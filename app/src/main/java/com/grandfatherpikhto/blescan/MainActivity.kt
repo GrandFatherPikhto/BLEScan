@@ -136,23 +136,6 @@ class MainActivity : AppCompatActivity() {
         permissionsLauncher(launchPermissions)
     }
 
-    private fun bindNavBar() {
-        val navHostFragment = supportFragmentManager.findFragmentById(R.id.nav_host_fragment_content_main) as NavHostFragment
-        val navController = navHostFragment?.findNavController()
-        if(navController != null) {
-            appBarConfiguration = AppBarConfiguration(navController.graph)
-            setupActionBarWithNavController(navController, appBarConfiguration)
-        }
-    }
-
-    private fun doNavigate(current: Current) {
-        val navHostFragment = supportFragmentManager.findFragmentById(R.id.nav_host_fragment_content_main) as NavHostFragment
-        val navController = navHostFragment?.findNavController()
-        if(navController.currentDestination?.id != current.value) {
-            navController.navigate(current.value)
-        }
-    }
-
     /**
      * Запрос группы разрешений
      */
@@ -173,6 +156,23 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
             launcher.launch(permissions.toTypedArray())
+        }
+    }
+
+    private fun bindNavBar() {
+        val navHostFragment = supportFragmentManager.findFragmentById(R.id.nav_host_fragment_content_main) as NavHostFragment
+        val navController = navHostFragment?.findNavController()
+        if(navController != null) {
+            appBarConfiguration = AppBarConfiguration(navController.graph)
+            setupActionBarWithNavController(navController, appBarConfiguration)
+        }
+    }
+
+    private fun doNavigate(current: Current) {
+        val navHostFragment = supportFragmentManager.findFragmentById(R.id.nav_host_fragment_content_main) as NavHostFragment
+        val navController = navHostFragment?.findNavController()
+        if(navController.currentDestination?.id != current.value) {
+            navController.navigate(current.value)
         }
     }
 }

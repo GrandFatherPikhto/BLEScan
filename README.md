@@ -1,9 +1,39 @@
 # Простейший сканнер BLE
+## Зачем?
+Честно говоря, библиотека 
+[NordicSemiconductor Android BLE Library](https://github.com/NordicSemiconductor/Android-BLE-Library/)
+полностью устраивает всех, кто хочет работать со стеком BLE на платформе Android.
+Быть может, с проблемой просто не стоит связываться, учитвая просто огромный список сложностей (Issues), 
+которые возникают при создании собственного стека BLE Android. К сожалению, официальном руководстве 
+[Android BLE](https://developer.android.com/guide/topics/connectivity/bluetooth/ble-overview) об этом говорится очень немного.
+
+Насколько понимаю, 
+[проблема работы фильтров при сканировании устройств](https://stackoverflow.com/questions/34065210/android-ble-device-scan-with-filter-is-not-working/34092300)
+на Android-устройствах, так до сих пор и не решена на многих устройствах.
+
+Кроме того, есть прекрасная облегчённая библиотека Мартина Велле [BLESSED](https://github.com/weliem/blessed-android) написанная на Java
+и аналогичная версия на Kotlin [Coroutines BLESSED](https://github.com/weliem/blessed-android-coroutines)
+
+Однако, иногда бывает нужно сделать что-то совершенно своё, особенное. Для этого надо хорошее понимание основных проблемм работы со стеком BLE.
+
+## Основные проблемы
+Пожалуй, основная проблема BLE -- это нестабильное подключение к устройству. 
+1. [`BluetoothGatt.discoverServices`](https://developer.android.com/reference/android/bluetooth/BluetoothGatt#discoverServices())
+Довольно часто возвращает `ложь`
+2. [`BluetoothDevice.connectGatt`](https://developer.android.com/reference/android/bluetooth/BluetoothDevice#connectGatt(android.content.Context,%20boolean,%20android.bluetooth.BluetoothGattCallback))
+при неправильном использовании параметра `autoConnect` так же может вернуть ошибку со статусом 6 или 131 (плохо объяснённые в официальном руководстве
+ошибки). Причём значение параметра, насколько понимаю, зависит от версии Android и модели мобильного телефона. Мистика!
+3. [BluetoothGattCallback.onConnectionStateChange](https://stackoverflow.com/questions/38666462/android-catching-ble-connection-fails-disconnects)
+   не всегда срабатывает при отключении устройства, если скажем, оно не сопряжено с телефоном (некоторые устройства без сопряжения автоматически
+   разрывают связь через 30 секунд) 
+
+## Простейший сканнер
+Учитывая, что фильтры на многих устройствах не работают, лучше сразу заложить возможность фильтрования имён и адресов.
+
+Стоит ли делать сканнер сервисом, если он и так уже сервис? Да, стоит, поскольку, для стабильного подключения к устройству
+иногда придётся делать кратковременное сканирование устройств с фильтром по адресу подключаемогоу устройства.
 
 ## Материалы
-
-## Cписок документации по BLE Android
-
 1.  [Все работы Мартина Ван Велле](https://medium.com/@martijn.van.welie) Самое толковое и подробное описание работы с Bluetooth BLE, с кучей ссылок на различные источники.
     Подробно о сканировании устройств. Почему-то не отражена проблема сканирования устройств с фильтрами.
 2.  [Making Android BLE work — part 1 // Martijn van Welie](https://medium.com/@martijn.van.welie/making-android-ble-work-part-1-a736dcd53b02?source=user_profile---------3-------------------------------) Часть 1. Как заставить Android BLE работать - часть 1
