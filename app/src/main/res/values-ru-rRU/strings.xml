@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">BLEScan</string>
+    <string name="action_settings">Настройки</string>
+    <string name="scan_fragment_label">Сканировать</string>
+    <string name="device_fragment_label">BLE Устройство</string>
+    <string name="next">Следующий</string>
+    <string name="previous">Предыдущий</string>
+    <string name="hello_first_fragment">Привет, первый фрагмент</string>
+    <string name="hello_second_fragment">Привет, второй фрагмент</string>
+    <string name="default_bt_name">Неизвестное устройство</string>
+    <string name="start_scan">Запустить сканирование</string>
+    <string name="stop_scan">Остановить сканирование</string>
+    <string name="paired_bluetooth">Сопряжённое устройство</string>
+    <string name="not_paired_bluetooth">Не сопряжённое устройство</string>
+    <string name="state_unkown">Неизвестное состояние</string>
+    <string name="state_connecting">Подключение к устройству</string>
+    <string name="state_connected">Устройство подключено</string>
+    <string name="state_discovering">Исследование GATT</string>
+    <string name="state_discovered">GATT исследован</string>
+    <string name="state_disconnecting">Отключение</string>
+    <string name="state_disconnected">Отключено</string>
+    <string name="state_pairing">Сопряжение</string>
+    <string name="state_paired">Устройство сопряжено</string>
+    <string name="state_rescan">Сканирование устройств</string>
+    <string name="device_state">Состояние устройства</string>
+    <string name="service_name">Название Сервиса</string>
+    <string name="service_uuid">UUID</string>
+    <string name="service">Сервис</string>
+    <string name="characteristic">Характеристика</string>
+    <string name="descriptor">Дескриптор</string>
+    <string name="property">Свойство</string>
+</resources>

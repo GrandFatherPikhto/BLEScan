@@ -1,0 +1,35 @@
+<resources>
+    <string name="app_name">BLEScan</string>
+    <string name="action_settings">Settings</string>
+    <!-- Strings used for fragments for navigation -->
+    <string name="next">Next</string>
+    <string name="previous">Previous</string>
+
+    <string name="hello_first_fragment">Hello first fragment</string>
+    <string name="hello_second_fragment">Hello second fragment. Arg: %1$s</string>
+    <string name="default_bt_name">Unknown device</string>
+    <string name="default_bt_address" translatable="false">00:00:00:00:00:00</string>
+    <string name="start_scan">Start Scan</string>
+    <string name="stop_scan">Stop Scan</string>
+    <string name="paired_bluetooth">Paired Bluetooth</string>
+    <string name="not_paired_bluetooth">Not Paired Bluetooth</string>
+    <string name="scan_fragment_label">Scan Bt Devices</string>
+    <string name="device_fragment_label">BLE Device</string>
+    <string name="state_unkown">Unknown State</string>
+    <string name="state_connecting">Connecting State</string>
+    <string name="state_connected">Connected</string>
+    <string name="state_discovering">Discovering</string>
+    <string name="state_discovered">Discovered</string>
+    <string name="state_disconnecting">Disconnecting</string>
+    <string name="state_disconnected">Disconnected</string>
+    <string name="state_pairing">Pairing device</string>
+    <string name="state_paired">Device Paired</string>
+    <string name="state_rescan">Rescan devices</string>
+    <string name="device_state">Device state</string>
+    <string name="service_name">Service Name</string>
+    <string name="service_uuid">Service UUID</string>
+    <string name="service">Service</string>
+    <string name="characteristic">Characteristic</string>
+    <string name="descriptor">Descriptor</string>
+    <string name="property">Property</string>
+</resources>
