@@ -337,6 +337,181 @@ Intent().also { intent ->
 по ряду причин лучше приспособлен ко взаимодействию с сервисами и другими объектами, не содержащими 
 в контексте `View Lifecycle`
 
+В сервисе [BtLeScanService](./app/src/main/java/com/grandfatherpikhto/blescan/service/BtLeScanService.kt) реализован интерфейс `привязывания`:
+
+```kotlin
+    /**
+     * Класс, используемый для клиента Binder. Поскольку мы знаем, что эта служба всегда
+     * выполняется в том же процессе, что и ее клиенты, нам не нужно иметь дело с IPC.
+     */
+    inner class LocalBinder : Binder() {
+        /** Возвращает экземпляр LocalService, чтобы можно было использовать общедоступные методы */
+        fun getService(): BtLeScanService = this@BtLeScanService
+    }
+
+    /** Binder given to clients */
+    private val binder = LocalBinder()
+
+    /**
+     * Привязывание сервиса "штатным" BindService
+     * Вызывается, когда клиент (MainActivity в случае этого приложения) выходит на передний план
+     * и связывается с этой службой. Когда это произойдет, служба должна перестать быть службой
+     * переднего плана.
+     */
+    override fun onBind(intent: Intent): IBinder? {
+        Log.d(TAG, "onBind()")
+        return binder
+    }
+```
+
+Тогда, в объекте [BtLeScanServiceConnector](./app/src/main/java/com/grandfatherpikhto/blescan/service/BtLeScanServiceConnector.kt)
+можно реализовать перегрузку функций обратного вызова события `привязки`:
+
+```kotlin
+    override fun onServiceConnected(componentName: ComponentName?, binderService: IBinder?) {
+        btLeScanService = (binderService as BtLeScanService.LocalBinder).getService()
+        _bound.tryEmit(true)
+
+        GlobalScope.launch {
+            // _state = btLeScanService!!.state as MutableStateFlow<BtLeScanService.State>
+            bound.collect { value ->
+                if (value && btLeScanService != null) {
+                    btLeScanService!!.state.collect { state ->
+                        _state.tryEmit(state)
+                    }
+                }
+            }
+        }
+    }
+```
+
+Всё, связь с сервисом налажена. Понятно, что общение с синглтоном
+[BtLeScanServiceConnector](./app/src/main/java/com/grandfatherpikhto/blescan/service/BtLeScanServiceConnector.kt)
+лучше подерживать через модель [BtLeScanModel](./app/src/main/java/com/grandfatherpikhto/blescan/model/BtLeScanModel.kt):
+
+```kotlin
+    /** */
+    init {
+        viewModelScope.launch {
+            BtLeScanServiceConnector.bound.collect { bondValue ->
+                _bound.postValue(bondValue)
+                if(bondValue) {
+                    BtLeScanServiceConnector.state.collect { stateValue ->
+                        _state.postValue(stateValue)
+                    }
+                }
+            }
+        }
+
+        viewModelScope.launch {
+            LeScanCallback.device.collect { finded ->
+                _device.postValue(finded)
+                if(finded != null) {
+                    if (devicesList.find { it.address == finded!!.address } == null) {
+                        devicesList.add(finded!!)
+                        _devices.postValue(devicesList.toList())
+                    }
+                }
+            }
+        }
+    }
+```
+
+Правда, количество обёрнутых обращений к различным объектам несколько раздражает.
+
+Также, объект 
+[BtLeScanServiceConnector](./app/src/main/java/com/grandfatherpikhto/blescan/service/BtLeScanServiceConnector.kt) 
+обращается к объекту [LeScanCallback](). Он наследован от 
+[ScanCallback](https://developer.android.com/reference/android/bluetooth/le/ScanCallback) 
+и внутри реализована перегрузка функций 
+
+```kotlin
+    /**
+     * Ошибка сканирования. Пока, никак не обрабатывается
+     */
+    override fun onScanFailed(errorCode: Int) {
+        super.onScanFailed(errorCode)
+        _error.tryEmit(errorCode)
+        Log.d(TAG, "Fail scan with error $errorCode")
+    }
+
+    /**
+     * Пакетный режим (сразу несколько устройств)
+     * Честно говоря, ни разу не видел, чтобы этот режим отрабатывал.
+     */
+    override fun onBatchScanResults(results: MutableList<ScanResult>?) {
+        super.onBatchScanResults(results)
+        results?.forEach { result ->
+            // Log.d(TAG, "[BatchScan] Найдено устройство: ${result.device.address} ${result.device.name}")
+            if(result?.device != null)
+                emitDevice(result.device)
+        }
+    }
+
+    /**
+     * Найдено одно устройство.
+     */
+    override fun onScanResult(callbackType: Int, result: ScanResult?) {
+        super.onScanResult(callbackType, result)
+        // Log.d(TAG, "[Scan] Найдено устройство: ${result?.device?.address} ${result?.device?.name}")
+        if(result != null && result.device != null) {
+            emitDevice(result.device)
+        }
+    }
+```
+
+Оповещение о найденном устройстве сделано через связку 
+
+```kotlin
+    /** */
+    private val _device = MutableSharedFlow<BtLeDevice?> (replay = 10 )
+    val device = _device.asSharedFlow()
+```
+
+Если использовать [StateFlow](https://kotlin.github.io/kotlinx.coroutines/kotlinx-coroutines-core/kotlinx.coroutines.flow/-mutable-state-flow/index.html), то повтор данных события обновления вызывать не будет. А значит,
+в некоторых случаях, например, при повторном поиске, данные будут утеряны.
+
+В объекте [LeScanCallback](./app/src/main/java/com/grandfatherpikhto/blescan/service/LeScanCallback.kt) 
+реализованы фильтры по имени устройства и по его адресу. В принципе,
+можно сделать фильтрацию по сервисам и характеристикам, но тогда надо подключаться к каждому
+найденному устройству, а это уже будет более громоздко.
+
+```kotlin
+    private fun checkName(bluetoothDevice: BluetoothDevice): Boolean {
+        // Log.d(TAG, "checkName: ${names.size}")
+        if(names.isNotEmpty()) {
+            // Log.d(TAG, "checkName: ${names.contains(bluetoothDevice.name)}")
+            if (bluetoothDevice.name == null) return false
+            return names.contains(bluetoothDevice.name)
+        }
+        return true
+    }
+
+    private fun checkAddress(bluetoothDevice: BluetoothDevice): Boolean {
+        // Log.d(TAG, "checkAddress: ${addresses.joinToString (", ")}, ${addresses.isNotEmpty()}")
+        if(addresses.isNotEmpty()) {
+            // Log.d(TAG, "Contains: ${addresses.contains(bluetoothDevice.address)}")
+            return addresses.contains(bluetoothDevice.address)
+        }
+        return true
+    }
+```
+
+Фильтрация по адресу понадобится при подключении к устройству. Часто случается, так, что метод
+[BluetoothDevice.connectGatt()](https://developer.android.com/reference/android/bluetooth/BluetoothDevice?hl=en#connectGatt(android.content.Context,%20boolean,%20android.bluetooth.BluetoothGattCallback))
+возвращает ошибку. Чтобы устранить её, надо провести быстрое сканирование
+по адресу устройства подключения и снова повторить попытку подключения.
+
+Реализацию вызова подключения можно увидеть, при помощи короткого нажатия на плашку устройства
+в списке найденных устройств. Сканирование будет повторено, но уже с фильтром адреса этого устройства.
+Как только устройство будет найдено, сканирование будет остановлено.
+
+Сканнер BLE-устройств готов.
+
+### Сервис [BtLeService](./app/src/main/java/com/grandfatherpikhto/blescan/service/BtLeService.kt)
+
+Сам процесс подключения очень подробно описан в статье 
+
 ### Навигация фрагментов
 
 В этом примере навигация сделана довольно грубая. В [MainActivity](./app/src/main/java/com/grandfatherpikhto/blescan/MainActivity.kt)
@@ -419,6 +594,7 @@ Fix: Replace with androidx.fragment.app.FragmentContainerView
         app:layout_constraintTop_toTopOf="parent"
         app:navGraph="@navigation/nav_graph" />
 ```
+
 Штатный код вызова 
 [`findNavController`](https://developer.android.com/reference/androidx/navigation/Navigation#findNavController(android.app.Activity,kotlin.Int))
 ```kotlin
