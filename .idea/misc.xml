@@ -6,6 +6,7 @@
         <entry key="app/src/main/res/layout/activity_main.xml" value="0.24728260869565216" />
         <entry key="app/src/main/res/layout/bt_device.xml" value="0.19791666666666666" />
         <entry key="app/src/main/res/layout/bt_gatt.xml" value="0.22" />
+        <entry key="app/src/main/res/layout/bt_property.xml" value="0.23550724637681159" />
         <entry key="app/src/main/res/layout/bt_service.xml" value="0.19791666666666666" />
         <entry key="app/src/main/res/layout/content_main.xml" value="0.19791666666666666" />
         <entry key="app/src/main/res/layout/fragment_device.xml" value="0.19791666666666666" />
