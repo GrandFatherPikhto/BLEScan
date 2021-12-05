@@ -289,6 +289,54 @@ Intent().also { intent ->
 при повороте экрана сервисы не будут уничтожаться, скажем, при повороте экрана или уходе приложения в
 фоновый режим.
 
+Вызов реализован через [Intent](https://developer.android.com/reference/android/content/Intent) по событию
+жизненного цикла [MainActivity](./app/src/main/java/com/grandfatherpikhto/blescan/MainActivity.kt) `onStart()`:
+
+```kotlin
+    private fun doBindServices() {
+        Intent(this, BtLeScanService::class.java).also { intent ->
+            bindService(intent, BtLeScanServiceConnector, Context.BIND_AUTO_CREATE)
+        }
+        Intent(this, BtLeService::class.java).also { intent ->
+            bindService(intent, BtLeServiceConnector, Context.BIND_AUTO_CREATE)
+        }
+    }
+```
+
+и отвязывание сервиса происходит по событию жизненного цикла `onStop()`
+
+```kotlin
+    private fun doUnbindServices() {
+        unbindService(BtLeScanServiceConnector)
+        unbindService(BtLeServiceConnector)
+    }
+```
+
+Понятно, что когда счётчик привязок обнуляется, сервис уничтожается. Если добавить такой же
+вызов, скажем в [BLEScanApp](./app/src/main/java/com/grandfatherpikhto/blescan/BLEScanApp.kt),
+жизненный цикл сервиса будет равен жизненному циклу приложения.
+Правда, в таком решении есть свои сложности: обычный сервис не может действовать в фоновом режиме.
+
+### Сервис [BtLeScanService](./app/src/main/java/com/grandfatherpikhto/blescan/service/BtLeScanService.kt)
+
+Соответственно, общение с сервисом осуществляется через объект
+[BtLeScanServiceConnector](./app/src/main/java/com/grandfatherpikhto/blescan/service/BtLeScanService.kt)
+наследованный от [ServiceConnection](https://developer.android.com/reference/android/content/ServiceConnection)
+
+Для связи используются уже не объекты
+[LiveData](https://developer.android.com/topic/libraries/architecture/livedata) и 
+[MutableLiveData](https://developer.android.com/reference/androidx/lifecycle/MutableLiveData), 
+а Сопрограммы Kotlin (Kotlin Koroutines)
+[MutableStateFlow](https://kotlin.github.io/kotlinx.coroutines/kotlinx-coroutines-core/kotlinx.coroutines.flow/-mutable-state-flow/index.html), 
+[StateFlow](https://kotlin.github.io/kotlinx.coroutines/kotlinx-coroutines-core/kotlinx.coroutines.flow/-state-flow/index.html) и 
+[MutableSharedFlow](https://kotlin.github.io/kotlinx.coroutines/kotlinx-coroutines-core/kotlinx.coroutines.flow/-mutable-shared-flow/), 
+[SharedFlow](https://kotlin.github.io/kotlinx.coroutines/kotlinx-coroutines-core/kotlinx.coroutines.flow/-shared-flow/index.html)
+
+В принципе, этого можно было и не делать, но жизненный цикл 
+[потоков сопрограмм](https://developer.android.com/kotlin/flow/stateflow-and-sharedflow)
+по ряду причин лучше приспособлен ко взаимодействию с сервисами и другими объектами, не содержащими 
+в контексте `View Lifecycle`
+
 ### Навигация фрагментов
 
 В этом примере навигация сделана довольно грубая. В [MainActivity](./app/src/main/java/com/grandfatherpikhto/blescan/MainActivity.kt)
