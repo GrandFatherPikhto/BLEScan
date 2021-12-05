@@ -113,12 +113,14 @@ Intent().also { intent ->
       a. Класс [`android.app.Application`](https://developer.android.com/reference/android/app/Application).
       Он имеет несколько методов жизненного цикла и будет автоматически создан Android, если зарегистрировать его в 
       [AndroidManifest.xml](./app/src/main/AndroidManifest.xml):
+      
 ```xml
     <application
         android:name=".BLEScanApp">
         
     </application>
 ```
+    
     Доступ к синглетону приложения можно получить через 
     [`getApplication()`](https://developer.android.com/reference/android/app/Activity#getApplication()) 
     из любого действия или из [службы](https://developer.android.com/reference/android/app/Service#getApplication()).
