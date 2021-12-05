@@ -94,6 +94,7 @@ Intent().also { intent ->
 ```
 
 И не забыть добавить описание сообщений в [`AndroidManifest.xml`](./app/src/main/AndroidManifest.xml)
+
 ```xml
 <receiver android:name=".MyBroadcastReceiver"  android:exported="true">
    <intent-filter>
@@ -113,17 +114,17 @@ Intent().also { intent ->
       a. Класс [`android.app.Application`](https://developer.android.com/reference/android/app/Application).
       Он имеет несколько методов жизненного цикла и будет автоматически создан Android, если зарегистрировать его в 
       [AndroidManifest.xml](./app/src/main/AndroidManifest.xml):
-      
+
 ```xml
     <application
         android:name=".BLEScanApp">
         
     </application>
-```
-    
-    Доступ к синглетону приложения можно получить через 
-    [`getApplication()`](https://developer.android.com/reference/android/app/Activity#getApplication()) 
-    из любого действия или из [службы](https://developer.android.com/reference/android/app/Service#getApplication()).
+``` 
+
+      Доступ к синглетону приложения можно получить через 
+      [`getApplication()`](https://developer.android.com/reference/android/app/Activity#getApplication()) 
+      из любого действия или из [службы](https://developer.android.com/reference/android/app/Service#getApplication()).
    
     4. Публичное статическое поле/метод
       Альтернативный способ сделать данные доступными для всех действий/служб — использовать 
