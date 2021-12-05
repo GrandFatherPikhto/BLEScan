@@ -246,37 +246,39 @@ Intent().also { intent ->
    Действие получателя извлекает объект с помощью этого ключа.
 
 6. Синглтон-класс
-  У использования статического синглтона есть преимущества. Например, можно ссылаться на объекты, 
-  не используя [`getApplication()`](https://developer.android.com/reference/android/app/Activity#getApplication())
-  к классу, зависящему от приложения, 
-  или можно сделать интерфейс на все подклассы Application, чтобы различные модули могли 
-  ссылаться на этот интерфейс вместо этого.
+   
+   У использования статического синглтона есть преимущества. Например, можно ссылаться на объекты, 
+   не используя [`getApplication()`](https://developer.android.com/reference/android/app/Activity#getApplication())
+   к классу, зависящему от приложения, 
+   или можно сделать интерфейс на все подклассы Application, чтобы различные модули могли 
+   ссылаться на этот интерфейс вместо этого.
   
-  Жизненный цикл статики не находится под вашим контролем; поэтому, чтобы соответствовать 
-  модели жизненного цикла, класс приложения должен инициировать и удалять эти статические 
-  объекты в методах `onCreate()` и `onTerminate()` класса приложения.
+   Жизненный цикл статики не находится под вашим контролем; поэтому, чтобы соответствовать 
+   модели жизненного цикла, класс приложения должен инициировать и удалять эти статические 
+   объекты в методах `onCreate()` и `onTerminate()` класса приложения.
       
 7. Постоянные объекты. Даже если кажется, что приложение продолжает работать, система может 
-  остановить его процесс и перезапустить его позже. Если у нас есть данные, которые необходимо 
-  сохранять от одного вызова действия к другому, необходимо представить эти данные как состояние, 
-  которое сохраняется действием, когда ему сообщается, что оно может исчезнуть.
-  Для совместного использования сложных постоянных определенных пользователем объектов есть
-  следующие подходы:
-  • [`Application Preferences`](https://developer.android.com/jetpack/androidx/releases/preference)
-  • [`Files`](https://developer.android.com/reference/java/io/File)
-  • [`contentProviders`](https://developer.android.com/reference/android/content/ContentProvider)
-  • [`SQLite`](https://developer.android.com/training/data-storage/sqlite) DB
-  
-  Если общие данные необходимо сохранить в точках, где процесс приложения может быть остановлен, 
-  данные можно помкестить в постоянное хранилище, такое как настройки приложения, 
-  база данных [`SQLite`](https://developer.android.com/training/data-storage/sqlite), 
-  файлы или [`ContentProviders`](https://developer.android.com/reference/android/content/ContentProvider). 
-  Подробнее в разделе [хранилище данных](https://developer.android.com/training/data-storage/room).
+   остановить его процесс и перезапустить его позже. Если у нас есть данные, которые необходимо 
+   сохранять от одного вызова действия к другому, необходимо представить эти данные как состояние, 
+   которое сохраняется действием, когда ему сообщается, что оно может исчезнуть.
+   Для совместного использования сложных постоянных определенных пользователем объектов есть
+   следующие подходы:
    
-  В данном случае выбран синглтон (объект). Может быть, то не очень оптимально в смысле экономии
-  памяти, но удобно в использовании.
-  Создано два класса: [`BtLeScanServiceConnector`](./app/src/main/java/com/grandfatherpikhto/blescan/service/BtLeScanServiceConnector.kt)
-  и [`BtLeServiceConnector`](./app/src/main/java/com/grandfatherpikhto/blescan/service/BtLeServiceConnector.kt)
+    • [`Application Preferences`](https://developer.android.com/jetpack/androidx/releases/preference)
+    • [`Files`](https://developer.android.com/reference/java/io/File)
+    • [`contentProviders`](https://developer.android.com/reference/android/content/ContentProvider)
+    • [`SQLite`](https://developer.android.com/training/data-storage/sqlite) DB
+  
+   Если общие данные необходимо сохранить в точках, где процесс приложения может быть остановлен, 
+   данные можно помкестить в постоянное хранилище, такое как настройки приложения, 
+   база данных [`SQLite`](https://developer.android.com/training/data-storage/sqlite), 
+   файлы или [`ContentProviders`](https://developer.android.com/reference/android/content/ContentProvider). 
+   Подробнее в разделе [хранилище данных](https://developer.android.com/training/data-storage/room).
+   
+   В данном случае выбран синглтон (объект). Может быть, то не очень оптимально в смысле экономии
+   памяти, но удобно в использовании.
+   Создано два класса: [`BtLeScanServiceConnector`](./app/src/main/java/com/grandfatherpikhto/blescan/service/BtLeScanServiceConnector.kt)
+   и [`BtLeServiceConnector`](./app/src/main/java/com/grandfatherpikhto/blescan/service/BtLeServiceConnector.kt)
 
 ### Активация сервисов
 
