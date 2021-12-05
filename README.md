@@ -22,13 +22,114 @@
 ## Основные проблемы
 Пожалуй, основная проблема BLE -- это нестабильное подключение к устройству. 
 1. [`BluetoothGatt.discoverServices`](https://developer.android.com/reference/android/bluetooth/BluetoothGatt#discoverServices())
-Довольно часто возвращает `ложь`
+   Довольно часто возвращает `ложь`
+   
 2. [`BluetoothDevice.connectGatt`](https://developer.android.com/reference/android/bluetooth/BluetoothDevice#connectGatt(android.content.Context,%20boolean,%20android.bluetooth.BluetoothGattCallback))
-при неправильном использовании параметра `autoConnect` так же может вернуть ошибку со статусом 6 или 131 (плохо объяснённые в официальном руководстве
-ошибки). Причём значение параметра, насколько понимаю, зависит от версии Android и модели мобильного телефона. Мистика!
+   при неправильном использовании параметра `autoConnect` так же может вернуть ошибку со статусом 6 или 131 (плохо объяснённые в официальном руководстве
+   ошибки). Причём значение параметра, насколько понимаю, зависит от версии Android и модели мобильного телефона. Мистика!
+   
 3. [BluetoothGattCallback.onConnectionStateChange](https://stackoverflow.com/questions/38666462/android-catching-ble-connection-fails-disconnects)
    не всегда срабатывает при отключении устройства, если скажем, оно не сопряжено с телефоном (некоторые устройства без сопряжения автоматически
    разрывают связь через 30 секунд) 
+
+4. Количество [разрешений](https://developer.android.com/reference/android/Manifest.permission), 
+   необходимых для 
+   [включения/выключения, сканирования, считывания рекламы](https://developer.android.com/guide/topics/connectivity/bluetooth/permissions) 
+   [`Bluetooth`](https://developer.android.com/guide/topics/connectivity/bluetooth), 
+   [BLE](https://developer.android.com/guide/topics/connectivity/bluetooth/ble-overview), 
+   постоянно меняется от одной версии к другой и выглядит несколько кошмарно:
+   
+```xml
+<manifest>
+    <!-- Запросить устаревшие разрешения Bluetooth на старых устройствах -->
+    <uses-permission android:name="android.permission.BLUETOOTH"
+        android:maxSdkVersion="30" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN"
+        android:maxSdkVersion="30" />
+
+    <!-- Требуется только в том случае, если ваше приложение ищет устройства Bluetooth. 
+         Если ваше приложение не использует результаты сканирования Bluetooth для получения 
+         информации о физическом местоположении, вы можете твердо утверждать, 
+         что ваше приложение не определяет физическое местоположение. -->
+    <uses-permission android:name="android.permission.BLUETOOTH_SCAN" />
+
+    <!-- Требуется только в том случае, если ваше приложение позволяет обнаруживать устройство для 
+         устройств Bluetooth. -->
+    <uses-permission android:name="android.permission.BLUETOOTH_ADVERTISE" />
+
+    <!-- Требуется только в том случае, если ваше приложение обменивается данными с уже сопряженными 
+         устройствами Bluetooth.. -->
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+
+    <!-- Требуется только в том случае, если ваше приложение использует результаты сканирования 
+         Bluetooth для определения физического местоположения. -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    ...
+</manifest>
+```
+
+Запросы уровня `dangerous`
+[android.permission.ACCESS_FINE_LOCATION](https://developer.android.com/reference/android/Manifest.permission#ACCESS_FINE_LOCATION),
+[android.permission.ACCESS_COARSE_LOCATION](https://developer.android.com/reference/android/Manifest.permission#ACCESS_COARSE_LOCATION),
+[android.permission.ACCESS_BACKGROUND_LOCATION](https://developer.android.com/reference/android/Manifest.permission#ACCESS_COARSE_LOCATION)
+нужно запрашивать напрямую, скажем, из `Активности`. Для этого созданы две функции, чтобы реализовать запрос массива разрешений:
+
+```kotlin
+    /**
+     * Проверка группы разрешений
+     */
+    private fun requestPermissions(permissions: MutableList<String>) {
+        var launchPermissions: MutableList<String> = arrayListOf()
+        permissions.forEach { permission ->
+            if (ContextCompat.checkSelfPermission(
+                    this,
+                    permission
+                ) == PackageManager.PERMISSION_GRANTED
+            ) {
+                Log.d(TAG, "Разрешение на $permission уже есть")
+            } else {
+                launchPermissions.add(permission)
+            }
+        }
+
+        permissionsLauncher(launchPermissions)
+    }
+
+    /**
+     * Запрос группы разрешений
+     */
+    private fun permissionsLauncher(permissions: List<String>) {
+        if (permissions.isNotEmpty()) {
+            val launcher =
+                registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { results ->
+                    results?.entries?.forEach { result ->
+                        val name = result.key
+                        val isGranted = result.value
+                        if (isGranted) {
+                            Toast.makeText(this, "Разрешение на $name получено", Toast.LENGTH_SHORT)
+                                .show()
+                        } else {
+                            Toast.makeText(this, "Разрешение на $name не дано", Toast.LENGTH_SHORT)
+                                .show()
+                        }
+                    }
+                }
+            launcher.launch(permissions.toTypedArray())
+        }
+    }
+```
+
+И запрос будет выглядеть так:
+
+```kotlin
+        requestPermissions(
+            mutableListOf(
+                Manifest.permission.ACCESS_FINE_LOCATION,
+                Manifest.permission.ACCESS_COARSE_LOCATION,
+                Manifest.permission.ACCESS_BACKGROUND_LOCATION
+            )
+        )
+```
 
 ## Простейший сканнер
 Учитывая, что фильтры на многих устройствах не работают, лучше сразу заложить возможность фильтрования имён и адресов.
@@ -41,10 +142,11 @@
 
 Таким образом, будет два сервиса:
 
-1. `BtLeScanService` -- сервис сканера
-2. `BtLeService` -- сервис подключения к BLE устройству
+1. [`BtLeScanService`](./app/src/main/java/com/grandfatherpikhto/blescan/service/BtLeScanService.kt) -- сервис сканера
+2. [`BtLeService`](./app/src/main/java/com/grandfatherpikhto/blescan/service/BtLeService.kt) -- сервис подключения к BLE устройству
 
 После того, как созданы классы сервисов, надо прописать их в [`AndroidManifest.xml`](./app/src/main/AndroidManifest.xml):
+
 ```xml
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
@@ -69,9 +171,8 @@
    при помощи [`Broadcastreceiver`](https://developer.android.com/reference/android/content/BroadcastReceiver),
    [`IntentFilter`](https://developer.android.com/reference/android/content/IntentFilter),
    [`sendBroadcast`](https://developer.android.com/reference/android/content/Context#sendBroadcast(android.content.Intent)),
-   как это достаточно подробно описано в примерах [`broadcasts`](https://developer.android.com/guide/components/broadcasts)
+   как это достаточно подробно описано в примерах [`broadcasts`](https://developer.android.com/guide/components/broadcasts).
    
-   .
 ```java
 Intent intent = new Intent("com.grandfatherpikhto.blescan.NEW_DEVICE_DETECTED");
 // Intent intent = new Intent();
@@ -122,9 +223,9 @@ Intent().also { intent ->
   </application>
 ``` 
 
-Доступ к синглетону приложения можно получить через 
-[`getApplication()`](https://developer.android.com/reference/android/app/Activity#getApplication()) 
-из любого действия или из [службы](https://developer.android.com/reference/android/app/Service#getApplication()).
+  Доступ к синглетону приложения можно получить через 
+  [`getApplication()`](https://developer.android.com/reference/android/app/Activity#getApplication()) 
+  из любого действия или из [службы](https://developer.android.com/reference/android/app/Service#getApplication()).
    
 4. Публичное статическое поле/метод
   Альтернативный способ сделать данные доступными для всех действий/служб — использовать 
@@ -143,7 +244,7 @@ Intent().also { intent ->
   и отправляет ключ (который является уникальным Long на основе счетчика или отметки времени) 
   действию получателя через дополнительные функции намерения. 
   Действие получателя извлекает объект с помощью этого ключа.
-      
+
 6. Синглтон-класс
   У использования статического синглтона есть преимущества. Например, можно ссылаться на объекты, 
   не используя [`getApplication()`](https://developer.android.com/reference/android/app/Activity#getApplication())
@@ -172,11 +273,140 @@ Intent().also { intent ->
   файлы или [`ContentProviders`](https://developer.android.com/reference/android/content/ContentProvider). 
   Подробнее в разделе [хранилище данных](https://developer.android.com/training/data-storage/room).
    
-   В данном случае выбран синглтон (объект). Может быть, то не очень оптимально в смысле экономии
-   памяти, но удобно в использовании.
-   Создано два класса: [`BtLeScanServiceConnector`](./app/src/main/java/com/grandfatherpikhto/blescan/service/BtLeScanServiceConnector.kt)
-   и [`BtLeServiceConnector`](./app/src/main/java/com/grandfatherpikhto/blescan/service/BtLeServiceConnector.kt)
-### 
+  В данном случае выбран синглтон (объект). Может быть, то не очень оптимально в смысле экономии
+  памяти, но удобно в использовании.
+  Создано два класса: [`BtLeScanServiceConnector`](./app/src/main/java/com/grandfatherpikhto/blescan/service/BtLeScanServiceConnector.kt)
+  и [`BtLeServiceConnector`](./app/src/main/java/com/grandfatherpikhto/blescan/service/BtLeServiceConnector.kt)
+
+### Активация сервисов
+
+Пока, вызов сервисов находится в 
+[`MainActivity`](./app/src/main/java/com/grandfatherpikhto/blescan/MainActivity.kt).
+Можно использовать [`BLEScanApp`](./app/src/main/java/com/grandfatherpikhto/blescan/BLEScanApp.kt)
+и наследовать сервисы от [`LifecycleService`](https://developer.android.com/reference/androidx/lifecycle/LifecycleService)
+при повороте экрана сервисы не будут уничтожаться, скажем, при повороте экрана или уходе приложения в
+фоновый режим.
+
+### Навигация фрагментов
+
+В этом примере навигация сделана довольно грубая. В [MainActivity](./app/src/main/java/com/grandfatherpikhto/blescan/MainActivity.kt)
+создан `enum class Current`, значения которого указывают на объекты навигации из 
+[nav_graph.xml](./app/src/main/res/navigation/nav_graph.xml)
+
+```kotlin
+    enum class Current (val value: Int) {
+        None(0x00),
+        Scanner(R.id.ScanFragment),
+        Device(R.id.DeviceFragment)
+    }
+```
+
+Объект [MutableLiveData](https://developer.android.com/reference/androidx/lifecycle/MutableLiveData) в
+модели [MainActivityModel](./app/src/main/java/com/grandfatherpikhto/blescan/model/MainActivityModel.kt)
+хранит идентификатор текущего активного фрейма:
+```kotlin
+    private val _current = MutableLiveData<MainActivity.Current>(MainActivity.Current.Scanner)
+    val current:LiveData<MainActivity.Current> = _current
+    
+    fun changeCurrent(value: MainActivity.Current) {
+        _current.postValue(value)
+    }
+```
+
+Всё, что остаётся -- просто менять запись на нужное значение и, соответственно, переключаться между
+[ScanFragment](./app/src/main/java/com/grandfatherpikhto/blescan/ScanFragment.kt) и 
+[DeviceFragment](./app/src/main/java/com/grandfatherpikhto/blescan/DeviceFragment.kt)
+
+События запуска сканирования и подключения к устройству обрабатываются внутри фрагментов.
+
+Важно, что по-умолчанию генератор приложения AndroidStudio `Basic Activity` создаёт тэг `fragment`
+
+```xml
+    <fragment
+        android:id="@+id/nav_host_fragment_content_main"
+        android:name="androidx.navigation.fragment.NavHostFragment"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:defaultNavHost="true"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:navGraph="@navigation/nav_graph" />
+
+```
+
+Однако, этот тэг является устаревшим и если последовать совету автокорректировщика
+
+```
+Use FragmentContainerView instead of the <fragment> tag
+
+Replace the <fragment> tag with FragmentContainerView.
+
+FragmentContainerView replaces the <fragment> tag as the preferred way of adding fragments via XML. 
+Unlike the <fragment> tag, FragmentContainerView uses a normal FragmentTransaction under the hood 
+to add the initial fragment, allowing further FragmentTransaction operations on the 
+FragmentContainerView and providing a consistent timing for lifecycle events.  
+Issue id: FragmentTagUsage 
+https://developer.android.com/reference/androidx/fragment/app/FragmentContainerView.html 
+Vendor: Android Open Source Project (fragment-1.3.6) 
+Identifier: fragment-1.3.6 Feedback: https://issuetracker.google.com/issues/new?component=192731
+
+Fix: Replace with androidx.fragment.app.FragmentContainerView  
+```
+И заменить &lt;fragment&gt; на &lt;FragmentContainerView&gt;
+
+```xml
+    <androidx.fragment.app.FragmentContainerView
+        android:id="@+id/nav_host_fragment_content_main"
+        android:name="androidx.navigation.fragment.NavHostFragment"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:defaultNavHost="true"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:navGraph="@navigation/nav_graph" />
+```
+Штатный код вызова `findNavController`
+```kotlin
+        val navController = findNavController(R.id.nav_host_fragment_content_main)
+        appBarConfiguration = AppBarConfiguration(navController.graph)
+        setupActionBarWithNavController(navController, appBarConfiguration)
+```
+
+Работать уже не будет. Так, что его надо заменить на обращение к `supportFragmentManager`
+
+```kotlin
+    private fun bindNavBar() {
+        val navHostFragment = supportFragmentManager.findFragmentById(R.id.nav_host_fragment_content_main) as NavHostFragment
+        val navController = navHostFragment?.findNavController()
+        if(navController != null) {
+            appBarConfiguration = AppBarConfiguration(navController.graph)
+            setupActionBarWithNavController(navController, appBarConfiguration)
+        }
+    }
+```
+
+И навигация по фрагментам тогда будет работать так:
+```kotlin
+    private fun doNavigate(current: Current) {
+        val navHostFragment = supportFragmentManager.findFragmentById(R.id.nav_host_fragment_content_main) as NavHostFragment
+        val navController = navHostFragment?.findNavController()
+        if(navController.currentDestination?.id != current.value) {
+            navController.navigate(current.value)
+        }
+    }
+```
+
+Осталось «привязать» изменения значения поля `current` в модели `MainActivityModel` к навигации по текущему фрагменту:
+
+```kotlin
+        mainActivityModel.current.observe(this, { current ->
+            doNavigate(current)
+        })
+```
 
 ## Материалы
 1.  [Все работы Мартина Ван Велле](https://medium.com/@martijn.van.welie) Самое толковое и подробное описание работы с Bluetooth BLE, с кучей ссылок на различные источники.
