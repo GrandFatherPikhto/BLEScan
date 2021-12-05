@@ -369,14 +369,17 @@ Fix: Replace with androidx.fragment.app.FragmentContainerView
         app:layout_constraintTop_toTopOf="parent"
         app:navGraph="@navigation/nav_graph" />
 ```
-Штатный код вызова `findNavController`
+Штатный код вызова 
+[`findNavController`](https://developer.android.com/reference/androidx/navigation/Navigation#findNavController(android.app.Activity,kotlin.Int))
 ```kotlin
         val navController = findNavController(R.id.nav_host_fragment_content_main)
         appBarConfiguration = AppBarConfiguration(navController.graph)
         setupActionBarWithNavController(navController, appBarConfiguration)
 ```
 
-Работать уже не будет. Так, что его надо заменить на обращение к `supportFragmentManager`
+Работать уже не будет. Так, что его надо заменить на обращение к 
+[`supportFragmentManager`](https://developer.android.com/reference/androidx/fragment/app/FragmentActivity#getSupportFragmentManager())
+(см. [Navigation](https://developer.android.com/guide/navigation))
 
 ```kotlin
     private fun bindNavBar() {
