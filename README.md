@@ -1,6 +1,6 @@
 # Простейший сканнер BLE
-![Программа BLEScan, скрин 01](./blescan01.jpg "Программа BLEScan, скрин 1" =100x)
-![Программа BLEScan, скрин 02](./blescan02.jpg "Программа BLEScan, скрин 2" =100x)
+<img src="./blescan01.jpg" style="width:100px" alt="Программа BLEScan, скрин 1" />
+<img src="./blescan02.jpg" style="width:100px" alt="Программа BLEScan, скрин 2" />
 
 ## Зачем?
 Честно говоря, библиотека 
