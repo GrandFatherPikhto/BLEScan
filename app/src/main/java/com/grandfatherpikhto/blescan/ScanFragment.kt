@@ -47,9 +47,6 @@ class ScanFragment : Fragment() {
     private val mainActivityModel:MainActivityModel by activityViewModels()
     /** */
     private val rvBtAdapter: RvBtAdapter = RvBtAdapter()
-    /** */
-    private lateinit var menuItemScanStart:MenuItem
-
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -59,6 +56,7 @@ class ScanFragment : Fragment() {
         setHasOptionsMenu(true)
 
         _binding = FragmentScanBinding.inflate(inflater, container, false)
+        initRvAdapter()
 
         return binding.root
 
@@ -66,15 +64,26 @@ class ScanFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
+        mainActivityModel.ready.observe(viewLifecycleOwner, { ready ->
+            requireActivity().invalidateOptionsMenu()
+        })
         bindAction(view)
+        mainActivityModel.enabled.observe(viewLifecycleOwner, { enabled ->
+            requireActivity().invalidateOptionsMenu()
+        })
     }
 
     override fun onCreateOptionsMenu(menu: Menu, menuInflater: MenuInflater) {
-        menuInflater.inflate(R.menu.menu_scan, menu)
-        super.onCreateOptionsMenu(menu, menuInflater)
-        menuItemScanStart = menu.findItem(R.id.scan_bluetooth)
-        initRvAdapter()
+        mainActivityModel.enabled.value?.let { enabled ->
+            if(enabled) {
+                mainActivityModel.ready.value?.let { ready ->
+                    menuInflater.inflate(R.menu.menu_scan, menu)
+                    super.onCreateOptionsMenu(menu, menuInflater)
+                    bindMenuReaction(menu)
+                }
+                Log.d(TAG, "onCreateOptionsMenu()")
+            }
+        }
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
@@ -82,12 +91,9 @@ class ScanFragment : Fragment() {
             R.id.scan_bluetooth -> {
                 if(btLeScanModel.state.value == BtLeScanService.State.Stopped) {
                     Log.d(TAG, "Start Scan")
-                    // BtLeScanServiceConnector.scanLeDevice(addresses = arrayListOf("7E:FC:58:23:24:DB"), mode = BtLeScanService.Mode.StopOnFind)
-                    // BtLeScanServiceConnector.scanLeDevice()
                     btLeScanModel.changeAction(Action.Scan)
                 } else {
                     Log.d(TAG, "Stop Scan")
-                    // BtLeScanServiceConnector.stopScan()
                     btLeScanModel.changeAction(Action.None)
                 }
                 true
@@ -137,6 +143,22 @@ class ScanFragment : Fragment() {
         bindRvAdapter()
     }
 
+    /**
+     *
+     */
+    private fun bindMenuReaction(menu: Menu) {
+        val menuItemScanStart = menu.findItem(R.id.scan_bluetooth)
+        btLeScanModel.state.observe(viewLifecycleOwner, { state ->
+            if(state == BtLeScanService.State.Scanning) {
+                menuItemScanStart?.setIcon(R.drawable.ic_baseline_search_off_24)
+                menuItemScanStart?.setTitle(R.string.stop_scan)
+            } else {
+                menuItemScanStart?.setIcon(R.drawable.ic_baseline_search_24)
+                menuItemScanStart?.setTitle(R.string.start_scan)
+            }
+        })
+    }
+
     private fun bindRvAdapter () {
         binding.apply {
             rvBtList.adapter = rvBtAdapter
@@ -147,15 +169,6 @@ class ScanFragment : Fragment() {
 
             btLeScanModel.devices.observe(viewLifecycleOwner, { devices ->
                 rvBtAdapter.setBtDevices(devices.toSet())
-            })
-            btLeScanModel.state.observe(viewLifecycleOwner, { state ->
-                if(state == BtLeScanService.State.Scanning) {
-                    menuItemScanStart?.setIcon(R.drawable.ic_baseline_search_off_24)
-                    menuItemScanStart?.setTitle(R.string.stop_scan)
-                } else {
-                    menuItemScanStart?.setIcon(R.drawable.ic_baseline_search_24)
-                    menuItemScanStart?.setTitle(R.string.start_scan)
-                }
             })
             btLeScanModel.bound.observe(viewLifecycleOwner, { isBond ->
                 // btLeScanService = BtLeScanServiceConnector.service
