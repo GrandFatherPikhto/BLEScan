@@ -15,6 +15,7 @@
         <entry key="app/src/main/res/layout/gatt.xml" value="0.33" />
         <entry key="app/src/main/res/menu/menu_main.xml" value="0.19791666666666666" />
         <entry key="app/src/main/res/menu/menu_scan.xml" value="0.19791666666666666" />
+        <entry key="app/src/main/res/xml/root_preferences.xml" value="0.23333333333333334" />
       </map>
     </option>
   </component>
