@@ -1,5 +1,6 @@
 package com.grandfatherpikhto.blescan.service
 
+import android.bluetooth.BluetoothAdapter
 import android.content.ComponentName
 import android.content.ServiceConnection
 import android.os.IBinder
@@ -71,10 +72,29 @@ object BtLeScanServiceConnector: ServiceConnection {
     }
 
 
-    fun scanLeDevice(addresses: List<String> = listOf(),
+    fun scanLeDevices(addresses: List<String> = listOf(),
                      names: List<String> = listOf<String>(),
                      mode:BtLeScanService.Mode = BtLeScanService.Mode.FindAll)
         = btLeScanService?.scanLeDevices(addressesList = addresses, namesList = names, modeScan = mode)
+
+    fun scanLeDevices(addresses: String? = null, names: String? = null, mode:BtLeScanService.Mode = BtLeScanService.Mode.FindAll)
+        = btLeScanService?.scanLeDevices(addresses, names, mode)
+
+//    fun scanLeDevices(addresses: String? = null,
+//            names:String? = null,
+//            mode:BtLeScanService.Mode = BtLeScanService.Mode.FindAll) {
+//        val addressesList = addresses?.let {
+//            it.split(",")?.filter { address ->
+//                address.trim().isNotEmpty()
+//                && BluetoothAdapter.checkBluetoothAddress(address)
+//            }
+//        } ?: listOf()
+//        val namesList = names?.let {
+//            it.split(",")?.filter { name ->
+//                name.trim().isNotEmpty() }
+//        } ?: listOf()
+//        btLeScanService?.scanLeDevices(addressesList = addressesList, namesList = namesList, modeScan = mode)
+//    }
 
 
     fun stopScan() = btLeScanService?.stopScan()
