@@ -124,6 +124,8 @@ class MainActivity : AppCompatActivity() {
         mainActivityModel.current.observe(this, { current ->
             doNavigate(current)
         })
+
+        mainActivityModel.changeEnabled(bluetoothAdapter.isEnabled)
     }
 
     /**
