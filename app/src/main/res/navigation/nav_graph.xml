@@ -14,6 +14,9 @@
         <action
             android:id="@+id/action_ScanFragment_to_DeviceFragment"
             app:destination="@id/DeviceFragment" />
+        <action
+            android:id="@+id/action_ScanFragment_to_SettingsFragment"
+            app:destination="@id/SettingsFragment" />
     </fragment>
     <fragment
         android:id="@+id/DeviceFragment"
@@ -24,5 +27,19 @@
         <action
             android:id="@+id/action_DeviceFragment_to_ScanFragment"
             app:destination="@id/ScanFragment" />
+        <action
+            android:id="@+id/action_DeviceFragment_to_SettingsFragment"
+            app:destination="@id/SettingsFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/SettingsFragment"
+        android:name="com.grandfatherpikhto.blescan.SettingsFragment"
+        android:label="SettingsFragment" >
+        <action
+            android:id="@+id/action_SettingsFragment_to_ScanFragment"
+            app:destination="@id/ScanFragment" />
+        <action
+            android:id="@+id/action_SettingsFragment_to_DeviceFragment"
+            app:destination="@id/DeviceFragment" />
     </fragment>
 </navigation>
