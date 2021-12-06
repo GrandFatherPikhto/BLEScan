@@ -32,4 +32,7 @@
     <string name="property">Свойство</string>
     <string name="action_enable_bluetooth">Включить Блютуз</string>
     <string name="action_disable_bluetooth">Выключить Блютуз</string>
+    <string name="filter_header">Фильтры Сканирования</string>
+    <string name="names_filter">Фильтрация по имени</string>
+    <string name="addresses_filter">Фильтр по адресам</string>
 </resources>
