@@ -43,9 +43,13 @@ class BtLeService: Service() {
     val state  = sharedState.asStateFlow()
 
     /** */
-    private lateinit var bluetoothManager:BluetoothManager
+    private val bluetoothManager:BluetoothManager by lazy {
+        getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
+    }
     /** */
-    private lateinit var bluetoothAdapter:BluetoothAdapter
+    private val bluetoothAdapter:BluetoothAdapter by lazy {
+        bluetoothManager.adapter
+    }
     /** */
     private var bluetoothAddress:String ?= null
     /** */
@@ -82,14 +86,10 @@ class BtLeService: Service() {
     }
 
     override fun onCreate() {
+        Log.d(TAG, "onCreate()")
         super.onCreate()
-        super.onCreate()
+
         if(charWriteMutex.isLocked) charWriteMutex.unlock()
-
-        bluetoothManager = getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
-        bluetoothAdapter = bluetoothManager.adapter
-        applicationContext.registerReceiver(BCReceiver, makeIntentFilter())
-
         GlobalScope.launch {
             BtGattCallback.state.collect {  gattState ->
                 Log.d(TAG, "State: $gattState")
@@ -132,12 +132,20 @@ class BtLeService: Service() {
                 }
             }
         }
+
+        GlobalScope.launch {
+            BCReceiver.paired.collect { pairedDevice ->
+                pairedDevice?.let {
+                    Log.d(TAG, "Paired device: ${pairedDevice?.address}")
+                    doConnect()
+                }
+            }
+        }
     }
 
     override fun onDestroy() {
         bluetoothGatt?.close()
         super.onDestroy()
-        applicationContext.unregisterReceiver(BCReceiver)
     }
 
     private fun doRescan() {
@@ -153,6 +161,7 @@ class BtLeService: Service() {
      *
      */
     private fun doConnect() {
+        Log.d(TAG, "Пытаемся подключиться к $bluetoothAddress")
         bluetoothGatt = bluetoothDevice?.connectGatt(
             applicationContext,
             bluetoothDevice!!.type == BluetoothDevice.DEVICE_TYPE_UNKNOWN,
@@ -169,14 +178,17 @@ class BtLeService: Service() {
         bluetoothGatt?.close()
     }
 
+    /**
+     * Если устройство не сопряжено, сопрягаем его и ждём оповещение сопряжения
+     * после получения, повторяем попытку подключения.
+     */
     fun connect(address: String? = null) {
         if(address != null) {
-            Log.d(TAG, "Пытаемся подключиться к $address")
             bluetoothAddress = address
             bluetoothDevice = bluetoothAdapter.getRemoteDevice(address)
             if(bluetoothDevice != null) {
                 if(bluetoothDevice!!.bondState == BluetoothDevice.BOND_NONE) {
-                    // Log.d(TAG, "Пытаюсь сопрячь устройство ")
+                    Log.d(TAG, "Пытаемся сопрячь устройство $address")
                     bluetoothDevice!!.createBond()
                 } else {
                     doConnect()
@@ -187,23 +199,4 @@ class BtLeService: Service() {
             }
         }
     }
-
-
-    /**
-     * Создаём фильтр перехвата для различных широковещательных событий
-     * В данном случае, нужны только фильтры для перехвата
-     * В данном случае, нужны только фильтры для перехвата
-     * запроса на сопряжение устройства и завершения сопряжения
-     * И интересует момент "Устройство найдено" на случай рескана устройств
-     * по адресу или имени
-     */
-    private fun makeIntentFilter(): IntentFilter {
-        val intentFilter = IntentFilter()
-        intentFilter.addAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED)
-        intentFilter.addAction(BluetoothDevice.ACTION_PAIRING_REQUEST)
-        intentFilter.addAction(BluetoothDevice.ACTION_FOUND)
-
-        return intentFilter
-    }
-
 }
