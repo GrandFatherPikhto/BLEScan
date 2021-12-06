@@ -174,7 +174,7 @@ class BtLeService: Service() {
      */
     private fun doRescan() {
         if(bluetoothAddress != null) {
-            BtLeScanServiceConnector.scanLeDevice(
+            BtLeScanServiceConnector.scanLeDevices(
                 addresses = listOf(bluetoothAddress!!), mode = BtLeScanService.Mode.StopOnFind
             )
             sharedState.tryEmit(State.Rescan)
