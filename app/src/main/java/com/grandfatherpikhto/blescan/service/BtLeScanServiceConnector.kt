@@ -29,7 +29,6 @@ object BtLeScanServiceConnector: ServiceConnection {
     private val _state = MutableStateFlow<BtLeScanService.State>(BtLeScanService.State.Stopped)
     val state: SharedFlow<BtLeScanService.State> = _state
 
-
     override fun onServiceConnected(componentName: ComponentName?, binderService: IBinder?) {
         btLeScanService = (binderService as BtLeScanService.LocalBinder).getService()
         _bound.tryEmit(true)
@@ -81,4 +80,6 @@ object BtLeScanServiceConnector: ServiceConnection {
     fun stopScan() = btLeScanService?.stopScan()
 
     fun pairedDevices() = btLeScanService?.pairedDevices()
+
+    fun disableBluetooth() = btLeScanService?.disableBluetooth()
 }
