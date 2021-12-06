@@ -20,7 +20,7 @@
 Однако, иногда бывает нужно сделать что-то совершенно своё, особенное. Для этого надо хорошее понимание основных проблемм работы со стеком BLE.
 
 ## Основные проблемы
-Пожалуй, основная проблема BLE -- это нестабильное подключение к устройству. 
+Пожалуй, основная проблема BLE — это нестабильное подключение к устройству. 
 1. [`BluetoothGatt.discoverServices`](https://developer.android.com/reference/android/bluetooth/BluetoothGatt#discoverServices())
    Довольно часто возвращает `ложь`
    
@@ -146,8 +146,8 @@
 
 Таким образом, будет два сервиса:
 
-1. [`BtLeScanService`](./app/src/main/java/com/grandfatherpikhto/blescan/service/BtLeScanService.kt) -- сервис сканера
-2. [`BtLeService`](./app/src/main/java/com/grandfatherpikhto/blescan/service/BtLeService.kt) -- сервис подключения к BLE устройству
+1. [`BtLeScanService`](./app/src/main/java/com/grandfatherpikhto/blescan/service/BtLeScanService.kt) — сервис сканера
+2. [`BtLeService`](./app/src/main/java/com/grandfatherpikhto/blescan/service/BtLeService.kt) — сервис подключения к BLE устройству
 
 После того, как созданы классы сервисов, надо прописать их в [`AndroidManifest.xml`](./app/src/main/AndroidManifest.xml):
 
@@ -646,7 +646,7 @@ Intent().also { intent ->
 
 События перехватываются в объекте [BcReceiver](./app/src/main/java/com/grandfatherpikhto/blescan/service/BcReceiver.kt).
 
-Всё, что осталось -- перехватить событие [onServicesDiscovered(btgatt: BluetoothGatt?, status: Int)]() и заполнить список
+Всё, что осталось — перехватить событие [onServicesDiscovered(btgatt: BluetoothGatt?, status: Int)]() и заполнить список
 сервисов, характеристик и дескрипторов.
 
 ### Навигация фрагментов
@@ -675,7 +675,7 @@ Intent().also { intent ->
     }
 ```
 
-Всё, что остаётся -- просто менять запись на нужное значение и, соответственно, переключаться между
+Всё, что остаётся — просто менять запись на нужное значение и, соответственно, переключаться между
 [ScanFragment](./app/src/main/java/com/grandfatherpikhto/blescan/ScanFragment.kt) и 
 [DeviceFragment](./app/src/main/java/com/grandfatherpikhto/blescan/DeviceFragment.kt)
 
