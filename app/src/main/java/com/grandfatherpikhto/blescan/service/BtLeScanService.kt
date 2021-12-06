@@ -124,11 +124,20 @@ class BtLeScanService: Service() {
                       , namesList:List<String> = listOf()
                       , modeScan: Mode = Mode.FindAll
     ) {
-        Log.d(TAG, "scanLeDevices Address filter: ${addressesList.joinToString(", ")}, Name filter: ${namesList.joinToString(", ")}, Mode: ${modeScan}")
+        Log.d(TAG, "scanLeDevices Address filter: ${addressesList.joinToString(", ")} ${addressesList.size}, Name filter: ${namesList.joinToString(", ")} ${namesList.size}, Mode: ${modeScan}")
         LeScanCallback.setAddresses(addressesList)
         LeScanCallback.setNames(namesList)
 
         this.mode = modeScan
+
+        startScan()
+    }
+
+    fun scanLeDevices(addresses: String? = null, names: String? = null, mode: Mode = Mode.FindAll) {
+        LeScanCallback.setAddresses(addresses)
+        LeScanCallback.setNames(names)
+
+        this.mode = mode
 
         startScan()
     }
