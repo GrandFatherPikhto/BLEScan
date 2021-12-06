@@ -1,5 +1,6 @@
 package com.grandfatherpikhto.blescan
 
+import android.content.SharedPreferences
 import android.os.Bundle
 import android.util.Log
 import android.view.*
@@ -7,6 +8,8 @@ import androidx.fragment.app.Fragment
 import android.widget.Toast
 import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
+import androidx.preference.Preference
+import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.snackbar.Snackbar
 import com.grandfatherpikhto.blescan.adapter.RvBtAdapter
@@ -47,6 +50,10 @@ class ScanFragment : Fragment() {
     private val mainActivityModel:MainActivityModel by activityViewModels()
     /** */
     private val rvBtAdapter: RvBtAdapter = RvBtAdapter()
+    /** */
+    private val settings:SharedPreferences by lazy {
+        PreferenceManager.getDefaultSharedPreferences(requireContext())
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -127,7 +134,7 @@ class ScanFragment : Fragment() {
                 // connectToBt(model)
                 BtLeScanServiceConnector.stopScan()
                 btLeScanModel.clean()
-                BtLeScanServiceConnector.scanLeDevice(addresses = listOf(model.address), mode = BtLeScanService.Mode.StopOnFind)
+                BtLeScanServiceConnector.scanLeDevices(addresses = listOf(model.address), mode = BtLeScanService.Mode.StopOnFind)
             }
 
             override fun onItemLongClick(model: BtLeDevice, view: View) {
@@ -188,7 +195,8 @@ class ScanFragment : Fragment() {
                         }
                         Action.Scan -> {
                             btLeScanModel.clean()
-                            BtLeScanServiceConnector.service?.scanLeDevices()
+                            BtLeScanServiceConnector.scanLeDevices(names = settings.getString("names_filter", ""),
+                                addresses = settings.getString("addresses_filter", ""))
                         }
                         Action.Paired -> {
                             btLeScanModel.clean()
