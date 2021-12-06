@@ -97,7 +97,6 @@ class BtLeService: Service() {
                     BtGattCallback.State.Disconnected -> {
                         bluetoothGatt?.close()
                         bluetoothGatt = null
-                        Log.e(TAG, "Disconnected")
                         doRescan()
                         sharedState.tryEmit(State.Disconnected)
                     }
@@ -194,7 +193,6 @@ class BtLeService: Service() {
                     doConnect()
                 }
             } else {
-                // TODO: Это неправильно. Надо генерировать состояние, а не вызывать doRescan()!!!
                 doRescan()
             }
         }
