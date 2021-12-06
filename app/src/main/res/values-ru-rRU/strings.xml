@@ -30,4 +30,6 @@
     <string name="characteristic">Характеристика</string>
     <string name="descriptor">Дескриптор</string>
     <string name="property">Свойство</string>
+    <string name="action_enable_bluetooth">Включить Блютуз</string>
+    <string name="action_disable_bluetooth">Выключить Блютуз</string>
 </resources>
