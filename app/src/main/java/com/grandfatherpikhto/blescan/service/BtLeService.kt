@@ -4,7 +4,6 @@ import android.app.Service
 import android.bluetooth.*
 import android.content.Context
 import android.content.Intent
-import android.content.IntentFilter
 import android.os.Binder
 import android.os.IBinder
 import android.util.Log
@@ -78,25 +77,33 @@ class BtLeService: Service() {
         fun getService(): BtLeService = this@BtLeService
     }
 
+    /**
+     *
+     */
     override fun onBind(p0: Intent?): IBinder? {
         // Log.d(TAG, "Сервис связан")
         sharedState.tryEmit(State.Disconnected)
         return binder
     }
 
+    /**
+     *
+     */
     override fun onUnbind(intent: Intent?): Boolean {
         // Log.d(TAG, "Сервис отвязан")
         bluetoothGatt?.disconnect()
         return super.onUnbind(intent)
     }
 
+    /**
+     *
+     */
     override fun onCreate() {
         Log.d(TAG, "onCreate()")
         super.onCreate()
 
         if(charWriteMutex.isLocked) charWriteMutex.unlock()
 
-        // TODO: Разобраться, почему вызывается два раза
         GlobalScope.launch {
             btGattCallback.state.collect {  gattState ->
                 Log.d(TAG, "State: $gattState")
@@ -137,7 +144,7 @@ class BtLeService: Service() {
         }
 
         GlobalScope.launch {
-            BCReceiver.paired.collect { pairedDevice ->
+            BcReceiver.paired.collect { pairedDevice ->
                 pairedDevice?.let {
                     Log.d(TAG, "Paired device: ${pairedDevice?.address}")
                     doConnect()
@@ -152,12 +159,19 @@ class BtLeService: Service() {
         }
     }
 
+    /**
+     *
+     */
     override fun onDestroy() {
         Log.d(TAG, "onDestroy()")
         bluetoothGatt?.close()
         super.onDestroy()
     }
 
+    /**
+     * Запрос на пересканирование с адресом устройства и остановкой сканирования
+     * после обнаружения устройства
+     */
     private fun doRescan() {
         if(bluetoothAddress != null) {
             BtLeScanServiceConnector.scanLeDevice(

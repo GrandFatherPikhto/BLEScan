@@ -515,29 +515,111 @@ Intent().also { intent ->
 
 Тонких моментов три
 
-1. Если устройство не сопряжено, его надо сопрячь. 
+1. Если устройство не сопряжено, его надо сопрячь. Если вызвали действие сопряжения,
+   приложение ожидает оповщения от 
+   [BCReceiver](./app/src/main/java/com/grandfatherpikhto/blescan/service/BсReceiver.kt) о
+   состоявшемся сопряжении. Если сопряжение произошло, можно попробовать подключиться к устройству.
+   
 ```kotlin
+    /**
+     * Если устройство не сопряжено, сопрягаем его и ждём оповещение сопряжения
+     * после получения, повторяем попытку подключения.
+     */
     fun connect(address: String? = null) {
         if(address != null) {
-            Log.d(TAG, "Пытаемся подключиться к $address")
             bluetoothAddress = address
             bluetoothDevice = bluetoothAdapter.getRemoteDevice(address)
             if(bluetoothDevice != null) {
                 if(bluetoothDevice!!.bondState == BluetoothDevice.BOND_NONE) {
-                    // Log.d(TAG, "Пытаюсь сопрячь устройство ")
+                    Log.d(TAG, "Пытаемся сопрячь устройство $address")
                     bluetoothDevice!!.createBond()
                 } else {
                     doConnect()
                 }
             } else {
-                // TODO: Это неправильно. Надо генерировать состояние, а не вызывать doRescan()!!!
                 doRescan()
             }
         }
     }
 ```
+   В классе приложения [BleScanApp.kt](./app/src/main/java/com/grandfatherpikhto/blescan/service/BсReceiver.kt) 
+   вызываются настройки фильтра [широковещательных оповещений](https://developer.android.com/reference/android/content/BroadcastReceiver)
+   теперь, приложение в курсе, когда произошло сопряжение, когда поменялся статус подключения
+   [BluetoothAdapter](https://developer.android.com/s/results?q=BluetoothAdapter) (обычно, он один на телефоне, поэтому, запрашиваем его, как единственный)
 
-В сервисе вызываются настройки фильтра [широковещательных оповещений]() 
+
+2. На большинстве устройств, если подключение происходит первый раз, параметр метода 
+   [BluetoothDevice.connectGatt](https://developer.android.com/reference/android/bluetooth/BluetoothDevice#connectGatt(android.content.Context,%20boolean,%20android.bluetooth.BluetoothGattCallback)) `autoConnect` должен быть `true`. Обычно, устройство
+   которое ни разу не подключалось, содержит в поле `тип` 
+   [BluetoothDevice.DEVICE_TYPE_UNKNOWN](https://developer.android.com/reference/android/bluetooth/BluetoothDevice#DEVICE_TYPE_UNKNOWN)
+   Если подключение происходит не в первый раз, мы должны передать `false`    Этому условию 
+   соответствует проверка равенства 
+   `bluetoothDevice!!.type == BluetoothDevice.DEVICE_TYPE_UNKNOWN`
+   
+   Если это поле выставить неправильно, все попытки подключения в 
+   [BtGattCallback.kt](./app/src/main/java/com/grandfatherpikhto/blescan/service/BtGattCallback.kt) будут
+   возвращать либо статус 6, либо 133. Об этом почти ничего не сказано в пакете документации
+   [BluetoothDevice.connectGatt()](https://developer.android.com/reference/android/bluetooth/BluetoothDevice#connectGatt(android.content.Context,%20boolean,%20android.bluetooth.BluetoothGattCallback))
+
+   Вообще говоря, ошибка 133 — это известная проблема Android. Bluetooth-сниффер, показывает, что 
+   телефон сначала отправляет LL_VERSION_IND, а затем он отправляет LL_FEATURE_REQ,  прежде  чем 
+   периферийное устройство отправиляет свой LL_VERSION_IND. Другими словами, телефон инициирует 
+   процедуру управления LL до завершения первой, и это явное нарушение спецификации Bluetooth. 
+   На этом этапе SoftDevice отключается.
+   
+```kotlin
+    /**
+     * Пытается подключиться к сервису GATT
+     * После подключения начинает работать синглетон BtGattCallback
+     */
+    private fun doConnect() {
+        Log.d(TAG, "Пытаемся подключиться к $bluetoothAddress")
+        bluetoothGatt = bluetoothDevice?.connectGatt(
+            applicationContext,
+            bluetoothDevice!!.type == BluetoothDevice.DEVICE_TYPE_UNKNOWN,
+            btGattCallback,
+            BluetoothDevice.TRANSPORT_LE
+        )
+        sharedState.tryEmit(State.Connecting)
+    }
+```
+
+   
+3. Если всё сделано правильно и процесс подключюения всё-равно вернул в 
+   [BluetoothGattCallback.onConnectionStateChange(gatt, status, newState)](https://developer.android.com/reference/android/bluetooth/BluetoothGattCallback#onConnectionStateChange(android.bluetooth.BluetoothGatt,%20int,%20int)) 
+   `state = 133`,
+   нужно пересканировать устройство с фильтром по его адресу и остановкой после обнаружения:
+   
+```kotlin
+    /**
+     * Запрос на пересканирование с адресом устройства и остановкой сканирования
+     * после обнаружения устройства
+     */
+    private fun doRescan() {
+        if(bluetoothAddress != null) {
+            BtLeScanServiceConnector.scanLeDevice(
+                addresses = listOf(bluetoothAddress!!), mode = BtLeScanService.Mode.StopOnFind
+            )
+            sharedState.tryEmit(State.Rescan)
+        }
+    }
+```
+
+   Как только в объекте [BtLeScanService.kt](./app/src/main/java/com/grandfatherpikhto/blescan/service/BtLeScanService.kt)
+   обнаруживает устройство он прекращает работу, согласно настройке `BtLeScanService.Mode.StopOnFind`.
+   Сервис отслеживает сообщение об обнаружении устройства и повторяет попытку подключения:
+```kotlin
+        GlobalScope.launch {
+            BtLeScanServiceConnector.device.collect { device ->
+                device?.let {
+                    if(sharedState.value == State.Rescan) {
+                        connect(device.address)
+                    }
+                }
+            }
+        }
+```
+
 
 ```kotlin
     /**
@@ -558,7 +640,10 @@ Intent().also { intent ->
     }
 ```
 
-События перехватываются в объекте [BCReceiver]().
+События перехватываются в объекте [BcReceiver](./app/src/main/java/com/grandfatherpikhto/blescan/service/BcReceiver.kt).
+
+Всё, что осталось -- перехватить событие [onServicesDiscovered(btgatt: BluetoothGatt?, status: Int)]() и заполнить список
+сервисов, характеристик и дескрипторов.
 
 ### Навигация фрагментов
 

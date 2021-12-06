@@ -21,7 +21,7 @@ import kotlinx.coroutines.launch
 
 @DelicateCoroutinesApi
 @RequiresApi(Build.VERSION_CODES.M)
-object BCReceiver : BroadcastReceiver() {
+object BcReceiver : BroadcastReceiver() {
     const val TAG:String = "BCReceiver"
 
     private var bluetoothManager:BluetoothManager? = null

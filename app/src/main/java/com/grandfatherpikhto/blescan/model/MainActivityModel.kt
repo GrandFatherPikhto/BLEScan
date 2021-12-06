@@ -1,16 +1,12 @@
 package com.grandfatherpikhto.blescan.model
 
-import android.app.Application
 import android.bluetooth.BluetoothAdapter
-import android.bluetooth.BluetoothManager
-import android.content.Context
 import android.util.Log
-import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import com.grandfatherpikhto.blescan.MainActivity
-import com.grandfatherpikhto.blescan.service.BCReceiver
+import com.grandfatherpikhto.blescan.service.BcReceiver
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.InternalCoroutinesApi
@@ -60,7 +56,7 @@ class MainActivityModel: ViewModel() {
 
     init {
         GlobalScope.launch {
-            BCReceiver.btState.collect { state ->
+            BcReceiver.btState.collect { state ->
                 Log.d(TAG, "State: $state")
                 when(state) {
                     BluetoothAdapter.STATE_ON -> {

@@ -5,22 +5,22 @@ import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
 import android.content.IntentFilter
 import android.util.Log
-import com.grandfatherpikhto.blescan.service.BCReceiver
+import com.grandfatherpikhto.blescan.service.BcReceiver
 
-class BLEScanApp: Application() {
+class BleScanApp: Application() {
     companion object {
         const val TAG:String = "BleTestApp"
     }
 
     override fun onCreate() {
         super.onCreate()
-        applicationContext.registerReceiver(BCReceiver, makeIntentFilter())
+        applicationContext.registerReceiver(BcReceiver, makeIntentFilter())
 
         Log.d(TAG, "OnCreate()")
     }
 
     override fun onTerminate() {
-        applicationContext.unregisterReceiver(BCReceiver)
+        applicationContext.unregisterReceiver(BcReceiver)
         super.onTerminate()
     }
 
