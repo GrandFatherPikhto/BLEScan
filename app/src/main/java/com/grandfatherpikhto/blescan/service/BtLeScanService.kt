@@ -12,15 +12,22 @@ import android.os.Binder
 import android.os.IBinder
 import android.os.ParcelUuid
 import android.util.Log
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AppCompatActivity
+import com.grandfatherpikhto.blescan.MainActivity
 import com.grandfatherpikhto.blescan.helper.toBtLeDevice
 import com.grandfatherpikhto.blescan.model.BtLeDevice
 import com.grandfatherpikhto.blescan.model.BtLeScanModel
+import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.InternalCoroutinesApi
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.util.*
 import kotlin.collections.ArrayList
 
+@InternalCoroutinesApi
+@DelicateCoroutinesApi
 class BtLeScanService: Service() {
     companion object {
         const val TAG:String = "BtLeScanService"
@@ -46,22 +53,19 @@ class BtLeScanService: Service() {
     val device = _device.asSharedFlow()
 
     /** */
-    private lateinit var bluetoothManager: BluetoothManager
+    private val bluetoothManager: BluetoothManager by lazy {
+        getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
+    }
 
     /** */
-    private lateinit var bluetoothAdapter: BluetoothAdapter
+    private val bluetoothAdapter: BluetoothAdapter by lazy {
+        bluetoothManager.adapter
+    }
 
     /** */
-    private lateinit var bluetoothLeScanner: BluetoothLeScanner
-
-    /** */
-    private var bluetoothService: String ?= null
-
-    /** */
-    private var bluetoothAddress:String ?= null
-
-    /** */
-    private var bluetoothName:String ?= null
+    private val bluetoothLeScanner: BluetoothLeScanner by lazy {
+        bluetoothAdapter.bluetoothLeScanner
+    }
 
     /** */
     private var mode = Mode.FindAll
@@ -91,9 +95,6 @@ class BtLeScanService: Service() {
 
     override fun onCreate() {
         super.onCreate()
-        bluetoothManager   = getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
-        bluetoothAdapter   = bluetoothManager.adapter
-        bluetoothLeScanner = bluetoothAdapter.bluetoothLeScanner
 
         GlobalScope.launch {
             LeScanCallback.device.collect { value ->
@@ -166,5 +167,9 @@ class BtLeScanService: Service() {
                 Log.d(TAG, "Сопряжённое устройство $device")
             }
         }
+    }
+
+    fun disableBluetooth() {
+        bluetoothAdapter.disable()
     }
 }
