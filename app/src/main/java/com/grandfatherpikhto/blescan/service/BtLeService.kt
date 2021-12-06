@@ -43,6 +43,10 @@ class BtLeService: Service() {
     val state  = sharedState.asStateFlow()
 
     /** */
+    private val sharedGatt = MutableStateFlow<BluetoothGatt?>(null)
+    val gatt = sharedGatt.asStateFlow()
+
+    /** */
     private val bluetoothManager:BluetoothManager by lazy {
         getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
     }
@@ -59,8 +63,9 @@ class BtLeService: Service() {
     /** */
     private val charWriteMutex = Mutex()
     /** */
-    private val _gatt = MutableStateFlow<BluetoothGatt?>(null)
-    val gatt = _gatt.asStateFlow()
+    private val btGattCallback:BtGattCallback by lazy {
+        BtGattCallback()
+    }
 
     /** Binder given to clients */
     private val binder = LocalBinder()
@@ -81,7 +86,7 @@ class BtLeService: Service() {
 
     override fun onUnbind(intent: Intent?): Boolean {
         // Log.d(TAG, "Сервис отвязан")
-        close()
+        bluetoothGatt?.disconnect()
         return super.onUnbind(intent)
     }
 
@@ -90,23 +95,22 @@ class BtLeService: Service() {
         super.onCreate()
 
         if(charWriteMutex.isLocked) charWriteMutex.unlock()
+
+        // TODO: Разобраться, почему вызывается два раза
         GlobalScope.launch {
-            BtGattCallback.state.collect {  gattState ->
+            btGattCallback.state.collect {  gattState ->
                 Log.d(TAG, "State: $gattState")
                 when(gattState) {
                     BtGattCallback.State.Disconnected -> {
-                        bluetoothGatt?.close()
-                        bluetoothGatt = null
+                        doClose()
                         doRescan()
-                        sharedState.tryEmit(State.Disconnected)
                     }
                     BtGattCallback.State.Connecting -> {
                         sharedState.tryEmit(State.Connecting)
                     }
                     BtGattCallback.State.Error -> {
-                        bluetoothGatt?.close()
-                        bluetoothGatt = null
                         sharedState.tryEmit(State.Error)
+                        doClose()
                         doRescan()
                     }
                     BtGattCallback.State.Discovered -> {
@@ -140,9 +144,16 @@ class BtLeService: Service() {
                 }
             }
         }
+
+        GlobalScope.launch {
+            btGattCallback.gatt.collect { value ->
+                sharedGatt.tryEmit(value)
+            }
+        }
     }
 
     override fun onDestroy() {
+        Log.d(TAG, "onDestroy()")
         bluetoothGatt?.close()
         super.onDestroy()
     }
@@ -157,24 +168,35 @@ class BtLeService: Service() {
     }
 
     /**
-     *
+     * Пытается подключиться к сервису GATT
+     * После подключения начинает работать синглетон BtGattCallback
      */
     private fun doConnect() {
         Log.d(TAG, "Пытаемся подключиться к $bluetoothAddress")
         bluetoothGatt = bluetoothDevice?.connectGatt(
             applicationContext,
             bluetoothDevice!!.type == BluetoothDevice.DEVICE_TYPE_UNKNOWN,
-            BtGattCallback,
+            btGattCallback,
             BluetoothDevice.TRANSPORT_LE
         )
         sharedState.tryEmit(State.Connecting)
     }
 
     /**
+     * Закрывает и обнуляет GATT.
+     * Генерирует событие об отключении
+     */
+    private fun doClose() {
+        bluetoothGatt?.close()
+        bluetoothGatt = null
+        sharedState.tryEmit(State.Disconnected)
+    }
+
+    /**
      *
      */
     fun close() {
-        bluetoothGatt?.close()
+        bluetoothGatt?.disconnect()
     }
 
     /**

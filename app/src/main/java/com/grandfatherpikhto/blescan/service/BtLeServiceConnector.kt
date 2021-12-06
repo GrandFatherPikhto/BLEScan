@@ -44,7 +44,7 @@ object BtLeServiceConnector:ServiceConnection {
             }
         }
         GlobalScope.launch {
-            BtGattCallback.gatt.collect { value ->
+            btLeService?.gatt?.collect { value ->
                 sharedGatt.tryEmit(value)
             }
         }

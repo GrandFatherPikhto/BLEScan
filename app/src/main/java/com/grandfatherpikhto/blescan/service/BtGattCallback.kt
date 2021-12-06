@@ -19,9 +19,11 @@ import kotlinx.coroutines.launch
  */
 @DelicateCoroutinesApi
 @InternalCoroutinesApi
-object BtGattCallback  : BluetoothGattCallback() {
-    const val TAG:String = "BtGattCallback"
-    const val MAX_TRY_CONNECT = 6
+class BtGattCallback  : BluetoothGattCallback() {
+    companion object {
+        const val TAG: String = "BtGattCallback"
+        const val MAX_TRY_CONNECT = 6
+    }
 
     enum class State(val value:Int) {
         Unknown(0x0),
@@ -95,6 +97,7 @@ object BtGattCallback  : BluetoothGattCallback() {
         super.onServicesDiscovered(btgatt, status)
         if(status == BluetoothGatt.GATT_SUCCESS) {
             if(btgatt != null) {
+                Log.d(TAG, "Сервисы исследованы")
                 _gatt.tryEmit(btgatt)
                 _state.tryEmit(State.Discovered)
             }
