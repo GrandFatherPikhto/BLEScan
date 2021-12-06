@@ -511,6 +511,54 @@ Intent().also { intent ->
 ### Сервис [BtLeService](./app/src/main/java/com/grandfatherpikhto/blescan/service/BtLeService.kt)
 
 Сам процесс подключения очень подробно описан в статье 
+[Martin van Wellie // Making Android BLE work — part 2](https://medium.com/@martijn.van.welie/making-android-ble-work-part-2-47a3cdaade07?source=user_profile---------2-------------------------------)
+
+Тонких моментов три
+
+1. Если устройство не сопряжено, его надо сопрячь. 
+```kotlin
+    fun connect(address: String? = null) {
+        if(address != null) {
+            Log.d(TAG, "Пытаемся подключиться к $address")
+            bluetoothAddress = address
+            bluetoothDevice = bluetoothAdapter.getRemoteDevice(address)
+            if(bluetoothDevice != null) {
+                if(bluetoothDevice!!.bondState == BluetoothDevice.BOND_NONE) {
+                    // Log.d(TAG, "Пытаюсь сопрячь устройство ")
+                    bluetoothDevice!!.createBond()
+                } else {
+                    doConnect()
+                }
+            } else {
+                // TODO: Это неправильно. Надо генерировать состояние, а не вызывать doRescan()!!!
+                doRescan()
+            }
+        }
+    }
+```
+
+В сервисе вызываются настройки фильтра [широковещательных оповещений]() 
+
+```kotlin
+    /**
+     * Создаём фильтр перехвата для различных широковещательных событий
+     * В данном случае, нужны только фильтры для перехвата
+     * В данном случае, нужны только фильтры для перехвата
+     * запроса на сопряжение устройства и завершения сопряжения
+     * И интересует момент "Устройство найдено" на случай рескана устройств
+     * по адресу или имени
+     */
+    private fun makeIntentFilter(): IntentFilter {
+        val intentFilter = IntentFilter()
+        intentFilter.addAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED)
+        intentFilter.addAction(BluetoothDevice.ACTION_PAIRING_REQUEST)
+        intentFilter.addAction(BluetoothDevice.ACTION_FOUND)
+
+        return intentFilter
+    }
+```
+
+События перехватываются в объекте [BCReceiver]().
 
 ### Навигация фрагментов
 
