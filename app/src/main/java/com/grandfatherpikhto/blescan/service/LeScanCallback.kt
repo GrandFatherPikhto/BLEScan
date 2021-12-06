@@ -1,5 +1,6 @@
 package com.grandfatherpikhto.blescan.service
 
+import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.le.ScanCallback
 import android.bluetooth.le.ScanResult
@@ -30,7 +31,7 @@ object LeScanCallback: ScanCallback() {
     private fun checkName(bluetoothDevice: BluetoothDevice): Boolean {
         // Log.d(TAG, "checkName: ${names.size}")
         if(names.isNotEmpty()) {
-            // Log.d(TAG, "checkName: ${names.contains(bluetoothDevice.name)}")
+            Log.d(TAG, "checkName: ${names.contains(bluetoothDevice.name)}")
             if (bluetoothDevice.name == null) return false
             return names.contains(bluetoothDevice.name)
         }
@@ -38,7 +39,7 @@ object LeScanCallback: ScanCallback() {
     }
 
     private fun checkAddress(bluetoothDevice: BluetoothDevice): Boolean {
-        // Log.d(TAG, "checkAddress: ${addresses.joinToString (", ")}, ${addresses.isNotEmpty()}")
+        Log.d(TAG, "checkAddress: ${addresses.joinToString (", ")}, ${addresses.isNotEmpty()}")
         if(addresses.isNotEmpty()) {
             // Log.d(TAG, "Contains: ${addresses.contains(bluetoothDevice.address)}")
             return addresses.contains(bluetoothDevice.address)
@@ -46,22 +47,11 @@ object LeScanCallback: ScanCallback() {
         return true
     }
 
-    /**
-     * TODO: Сделай опрос коннект, опрос сервисов. Видимо, придётся, создать очередь.
-     */
-    private fun checkServices(bluetoothDevice: BluetoothDevice): Boolean {
-        if(services.size != 0) {
-            return false
-        }
-        return true
-    }
-
-
     private fun emitDevice(bluetoothDevice: BluetoothDevice?) {
         if(bluetoothDevice != null) {
+            Log.d(TAG, "emitDevice [${bluetoothDevice.name}, ${bluetoothDevice.address}, checkName: ${checkName(bluetoothDevice)}, checkAddress: ${checkAddress(bluetoothDevice)}]")
             if(checkName(bluetoothDevice)
                 &&  checkAddress(bluetoothDevice)) {
-                // Log.d(TAG, "emitDevice [${bluetoothDevice.name}, ${bluetoothDevice.address}, checkName: ${checkName(bluetoothDevice)}, checkAddress: ${checkAddress(bluetoothDevice)}]")
                 _device.tryEmit(bluetoothDevice.toBtLeDevice())
             }
         }
@@ -102,16 +92,40 @@ object LeScanCallback: ScanCallback() {
 
     fun setAddresses(values: List<String>) {
         addresses.clear()
-        addresses.addAll(values)
+        addresses.addAll(values.filter { address ->
+            address.trim().isNotBlank()
+        })
+    }
+
+    fun setAddresses(value: String? = null) {
+        addresses.clear()
+        value?.trim()?.let {
+            if (it.trim().isNotEmpty()) {
+                addresses.addAll(it.split(",")?.filter { address ->
+                    address.trim().isNotEmpty()
+                            && BluetoothAdapter.checkBluetoothAddress(address)
+                })
+            }
+        }
     }
 
     fun setNames(values: List<String>) {
         names.clear()
-        names.addAll(values)
+        names.addAll(values.filter { name ->
+            name.trim().isNotBlank()
+        })
     }
 
-    fun setServices(values: List<String>) {
-        services.clear()
-        services.addAll(values)
+    fun setNames(value:String? = null) {
+        names.clear()
+        value?.trim()?.let {
+            if (it.isNotEmpty()) {
+                it.let {
+                    names.addAll(it?.split(",")?.filter { name ->
+                        name.trim().isNotBlank()
+                    })
+                }
+            }
+        }
     }
 }
