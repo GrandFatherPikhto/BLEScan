@@ -14,7 +14,7 @@ import com.google.android.material.snackbar.Snackbar
 import com.grandfatherpikhto.blescan.adapter.RvGattAdapter
 import com.grandfatherpikhto.blescan.databinding.BtDeviceBinding
 import com.grandfatherpikhto.blescan.databinding.FragmentDeviceBinding
-import com.grandfatherpikhto.blescan.model.BtLeDeviceModel
+import com.grandfatherpikhto.blescan.model.BtLeModel
 import com.grandfatherpikhto.blescan.model.MainActivityModel
 import com.grandfatherpikhto.blescan.service.BtLeService
 import com.grandfatherpikhto.blescan.service.BtLeServiceConnector
@@ -38,7 +38,7 @@ class DeviceFragment : Fragment() {
 
 
     /** */
-    private val btLeDevice:BtLeDeviceModel by viewModels()
+    private val btLe:BtLeModel by viewModels()
     private val mainActivityModel:MainActivityModel by activityViewModels()
 
     private val rvGattAdapter by lazy {
@@ -71,7 +71,7 @@ class DeviceFragment : Fragment() {
             }
         }
 
-        btLeDevice.state.observe(viewLifecycleOwner, { state ->
+        btLe.state.observe(viewLifecycleOwner, { state ->
             when(state) {
 //                BtLeService.State.Error         -> { setSnakeMessage(view, getString(R.string.state_unkown))  }
 //                BtLeService.State.Rescan        -> { setSnakeMessage(view, getString(R.string.start_scan)) }
@@ -83,7 +83,7 @@ class DeviceFragment : Fragment() {
             }
         })
 
-        btLeDevice.gatt.observe(viewLifecycleOwner, { gatt ->
+        btLe.gatt.observe(viewLifecycleOwner, { gatt ->
             gatt?.let { rvGattAdapter.setGatt(it) }
             gatt?.services?.forEach { service ->
                 Log.d(TAG, "Service: ${service.uuid} ${service.type}")
