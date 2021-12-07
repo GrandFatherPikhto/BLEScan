@@ -29,7 +29,6 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <service android:name=".service.BtLeScanService" android:enabled="true" />
         <service android:name=".service.BtLeService" android:enabled="true" />
     </application>
 
