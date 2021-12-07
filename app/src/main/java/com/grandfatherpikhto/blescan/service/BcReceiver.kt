@@ -11,29 +11,40 @@ import android.content.Intent
 import android.os.Build
 import android.util.Log
 import androidx.annotation.RequiresApi
+import com.grandfatherpikhto.blescan.helper.toBtLeDevice
+import com.grandfatherpikhto.blescan.model.BtLeDevice
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.InternalCoroutinesApi
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
+@InternalCoroutinesApi
 @DelicateCoroutinesApi
 @RequiresApi(Build.VERSION_CODES.M)
-object BcReceiver : BroadcastReceiver() {
-    const val TAG:String = "BCReceiver"
-
-    private var bluetoothManager:BluetoothManager? = null
-    private var bluetoothAdapter: BluetoothAdapter? = null
+class BcReceiver(private val service: BtLeService) : BroadcastReceiver() {
+    companion object {
+        const val TAG:String = "BCReceiver"
+    }
 
     private var bondingDevice:BluetoothDevice? = null
 
     private val _paired = MutableStateFlow<BluetoothDevice?>(null)
     val paired = _paired.asSharedFlow()
 
-    private val _btState = MutableStateFlow<Int>(-1)
-    val btState = _btState.asStateFlow()
+    private val _bt_state = MutableStateFlow<Int>(service.adapter.state)
+    val btState = _bt_state.asStateFlow()
+
+    interface ReceiverCallback {
+        fun onBluetoothChangeState(state: Int) {}
+        fun onBluetoothEnable(enable: Boolean) {}
+        fun onBluetoothPaired(btLeDevice: BtLeDevice) {}
+    }
+
+    private var receiverCallbacks: MutableList<ReceiverCallback> = mutableListOf()
 
 
     /**
@@ -46,20 +57,19 @@ object BcReceiver : BroadcastReceiver() {
      * paired. По этому событию вызывается попытка подключения.
      */
     override fun onReceive(context: Context?, intent: Intent?) {
-        // Log.d(TAG, "broadcastReceiver: ${intent?.action}")
-        if (bluetoothManager == null) {
-            bluetoothManager = context?.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
-        }
-        if (bluetoothAdapter == null) {
-            bluetoothAdapter = bluetoothManager?.adapter
-        }
-        
         if(intent != null) {
             when(intent.action) {
                 BluetoothAdapter.ACTION_STATE_CHANGED -> {
                     val state    = intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, BluetoothAdapter.ERROR);
-                    _btState.tryEmit(state)
-                    Log.d(TAG, "ACTION_STATE_CHANGED($state) ${state == BluetoothAdapter.STATE_ON}")
+                    // Log.d(TAG, "ACTION_STATE_CHANGED($state) ${state == BluetoothAdapter.STATE_ON}")
+                    receiverCallbacks.forEach { callback ->
+                        callback.onBluetoothChangeState(state)
+                        when(state) {
+                            BluetoothAdapter.STATE_ON  -> callback.onBluetoothEnable(true)
+                            BluetoothAdapter.STATE_OFF -> callback.onBluetoothEnable(false)
+                            else -> {}
+                        }
+                    }
                 }
                 BluetoothDevice.ACTION_PAIRING_REQUEST -> {
                     bondingDevice = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE)
@@ -81,8 +91,13 @@ object BcReceiver : BroadcastReceiver() {
                             && previousBondState == BluetoothDevice.BOND_BONDING
                             && bondState == BluetoothDevice.BOND_BONDED) {
                             GlobalScope.launch {
-                                Log.d(TAG, "Устройство было сопряжено. PreviousBondState: $previousBondState, BondState: $bondState, device: ${device?.address}")
-                                _paired.tryEmit(device)
+                                // Log.d(TAG, "Устройство было сопряжено. PreviousBondState: $previousBondState, BondState: $bondState, device: ${device?.address}")
+                                // _paired.tryEmit(device)
+                                receiverCallbacks.forEach { callback ->
+                                    device?.let { btDevice ->
+                                        callback.onBluetoothPaired(btDevice.toBtLeDevice())
+                                    }
+                                }
                                 bondingDevice = null
                             }
                         }
@@ -95,5 +110,9 @@ object BcReceiver : BroadcastReceiver() {
                 }
             }
         }
+    }
+
+    fun addEventListener(receiverCallback: ReceiverCallback) {
+        receiverCallbacks.add(receiverCallback)
     }
 }
