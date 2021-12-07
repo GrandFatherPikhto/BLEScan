@@ -7,26 +7,34 @@ import android.bluetooth.le.ScanResult
 import android.util.Log
 import com.grandfatherpikhto.blescan.helper.toBtLeDevice
 import com.grandfatherpikhto.blescan.model.BtLeDevice
-import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.InternalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asSharedFlow
 
-object LeScanCallback: ScanCallback() {
-    const val TAG: String = "LeScanCallback"
+@DelicateCoroutinesApi
+@InternalCoroutinesApi
+class LeScanCallback(service: BtLeService): ScanCallback() {
+    companion object {
+        const val TAG: String = "LeScanCallback"
+    }
+
+    interface LeScannerCallback {
+        fun onFindDevice(btLeDevice: BtLeDevice)
+        fun onError(error: Int)
+    }
+
+    /** */
+    private var scannerCallbacks: MutableList<LeScannerCallback> = mutableListOf()
     /** */
     private val addresses = mutableListOf<String>()
     /** */
     private val names     = mutableListOf<String>()
-    /** */
-    private val services  = mutableListOf<String>()
-    /** */
-    private val _device = MutableSharedFlow<BtLeDevice?> (replay = 10 )
-    val device = _device.asSharedFlow()
 
     /** */
     private val _error = MutableStateFlow<Int>(0)
     val error: StateFlow<Int> = _error
+
 
     private fun checkName(bluetoothDevice: BluetoothDevice): Boolean {
         // Log.d(TAG, "checkName: ${names.size}")
@@ -39,7 +47,7 @@ object LeScanCallback: ScanCallback() {
     }
 
     private fun checkAddress(bluetoothDevice: BluetoothDevice): Boolean {
-        Log.d(TAG, "checkAddress: ${addresses.joinToString (", ")}, ${addresses.isNotEmpty()}")
+        // Log.d(TAG, "checkAddress: ${addresses.joinToString (", ")}, ${addresses.isNotEmpty()}")
         if(addresses.isNotEmpty()) {
             // Log.d(TAG, "Contains: ${addresses.contains(bluetoothDevice.address)}")
             return addresses.contains(bluetoothDevice.address)
@@ -49,10 +57,12 @@ object LeScanCallback: ScanCallback() {
 
     private fun emitDevice(bluetoothDevice: BluetoothDevice?) {
         if(bluetoothDevice != null) {
-            Log.d(TAG, "emitDevice [${bluetoothDevice.name}, ${bluetoothDevice.address}, checkName: ${checkName(bluetoothDevice)}, checkAddress: ${checkAddress(bluetoothDevice)}]")
+            // Log.d(TAG, "emitDevice [${bluetoothDevice.name}, ${bluetoothDevice.address}, checkName: ${checkName(bluetoothDevice)}, checkAddress: ${checkAddress(bluetoothDevice)}]")
             if(checkName(bluetoothDevice)
                 &&  checkAddress(bluetoothDevice)) {
-                _device.tryEmit(bluetoothDevice.toBtLeDevice())
+                scannerCallbacks.forEach { callback ->
+                    callback.onFindDevice(bluetoothDevice.toBtLeDevice())
+                }
             }
         }
     }
@@ -62,7 +72,9 @@ object LeScanCallback: ScanCallback() {
      */
     override fun onScanFailed(errorCode: Int) {
         super.onScanFailed(errorCode)
-        _error.tryEmit(errorCode)
+        scannerCallbacks.forEach { callback ->
+            callback.onError(errorCode)
+        }
         Log.d(TAG, "Fail scan with error $errorCode")
     }
 
@@ -90,7 +102,7 @@ object LeScanCallback: ScanCallback() {
         }
     }
 
-    fun setAddresses(values: List<String>) {
+    fun setAddresses(values: Array<String>) {
         addresses.clear()
         addresses.addAll(values.filter { address ->
             address.trim().isNotBlank()
@@ -109,7 +121,7 @@ object LeScanCallback: ScanCallback() {
         }
     }
 
-    fun setNames(values: List<String>) {
+    fun setNames(values: Array<String>) {
         names.clear()
         names.addAll(values.filter { name ->
             name.trim().isNotBlank()
@@ -127,5 +139,9 @@ object LeScanCallback: ScanCallback() {
                 }
             }
         }
+    }
+
+    fun setOnEventListener(callback: LeScannerCallback) {
+        scannerCallbacks.add(callback)
     }
 }
