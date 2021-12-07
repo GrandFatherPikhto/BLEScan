@@ -105,6 +105,13 @@ class BtLeConnector(private val service: BtLeService) {
             }
         })
 
+        service.receiver.addEventListener(object: BcReceiver.ReceiverCallback {
+            override fun onBluetoothPaired(btLeDevice: BtLeDevice) {
+                super.onBluetoothPaired(btLeDevice)
+                doConnect()
+            }
+        })
+
         GlobalScope.launch {
             service.receiver.paired.collect { pairedDevice ->
                 pairedDevice?.let {
