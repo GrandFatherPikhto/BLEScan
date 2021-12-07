@@ -4,17 +4,16 @@ import android.app.Service
 import android.bluetooth.*
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.os.Binder
 import android.os.IBinder
 import android.util.Log
+import com.grandfatherpikhto.blescan.model.BtLeDevice
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.InternalCoroutinesApi
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.sync.Mutex
 
 @InternalCoroutinesApi
 @DelicateCoroutinesApi
@@ -26,45 +25,52 @@ class BtLeService: Service() {
 
     /** */
     enum class State(val value:Int) {
-        Unknown(0x00),
-        Disconnected(0x01),
-        Connecting(0x02),
-        Connected(0x03),
-        Rescan(0x04),
+        None(0x00),
+        Scanning(0x01),
+        Stopped(0x02),
+        Disconnecting(0x04),
+        Disconnected(0x05),
+        Connecting(0x06),
+        Connected(0x07),
         Error(0xFE),
         FatalError(0xFF)
     }
 
-    data class CharWrite(val gatt: BluetoothGatt?, val characteristic: BluetoothGattCharacteristic?, val status:Int)
+    /** */
+    private lateinit var bluetoothManager: BluetoothManager
+
+    val btManager get() = bluetoothManager
 
     /** */
-    private val sharedState = MutableStateFlow<State>(State.Error)
-    val state  = sharedState.asStateFlow()
+    private lateinit var bluetoothAdapter: BluetoothAdapter
+    /** */
+    val adapter get() = bluetoothAdapter
+
+    private lateinit var btLeConnector:BtLeConnector
+    val connector get() = btLeConnector
+
+    private lateinit var btLeScanner:BtLeScanner
+    val scanner get() = btLeScanner
+
+    private lateinit var bcReceiver:BcReceiver
+    val receiver get() = bcReceiver
+
+    /** */
+    private val sharedState = MutableStateFlow(State.None)
+    val state = sharedState.asStateFlow()
+
+    /** */
+    private val sharedDevice = MutableSharedFlow<BtLeDevice>(replay = 10)
+    val device = sharedDevice.asSharedFlow()
 
     /** */
     private val sharedGatt = MutableStateFlow<BluetoothGatt?>(null)
     val gatt = sharedGatt.asStateFlow()
 
     /** */
-    private val bluetoothManager:BluetoothManager by lazy {
-        getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
-    }
-    /** */
-    private val bluetoothAdapter:BluetoothAdapter by lazy {
-        bluetoothManager.adapter
-    }
-    /** */
-    private var bluetoothAddress:String ?= null
-    /** */
-    private var bluetoothDevice:BluetoothDevice ?= null
-    /** */
-    private var bluetoothGatt:BluetoothGatt ?= null
-    /** */
-    private val charWriteMutex = Mutex()
-    /** */
-    private val btGattCallback:BtGattCallback by lazy {
-        BtGattCallback()
-    }
+    private val sharedBtEnabled = MutableStateFlow<Boolean>(false)
+    val enabled = sharedBtEnabled.asStateFlow()
+
 
     /** Binder given to clients */
     private val binder = LocalBinder()
@@ -73,7 +79,6 @@ class BtLeService: Service() {
      * runs in the same process as its clients, we don't need to deal with IPC.
      */
     inner class LocalBinder : Binder() {
-        // Return this instance of LocalService so clients can call public methods
         fun getService(): BtLeService = this@BtLeService
     }
 
@@ -81,7 +86,6 @@ class BtLeService: Service() {
      *
      */
     override fun onBind(p0: Intent?): IBinder? {
-        // Log.d(TAG, "Сервис связан")
         sharedState.tryEmit(State.Disconnected)
         return binder
     }
@@ -90,8 +94,6 @@ class BtLeService: Service() {
      *
      */
     override fun onUnbind(intent: Intent?): Boolean {
-        // Log.d(TAG, "Сервис отвязан")
-        bluetoothGatt?.disconnect()
         return super.onUnbind(intent)
     }
 
@@ -101,62 +103,55 @@ class BtLeService: Service() {
     override fun onCreate() {
         Log.d(TAG, "onCreate()")
         super.onCreate()
+        bluetoothManager = applicationContext.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
+        bluetoothAdapter = bluetoothManager.adapter
+        sharedBtEnabled.value = bluetoothAdapter.isEnabled
 
-        if(charWriteMutex.isLocked) charWriteMutex.unlock()
 
-        GlobalScope.launch {
-            btGattCallback.state.collect {  gattState ->
-                Log.d(TAG, "State: $gattState")
-                when(gattState) {
-                    BtGattCallback.State.Disconnected -> {
-                        doClose()
-                        doRescan()
-                    }
-                    BtGattCallback.State.Connecting -> {
-                        sharedState.tryEmit(State.Connecting)
-                    }
-                    BtGattCallback.State.Error -> {
-                        sharedState.tryEmit(State.Error)
-                        doClose()
-                        doRescan()
-                    }
-                    BtGattCallback.State.Discovered -> {
-                        sharedState.tryEmit(State.Connected)
-                    }
-                    BtGattCallback.State.FatalError -> {
-                        sharedState.tryEmit(State.FatalError)
-                    }
-                    else -> {
+        bcReceiver    = BcReceiver(this)
+        btLeScanner   = BtLeScanner(this)
+        btLeConnector = BtLeConnector(this)
 
-                    }
+        applicationContext.registerReceiver(bcReceiver, makeIntentFilter())
+
+        btLeConnector.addEventListener(object: BtLeConnector.ConnectorCallback {
+            override fun onChangeGattState(connectorState: BtLeConnector.State) {
+                when(connectorState) {
+                    BtLeConnector.State.Disconnecting -> { sharedState.tryEmit(State.Disconnecting) }
+                    BtLeConnector.State.Disconnected  -> { sharedState.tryEmit(State.Disconnected) }
+                    BtLeConnector.State.Connecting    -> { sharedState.tryEmit(State.Connecting) }
+                    BtLeConnector.State.Connected     -> { sharedState.tryEmit(State.Connected) }
                 }
             }
-        }
 
-        GlobalScope.launch {
-            BtLeScanServiceConnector.device.collect { device ->
-                device?.let {
-                    if(sharedState.value == State.Rescan) {
-                        connect(device.address)
-                    }
+            override fun onGattDiscovered(bluetoothGatt: BluetoothGatt) {
+                sharedGatt.tryEmit(bluetoothGatt)
+            }
+        })
+
+        btLeScanner.addEventListener(object: BtLeScanner.ScannerCallback {
+            override fun onChangeState(scannerState: BtLeScanner.State) {
+                when(scannerState) {
+                    BtLeScanner.State.Scanning -> { sharedState.tryEmit(State.Scanning) }
+                    BtLeScanner.State.Stopped  -> { sharedState.tryEmit(State.Stopped) }
+                    BtLeScanner.State.Error    -> { sharedState.tryEmit(State.Error)}
                 }
             }
-        }
 
-        GlobalScope.launch {
-            BcReceiver.paired.collect { pairedDevice ->
-                pairedDevice?.let {
-                    Log.d(TAG, "Paired device: ${pairedDevice?.address}")
-                    doConnect()
+            override fun onFindDevice(btLeDevice: BtLeDevice?) {
+                super.onFindDevice(btLeDevice)
+                btLeDevice?.let { found ->
+                    sharedDevice.tryEmit(found)
                 }
             }
-        }
+        })
 
-        GlobalScope.launch {
-            btGattCallback.gatt.collect { value ->
-                sharedGatt.tryEmit(value)
+        receiver.addEventListener(object: BcReceiver.ReceiverCallback {
+            override fun onBluetoothEnable(enable: Boolean) {
+                super.onBluetoothEnable(enable)
+                sharedBtEnabled.tryEmit(enable)
             }
-        }
+        })
     }
 
     /**
@@ -164,73 +159,56 @@ class BtLeService: Service() {
      */
     override fun onDestroy() {
         Log.d(TAG, "onDestroy()")
-        bluetoothGatt?.close()
+        applicationContext.unregisterReceiver(bcReceiver)
         super.onDestroy()
     }
 
-    /**
-     * Запрос на пересканирование с адресом устройства и остановкой сканирования
-     * после обнаружения устройства
-     */
-    private fun doRescan() {
-        if(bluetoothAddress != null) {
-            BtLeScanServiceConnector.scanLeDevices(
-                addresses = listOf(bluetoothAddress!!), mode = BtLeScanService.Mode.StopOnFind
-            )
-            sharedState.tryEmit(State.Rescan)
-        }
+    fun scanLeDevices( addresses: String? = null,
+                       names: String? = null,
+                       mode: BtLeScanner.Mode = BtLeScanner.Mode.FindAll) {
+        btLeConnector.close()
+        btLeScanner.scanLeDevices(addresses, names, mode)
     }
 
-    /**
-     * Пытается подключиться к сервису GATT
-     * После подключения начинает работать синглетон BtGattCallback
-     */
-    private fun doConnect() {
-        Log.d(TAG, "Пытаемся подключиться к $bluetoothAddress")
-        bluetoothGatt = bluetoothDevice?.connectGatt(
-            applicationContext,
-            bluetoothDevice!!.type == BluetoothDevice.DEVICE_TYPE_UNKNOWN,
-            btGattCallback,
-            BluetoothDevice.TRANSPORT_LE
-        )
-        sharedState.tryEmit(State.Connecting)
+    fun scanLeDevices( addresses: Array<String> = arrayOf<String>(),
+                       names: Array<String> = arrayOf<String>(),
+                       mode: BtLeScanner.Mode = BtLeScanner.Mode.FindAll)
+        = btLeScanner.scanLeDevices(addresses, names, mode)
+
+    fun stopScan() = btLeScanner.stopScan()
+
+    fun pairedDevices() = btLeScanner.pairedDevices()
+
+    fun connect(btLeDevice: BtLeDevice) {
+        btLeScanner.stopScan()
+        btLeConnector.connect(btLeDevice)
     }
 
-    /**
-     * Закрывает и обнуляет GATT.
-     * Генерирует событие об отключении
-     */
-    private fun doClose() {
-        bluetoothGatt?.close()
-        bluetoothGatt = null
-        sharedState.tryEmit(State.Disconnected)
+    fun connect(address:String) {
+        btLeScanner.stopScan()
+        btLeConnector.connect(address)
     }
 
-    /**
-     *
-     */
     fun close() {
-        bluetoothGatt?.disconnect()
+        btLeConnector.close()
     }
 
     /**
-     * Если устройство не сопряжено, сопрягаем его и ждём оповещение сопряжения
-     * после получения, повторяем попытку подключения.
+     * Создаём фильтр перехвата для различных широковещательных событий
+     * В данном случае, нужны только фильтры для перехвата
+     * В данном случае, нужны только фильтры для перехвата
+     * запроса на сопряжение устройства и завершения сопряжения
+     * И интересует момент "Устройство найдено" на случай рескана устройств
+     * по адресу или имени
      */
-    fun connect(address: String? = null) {
-        if(address != null) {
-            bluetoothAddress = address
-            bluetoothDevice = bluetoothAdapter.getRemoteDevice(address)
-            if(bluetoothDevice != null) {
-                if(bluetoothDevice!!.bondState == BluetoothDevice.BOND_NONE) {
-                    Log.d(TAG, "Пытаемся сопрячь устройство $address")
-                    bluetoothDevice!!.createBond()
-                } else {
-                    doConnect()
-                }
-            } else {
-                doRescan()
-            }
-        }
+    private fun makeIntentFilter(): IntentFilter {
+        val intentFilter = IntentFilter()
+        intentFilter.addAction(BluetoothAdapter.ACTION_REQUEST_ENABLE)
+        intentFilter.addAction(BluetoothAdapter.ACTION_STATE_CHANGED)
+        intentFilter.addAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED)
+        intentFilter.addAction(BluetoothDevice.ACTION_PAIRING_REQUEST)
+        intentFilter.addAction(BluetoothDevice.ACTION_FOUND)
+
+        return intentFilter
     }
 }
