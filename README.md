@@ -556,7 +556,7 @@ Cвязь с сервисом налажена. Понятно, что обще�
    В классе сервиса [BtLeService.kt](./app/src/main/java/com/grandfatherpikhto/blescan/service/BtLeService.kt)
    вызываются настройки фильтра [широковещательных оповещений](https://developer.android.com/reference/android/content/BroadcastReceiver)
    теперь, приложение в курсе, когда произошло сопряжение, когда поменялся статус подключения
-   [BluetoothAdapter](https://developer.android.com/s/results?q=BluetoothAdapter) (обычно, он один на телефоне, поэтому, запрашиваем его, как единственный) Здесь же перехватывается включение/выключение `BluetoothAdapter`'а.
+   [BluetoothAdapter](https://developer.android.com/s/results?q=BluetoothAdapter) (обычно, он один на телефоне, поэтому, запрашиваем его, как единственный) 
 
    Состояние Bluetooth отслеживается при помощи параметра `enable`. Это удобно, т.к. скажем, подключение меню во фрагменте [ScanerFragmetn.kt](./app/src/main/java/com/grandfatherpikhto/blescan/ScannerFragment.kt) завсит от того, включён ли BluetoothAdapter мобильного телефона.
 
@@ -798,3 +798,5 @@ Fix: Replace with androidx.fragment.app.FragmentContainerView
 27. [Connect GATT Server](https://developer.android.com/guide/topics/connectivity/bluetooth/connect-gatt-server) Подключение к серверу GATT.
 28. [Transver BLE Data](https://developer.android.com/guide/topics/connectivity/bluetooth/transfer-ble-data) Передача/Приём данных через GATT.
 29. [Android connectivity samples](https://github.com/android/connectivity-samples) Официальный набор отдельных проектов Android Studio, которые помогут вам приступить к написанию приложений Connectivity на Android.
+30. [Android BLE Library](https://github.com/NordicSemiconductor/Android-BLE-Library/) NordicSemiconductor Android BLE Library // Самая надёжная и быстрая библиотека стека BLE
+31. [Android BluetoothLeGatt Sample](https://github.com/android/connectivity-samples/tree/master/BluetoothLeGatt) В этом примере показано, как использовать общий профиль атрибутов Bluetooth LE (GATT) для передачи произвольных данных между устройствами.
