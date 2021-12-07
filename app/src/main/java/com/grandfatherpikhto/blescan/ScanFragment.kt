@@ -8,18 +8,15 @@ import androidx.fragment.app.Fragment
 import android.widget.Toast
 import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
-import androidx.preference.Preference
 import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.google.android.material.snackbar.Snackbar
 import com.grandfatherpikhto.blescan.adapter.RvBtAdapter
 import com.grandfatherpikhto.blescan.databinding.FragmentScanBinding
-import com.grandfatherpikhto.blescan.model.BtLeDevice
-import com.grandfatherpikhto.blescan.model.BtLeScanModel
-import com.grandfatherpikhto.blescan.model.MainActivityModel
-import com.grandfatherpikhto.blescan.model.RvItemClick
-import com.grandfatherpikhto.blescan.service.BtLeScanService
-import com.grandfatherpikhto.blescan.service.BtLeScanServiceConnector
+import com.grandfatherpikhto.blescan.model.*
+import com.grandfatherpikhto.blescan.service.BtLeScanner
+import com.grandfatherpikhto.blescan.service.BtLeService
+import com.grandfatherpikhto.blescan.service.BtLeServiceConnector
+
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.InternalCoroutinesApi
 
@@ -45,7 +42,7 @@ class ScanFragment : Fragment() {
     /** This property is only valid between onCreateView and  onDestroyView. */
     private val binding get() = _binding!!
     /** */
-    private val btLeScanModel:BtLeScanModel by viewModels()
+    private val btLeModel: BtLeModel by viewModels()
     /** */
     private val mainActivityModel:MainActivityModel by activityViewModels()
     /** */
@@ -96,18 +93,18 @@ class ScanFragment : Fragment() {
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
             R.id.scan_bluetooth -> {
-                if(btLeScanModel.state.value == BtLeScanService.State.Stopped) {
-                    Log.d(TAG, "Start Scan")
-                    btLeScanModel.changeAction(Action.Scan)
-                } else {
+                if(btLeModel.state.value == BtLeService.State.Scanning) {
                     Log.d(TAG, "Stop Scan")
-                    btLeScanModel.changeAction(Action.None)
+                    btLeModel.changeAction(Action.None)
+                } else {
+                    Log.d(TAG, "Start Scan")
+                    btLeModel.changeAction(Action.Scan)
                 }
                 true
             }
             R.id.paired_bluetooth -> {
-                BtLeScanServiceConnector.stopScan()
-                BtLeScanServiceConnector.pairedDevices()
+                BtLeServiceConnector.stopScan()
+                BtLeServiceConnector.pairedDevices()
                 true
             }
             else -> { return super.onOptionsItemSelected(item) }
@@ -121,7 +118,7 @@ class ScanFragment : Fragment() {
 
     override fun onStop() {
         super.onStop()
-        BtLeScanServiceConnector.stopScan()
+        BtLeServiceConnector.stopScan()
     }
 
     private fun initRvAdapter() {
@@ -131,10 +128,9 @@ class ScanFragment : Fragment() {
                     requireContext(),
                     "Сканируем адрес ${model.address}",
                     Toast.LENGTH_LONG).show()
-                // connectToBt(model)
-                BtLeScanServiceConnector.stopScan()
-                btLeScanModel.clean()
-                BtLeScanServiceConnector.scanLeDevices(addresses = listOf(model.address), mode = BtLeScanService.Mode.StopOnFind)
+                BtLeServiceConnector.stopScan()
+                btLeModel.clean()
+                BtLeServiceConnector.scanLeDevices(addresses = arrayOf(model.address), mode = BtLeScanner.Mode.StopOnFind)
             }
 
             override fun onItemLongClick(model: BtLeDevice, view: View) {
@@ -155,8 +151,8 @@ class ScanFragment : Fragment() {
      */
     private fun bindMenuReaction(menu: Menu) {
         val menuItemScanStart = menu.findItem(R.id.scan_bluetooth)
-        btLeScanModel.state.observe(viewLifecycleOwner, { state ->
-            if(state == BtLeScanService.State.Scanning) {
+        btLeModel.state.observe(viewLifecycleOwner, { state ->
+            if(state == BtLeService.State.Scanning) {
                 menuItemScanStart?.setIcon(R.drawable.ic_baseline_search_off_24)
                 menuItemScanStart?.setTitle(R.string.stop_scan)
             } else {
@@ -170,14 +166,14 @@ class ScanFragment : Fragment() {
         binding.apply {
             rvBtList.adapter = rvBtAdapter
             rvBtList.layoutManager = LinearLayoutManager(requireContext())
-            if(btLeScanModel.devices != null) {
-                rvBtAdapter.setBtDevices(btLeScanModel.devices.value!!.toSet())
+            if(btLeModel.devices != null) {
+                rvBtAdapter.setBtDevices(btLeModel.devices.value!!.toSet())
             }
 
-            btLeScanModel.devices.observe(viewLifecycleOwner, { devices ->
+            btLeModel.devices.observe(viewLifecycleOwner, { devices ->
                 rvBtAdapter.setBtDevices(devices.toSet())
             })
-            btLeScanModel.bound.observe(viewLifecycleOwner, { isBond ->
+            btLeModel.bound.observe(viewLifecycleOwner, { isBond ->
                 // btLeScanService = BtLeScanServiceConnector.service
                 // btLeScanService?.scanLeDevices(name = AppConst.DEFAULT_NAME)
             })
@@ -185,23 +181,23 @@ class ScanFragment : Fragment() {
     }
 
     private fun bindAction (view: View) {
-        btLeScanModel.bound.observe(viewLifecycleOwner, { isBond ->
+        btLeModel.bound.observe(viewLifecycleOwner, { isBond ->
             if(isBond) {
-                btLeScanModel.action.observe(viewLifecycleOwner, { action ->
+                btLeModel.action.observe(viewLifecycleOwner, { action ->
                     Log.d(TAG, "$action")
                     when(action) {
                         Action.None -> {
-                            BtLeScanServiceConnector.service?.stopScan()
+                            BtLeServiceConnector.service?.stopScan()
                         }
                         Action.Scan -> {
-                            btLeScanModel.clean()
-                            BtLeScanServiceConnector.scanLeDevices(names = settings.getString("names_filter", ""),
+                            btLeModel.clean()
+                            BtLeServiceConnector.scanLeDevices(names = settings.getString("names_filter", ""),
                                 addresses = settings.getString("addresses_filter", ""))
                         }
                         Action.Paired -> {
-                            btLeScanModel.clean()
-                            BtLeScanServiceConnector.service?.stopScan()
-                            BtLeScanServiceConnector.service?.pairedDevices()
+                            btLeModel.clean()
+                            BtLeServiceConnector.service?.stopScan()
+                            BtLeServiceConnector.service?.pairedDevices()
                         }
                         else -> {}
                     }
