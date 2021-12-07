@@ -7,6 +7,7 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import com.grandfatherpikhto.blescan.MainActivity
 import com.grandfatherpikhto.blescan.service.BcReceiver
+import com.grandfatherpikhto.blescan.service.BtLeServiceConnector
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.InternalCoroutinesApi
@@ -56,20 +57,9 @@ class MainActivityModel: ViewModel() {
 
     init {
         GlobalScope.launch {
-            BcReceiver.btState.collect { state ->
-                Log.d(TAG, "State: $state")
-                when(state) {
-                    BluetoothAdapter.STATE_ON -> {
-                        if(_enabled.value == false) {
-                            _enabled.postValue(true)
-                        }
-                    }
-                    BluetoothAdapter.STATE_OFF -> {
-                        if(_enabled.value == true) {
-                            _enabled.postValue(false)
-                        }
-                    }
-                }
+            BtLeServiceConnector.enabled.collect { enabled ->
+                Log.d(TAG, "State: $enabled")
+                _enabled.postValue(enabled)
             }
         }
     }
