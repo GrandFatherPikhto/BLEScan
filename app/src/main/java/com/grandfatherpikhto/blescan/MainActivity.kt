@@ -168,7 +168,7 @@ class MainActivity : AppCompatActivity() {
      */
     override fun onPause() {
         super.onPause()
-        doUnbindServices()
+        unbindService(BtLeServiceConnector)
     }
 
     /**
@@ -176,7 +176,9 @@ class MainActivity : AppCompatActivity() {
      */
     override fun onResume() {
         super.onResume()
-        doBindServices()
+        Intent(this, BtLeService::class.java).also { intent ->
+            bindService(intent, BtLeServiceConnector, Context.BIND_AUTO_CREATE)
+        }
     }
 
     /**
@@ -192,26 +194,6 @@ class MainActivity : AppCompatActivity() {
             }
             Log.d(TAG, "bindMenuReaction $enabled")
         })
-    }
-
-    /**
-     * Привязать сервисы
-     */
-    private fun doBindServices() {
-        Intent(this, BtLeScanService::class.java).also { intent ->
-            bindService(intent, BtLeScanServiceConnector, Context.BIND_AUTO_CREATE)
-        }
-        Intent(this, BtLeService::class.java).also { intent ->
-            bindService(intent, BtLeServiceConnector, Context.BIND_AUTO_CREATE)
-        }
-    }
-
-    /**
-     * Отвязать сервисы
-     */
-    private fun doUnbindServices() {
-        unbindService(BtLeScanServiceConnector)
-        unbindService(BtLeServiceConnector)
     }
 
     /**
