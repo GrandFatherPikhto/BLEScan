@@ -38,6 +38,10 @@
     <string name="filter_header">Scan Filters</string>
     <string name="names_filter">Names Filter</string>
     <string name="addresses_filter">Addresses Filter</string>
+    <string name="service_type">Service Type</string>
+    <string name="service_attribute">Service Attribute</string>
+    <string name="service_primary">Primary Service</string>
+    <string name="service_secondary">Secondary Service</string>
 
     <!-- Messages Preferences -->
 

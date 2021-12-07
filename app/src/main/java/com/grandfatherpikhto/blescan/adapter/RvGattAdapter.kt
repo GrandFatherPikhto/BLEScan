@@ -11,6 +11,7 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.grandfatherpikhto.blescan.R
 import com.grandfatherpikhto.blescan.databinding.BtPropertyBinding
+import com.grandfatherpikhto.blescan.databinding.BtServiceBinding
 import com.grandfatherpikhto.blescan.model.RvItemClick
 import java.util.*
 
@@ -25,33 +26,40 @@ class RvGattAdapter : RecyclerView.Adapter<RvGattAdapter.ProfileHolder>(){
         const val TAG:String = "RvGattAdapter"
     }
     /** Список устройств */
-    private var profile:MutableList<Pair<Type, UUID>> = mutableListOf()
+    private var profile:MutableList<Pair<Type, Any>> = mutableListOf()
     private var gatt:BluetoothGatt? = null
 
     /** Коллбэк для обработки нажатия и долгого нажатия на элемент списка */
-    private var itemClick: RvItemClick<Pair<Type, UUID>>? = null
+    private var itemClick: RvItemClick<Pair<Type, Any>>? = null
     /** Холдер для лэйаута устройства */
     class ProfileHolder(item: View): RecyclerView.ViewHolder(item) {
         /** Привязка к элементам лэйаута устройства */
         private val binding = BtPropertyBinding.bind(item)
-        fun bind(property: Pair<Type, UUID>) {
+
+        fun bind(property: Pair<Type, Any>) {
             with(binding) {
-                property.second.also { tvPropertyUuid.text = property.second.toString() }
                 when (property.first) {
                     Type.Service -> {
-                        binding.tvPropName.text = itemView.context.getString(R.string.service)
+                        property.second.also { tvPropertyUuid.text = (property.second as BluetoothGattService).uuid.toString() }
+                        binding.tvPropName.text = itemView.context.getString(R.string.characteristic)
                     }
                     Type.Characteristic -> {
+                        property.second.also { tvPropertyUuid.text = (property.second as BluetoothGattCharacteristic).uuid.toString() }
                         binding.tvPropName.text = itemView.context.getString(R.string.characteristic)
                     }
                     Type.Descriptor -> {
+                        property.second.also { tvPropertyUuid.text = (property.second as BluetoothGattDescriptor).uuid.toString() }
                         binding.tvPropName.text = itemView.context.getString(R.string.descriptor)
                     }
                     else -> { }
                 }
-
             }
         }
+    }
+
+    override fun getItemViewType(position: Int): Int {
+        // return super.getItemViewType(position)
+        return profile[position].first.value
     }
 
     /** Создаём очередной элемент лэйаута холдера. Операция ресурсоёмкая */
@@ -92,11 +100,11 @@ class RvGattAdapter : RecyclerView.Adapter<RvGattAdapter.ProfileHolder>(){
         this.profile.clear()
         gatt = bluetoothGatt
         gatt?.services?.forEach { service ->
-            profile.add(Pair( Type.Service, service.uuid))
+            profile.add(Pair(Type.Service, service))
             service.characteristics?.forEach { characteristic ->
-                profile.add(Pair(Type.Characteristic, characteristic.uuid))
+                profile.add(Pair(Type.Characteristic, characteristic))
                 characteristic.descriptors?.forEach { descriptor ->
-                    profile.add(Pair(Type.Descriptor, descriptor.uuid))
+                    profile.add(Pair(Type.Descriptor, descriptor))
                 }
             }
         }
@@ -104,7 +112,7 @@ class RvGattAdapter : RecyclerView.Adapter<RvGattAdapter.ProfileHolder>(){
     }
 
     /** Привязка к событию Click */
-    fun setOnItemClickListener(itemClick: RvItemClick<Pair<Type, UUID>>) {
+    fun setOnItemClickListener(itemClick: RvItemClick<Pair<Type, Any>>) {
         this.itemClick = itemClick
     }
 }

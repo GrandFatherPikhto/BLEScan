@@ -35,4 +35,8 @@
     <string name="filter_header">Фильтры Сканирования</string>
     <string name="names_filter">Фильтрация по имени</string>
     <string name="addresses_filter">Фильтр по адресам</string>
+    <string name="service_type">Тип Сервиса</string>
+    <string name="service_attribute">Аттрибут Сервиса</string>
+    <string name="service_primary">Основной Сервис</string>
+    <string name="service_secondary">Вторичный Сервис</string>
 </resources>

@@ -16,7 +16,7 @@ import kotlinx.coroutines.flow.*
 
 @InternalCoroutinesApi
 @DelicateCoroutinesApi
-object BtLeServiceConnector:ServiceConnection {
+object BtLeServiceConnector: ServiceConnection {
     private const val TAG = "BtLeServiceConnector"
     private var btLeService:BtLeService ?= null
     val service:BtLeService? get() = btLeService

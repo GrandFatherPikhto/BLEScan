@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/csService"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+    <TextView
+        android:id="@+id/tvServiceTitle"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:text="@string/service"
+        app:layout_constraintBottom_toTopOf="@+id/tvUuid"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/tvAttributeType"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:text="@string/service_attribute"
+        app:layout_constraintBottom_toTopOf="@+id/tvServiceType"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/tvUuid" />
+
+    <TextView
+        android:id="@+id/tvServiceType"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:text="@string/service_type"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/tvAttributeType" />
+
+    <TextView
+        android:id="@+id/tvUuid"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:text="@string/service_uuid"
+        app:layout_constraintBottom_toTopOf="@+id/tvAttributeType"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/tvServiceTitle" />
+</androidx.constraintlayout.widget.ConstraintLayout>
