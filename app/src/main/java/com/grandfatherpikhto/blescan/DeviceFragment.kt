@@ -16,8 +16,7 @@ import com.grandfatherpikhto.blescan.databinding.BtDeviceBinding
 import com.grandfatherpikhto.blescan.databinding.FragmentDeviceBinding
 import com.grandfatherpikhto.blescan.model.BtLeModel
 import com.grandfatherpikhto.blescan.model.MainActivityModel
-import com.grandfatherpikhto.blescan.service.BtLeService
-import com.grandfatherpikhto.blescan.service.BtLeServiceConnector
+import com.grandfatherpikhto.blescan.service.*
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.InternalCoroutinesApi
 
@@ -36,9 +35,10 @@ class DeviceFragment : Fragment() {
 
     private lateinit var bindingDevice: BtDeviceBinding
 
-
     /** */
-    private val btLe:BtLeModel by viewModels()
+    private val bluetoothInterface: BluetoothInterface by BluetoothInterfaceLazy()
+    /** */
+    private val btLeModel:BtLeModel by viewModels()
     private val mainActivityModel:MainActivityModel by activityViewModels()
 
     private val rvGattAdapter by lazy {
@@ -71,19 +71,19 @@ class DeviceFragment : Fragment() {
             }
         }
 
-        btLe.state.observe(viewLifecycleOwner, { state ->
+        btLeModel.connector.observe(viewLifecycleOwner, { state ->
             when(state) {
 //                BtLeService.State.Error         -> { setSnakeMessage(view, getString(R.string.state_unkown))  }
 //                BtLeService.State.Rescan        -> { setSnakeMessage(view, getString(R.string.start_scan)) }
-                BtLeService.State.Connected     -> { setSnakeMessage(view, getString(R.string.state_connected)) }
+                BtLeConnector.State.Connected     -> { setSnakeMessage(view, getString(R.string.state_connected)) }
 //                BtLeService.State.Disconnected  -> { setSnakeMessage(view, getString(R.string.state_disconnected)) }
 //                BtLeService.State.Connecting    -> { setSnakeMessage(view, getString(R.string.state_connecting)) }
-                BtLeService.State.FatalError      -> { mainActivityModel.changeCurrent(MainActivity.Current.Scanner) }
+                BtLeConnector.State.FatalError      -> { mainActivityModel.changeCurrent(MainActivity.Current.Scanner) }
                 else -> { Log.d(TAG, "Неизвестное состояние: $state") }
             }
         })
 
-        btLe.gatt.observe(viewLifecycleOwner, { gatt ->
+        btLeModel.gatt.observe(viewLifecycleOwner, { gatt ->
             gatt?.let { rvGattAdapter.setGatt(it) }
             gatt?.services?.forEach { service ->
                 Log.d(TAG, "Service: ${service.uuid} ${service.type}")
@@ -100,13 +100,15 @@ class DeviceFragment : Fragment() {
     override fun onStart() {
         super.onStart()
         mainActivityModel.device.value?.let { device ->
-            BtLeServiceConnector.connect(device.address)
+            Log.d(TAG, "Подключаемся к ${device.address}")
+            bluetoothInterface.connect(device)
+            // btLeModel.service?.value?.connect(device.address)
         }
     }
 
     override fun onStop() {
         super.onStop()
-        BtLeServiceConnector.close()
+        bluetoothInterface.close()
     }
 
     override fun onDestroyView() {
@@ -120,7 +122,7 @@ class DeviceFragment : Fragment() {
     }
 
     private fun bindRvAdapter() {
-        binding?.apply {
+        binding.apply {
             rvGatt.adapter = rvGattAdapter
             rvGatt.layoutManager = LinearLayoutManager(requireContext())
         }
