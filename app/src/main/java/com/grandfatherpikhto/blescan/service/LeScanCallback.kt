@@ -5,12 +5,13 @@ import android.bluetooth.BluetoothDevice
 import android.bluetooth.le.ScanCallback
 import android.bluetooth.le.ScanResult
 import android.util.Log
-import com.grandfatherpikhto.blescan.helper.toBtLeDevice
 import com.grandfatherpikhto.blescan.model.BtLeDevice
+import com.grandfatherpikhto.blescan.model.toBtLeDevice
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.InternalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlin.properties.Delegates
 
 @DelicateCoroutinesApi
 @InternalCoroutinesApi
@@ -20,21 +21,15 @@ class LeScanCallback(service: BtLeService): ScanCallback() {
     }
 
     interface LeScannerCallback {
-        fun onFindDevice(btLeDevice: BtLeDevice)
+        fun onFindDevice(btLeDevice: BtLeDevice?)
         fun onError(error: Int)
     }
-
-    /** */
-    private var scannerCallbacks: MutableList<LeScannerCallback> = mutableListOf()
     /** */
     private val addresses = mutableListOf<String>()
     /** */
     private val names     = mutableListOf<String>()
-
     /** */
-    private val _error = MutableStateFlow<Int>(0)
-    val error: StateFlow<Int> = _error
-
+    private val bluetoothInterface:BluetoothInterface by BluetoothInterfaceLazy()
 
     private fun checkName(bluetoothDevice: BluetoothDevice): Boolean {
         // Log.d(TAG, "checkName: ${names.size}")
@@ -60,9 +55,7 @@ class LeScanCallback(service: BtLeService): ScanCallback() {
             // Log.d(TAG, "emitDevice [${bluetoothDevice.name}, ${bluetoothDevice.address}, checkName: ${checkName(bluetoothDevice)}, checkAddress: ${checkAddress(bluetoothDevice)}]")
             if(checkName(bluetoothDevice)
                 &&  checkAddress(bluetoothDevice)) {
-                scannerCallbacks.forEach { callback ->
-                    callback.onFindDevice(bluetoothDevice.toBtLeDevice())
-                }
+                bluetoothInterface.deviceFound = bluetoothDevice.toBtLeDevice()
             }
         }
     }
@@ -72,9 +65,7 @@ class LeScanCallback(service: BtLeService): ScanCallback() {
      */
     override fun onScanFailed(errorCode: Int) {
         super.onScanFailed(errorCode)
-        scannerCallbacks.forEach { callback ->
-            callback.onError(errorCode)
-        }
+        bluetoothInterface.scanError = errorCode
         Log.d(TAG, "Fail scan with error $errorCode")
     }
 
@@ -86,8 +77,7 @@ class LeScanCallback(service: BtLeService): ScanCallback() {
         super.onBatchScanResults(results)
         results?.forEach { result ->
             // Log.d(TAG, "[BatchScan] Найдено устройство: ${result.device.address} ${result.device.name}")
-            if(result?.device != null)
-                emitDevice(result.device)
+            emitDevice(result.device)
         }
     }
 
@@ -141,7 +131,7 @@ class LeScanCallback(service: BtLeService): ScanCallback() {
         }
     }
 
-    fun setOnEventListener(callback: LeScannerCallback) {
-        scannerCallbacks.add(callback)
+    fun destroy() {
+
     }
 }
