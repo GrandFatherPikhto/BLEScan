@@ -3,9 +3,8 @@ package com.grandfatherpikhto.blescan.service
 import android.bluetooth.*
 import android.util.Log
 import kotlinx.coroutines.DelicateCoroutinesApi
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.InternalCoroutinesApi
-import kotlinx.coroutines.launch
+import kotlin.properties.Delegates
 
 /**
  * Обратные вызовы работы с GATT
@@ -17,52 +16,36 @@ class BtGattCallback  : BluetoothGattCallback() {
         const val TAG: String = "BtGattCallback"
         const val MAX_TRY_CONNECT = 6
     }
-    
-    interface GattCallback {
-        fun onChangeState(state:BtLeConnector.State) {}
-        fun onGattDiscovered(bluetoothGatt: BluetoothGatt) {}
-        fun onCharacteristicWrited(bluetoothGatt: BluetoothGatt?, bluetoothGattCharacteristic: BluetoothGattCharacteristic?, state: Int) {}
-        fun onCharacteristicReaded(bluetoothGatt: BluetoothGatt?, bluetoothGattCharacteristic: BluetoothGattCharacteristic?, state: Int) {}
-        fun onCharacteristicChanged(bluetoothGatt: BluetoothGatt?, bluetoothGattCharacteristic: BluetoothGattCharacteristic?) {}
-        fun onDescriptorWrited(bluetoothGatt: BluetoothGatt?, bluetoothGattDescriptor: BluetoothGattDescriptor?, state: Int) {}
-        fun onDescriptorReaded(bluetoothGatt: BluetoothGatt?, bluetoothGattDescriptor: BluetoothGattDescriptor?, state: Int) {}
-        fun onServiceChanged(bluetoothGatt: BluetoothGatt?) {}
-    }
 
-    private var gattCallbacks:MutableList<GattCallback> = mutableListOf()
+    private val bluetoothInterface:BluetoothInterface by BluetoothInterfaceLazy()
 
-    private var state:BtLeConnector.State = BtLeConnector.State.Unknown
-
-    private var bluetoothGatt:BluetoothGatt? = null
-
+    /** */
     private var tryConnectCounter = 0
 
-    override fun onConnectionStateChange(gatt: BluetoothGatt?, status: Int, newState: Int) {
-
-        super.onConnectionStateChange(gatt, status, newState)
+    /**
+     *
+     */
+    override fun onConnectionStateChange(btgatt: BluetoothGatt?, status: Int, newState: Int) {
+        super.onConnectionStateChange(btgatt, status, newState)
         when (newState) {
             BluetoothProfile.STATE_DISCONNECTED -> {
-                changeState(BtLeConnector.State.Disconnected)
+                bluetoothInterface.connectorState = BtLeConnector.State.Disconnected
             }
             BluetoothProfile.STATE_CONNECTING -> {
-                gattCallbacks.forEach { callback ->
-                    callback.onChangeState(BtLeConnector.State.Connecting)
-                }
+                bluetoothInterface.connectorState = BtLeConnector.State.Connecting
             }
             BluetoothProfile.STATE_CONNECTED -> {
-                changeState(BtLeConnector.State.Connected)
-                bluetoothGatt = gatt
-                if(gatt!!.discoverServices()) {
-                    changeState(BtLeConnector.State.Discovering)
+                bluetoothInterface.connectorState = BtLeConnector.State.Connected
+                bluetoothInterface.bluetoothGatt = btgatt
+                if(btgatt!!.discoverServices()) {
+                    bluetoothInterface.connectorState = BtLeConnector.State.Discovering
                 } else {
-                    changeState(BtLeConnector.State.Error)
+                    bluetoothInterface.connectorState = BtLeConnector.State.Error
                 }
                 tryConnectCounter = 0
             }
             BluetoothProfile.STATE_DISCONNECTING -> {
-                gattCallbacks.forEach { callback ->
-                    callback.onChangeState(BtLeConnector.State.Disconnecting)
-                }
+                bluetoothInterface.connectorState = BtLeConnector.State.Disconnecting
             }
             else -> {
             }
@@ -71,13 +54,9 @@ class BtGattCallback  : BluetoothGattCallback() {
             Log.d(TAG, "onConnectionStateChange $status $newState запустить рескан")
             if (tryConnectCounter >= MAX_TRY_CONNECT - 1) {
                 tryConnectCounter = 0
-                gattCallbacks.forEach { callback ->
-                    callback.onChangeState(BtLeConnector.State.FatalError)
-                }
+                bluetoothInterface.connectorState = BtLeConnector.State.FatalError
             } else {
-                gattCallbacks.forEach { callback ->
-                    callback.onChangeState(BtLeConnector.State.Error)
-                }
+                bluetoothInterface.connectorState = BtLeConnector.State.Error
                 tryConnectCounter++
             }
         }
@@ -85,98 +64,69 @@ class BtGattCallback  : BluetoothGattCallback() {
 
     override fun onServicesDiscovered(btgatt: BluetoothGatt?, status: Int) {
         super.onServicesDiscovered(btgatt, status)
-        state = BtLeConnector.State.Discovered
+        bluetoothInterface.connectorState = BtLeConnector.State.Discovered
         if(status == BluetoothGatt.GATT_SUCCESS) {
             if(btgatt != null) {
-                gattCallbacks.forEach { callback ->
-                    callback.onChangeState(state)
-                    callback.onGattDiscovered(btgatt)
-                }
+                bluetoothInterface.bluetoothGatt = btgatt
             }
         }
     }
 
     override fun onCharacteristicWrite(
-        gatt: BluetoothGatt?,
+        btgatt: BluetoothGatt?,
         characteristic: BluetoothGattCharacteristic?,
         status: Int
     ) {
-        super.onCharacteristicWrite(gatt, characteristic, status)
-        state = BtLeConnector.State.CharWrited
-        gattCallbacks.forEach { callback ->
-            callback.onChangeState(state)
-            callback.onCharacteristicWrited(gatt, characteristic, status)
-        }
+        super.onCharacteristicWrite(btgatt, characteristic, status)
+        bluetoothInterface.connectorState = BtLeConnector.State.CharWrited
+        bluetoothInterface.characteristicWrite(btgatt, characteristic, status)
     }
 
     override fun onCharacteristicRead(
-        gatt: BluetoothGatt?,
+        btgatt: BluetoothGatt?,
         characteristic: BluetoothGattCharacteristic?,
         status: Int
     ) {
-        super.onCharacteristicRead(gatt, characteristic, status)
-        state = BtLeConnector.State.CharReaded
-        gattCallbacks.forEach { callback ->
-            callback.onChangeState(state)
-            callback.onCharacteristicReaded(gatt, characteristic, status)
-        }
+        super.onCharacteristicRead(btgatt, characteristic, status)
+        bluetoothInterface.connectorState = BtLeConnector.State.CharReaded
+        bluetoothInterface.characteristicRead(btgatt, characteristic, status)
     }
 
     override fun onCharacteristicChanged(
-        gatt: BluetoothGatt?,
+        btgatt: BluetoothGatt?,
         characteristic: BluetoothGattCharacteristic?
     ) {
-        super.onCharacteristicChanged(gatt, characteristic)
-        state = BtLeConnector.State.CharWrited
-        gattCallbacks.forEach { callback ->
-            callback.onChangeState(state)
-            callback.onCharacteristicChanged(gatt, characteristic)
-        }
+        super.onCharacteristicChanged(btgatt, characteristic)
+        bluetoothInterface.connectorState = BtLeConnector.State.CharChanged
+        bluetoothInterface.characteristicChange(btgatt, characteristic)
     }
 
     override fun onDescriptorRead(
-        gatt: BluetoothGatt?,
+        btgatt: BluetoothGatt?,
         descriptor: BluetoothGattDescriptor?,
         status: Int
     ) {
-        super.onDescriptorRead(gatt, descriptor, status)
-        state = BtLeConnector.State.DescrReaded
-        gattCallbacks.forEach { callback ->
-            callback.onChangeState(state)
-            callback.onDescriptorReaded(gatt, descriptor, status)
-        }
+        super.onDescriptorRead(btgatt, descriptor, status)
+        bluetoothInterface.connectorState = BtLeConnector.State.DescrReaded
+        bluetoothInterface.descriptorRead(btgatt, descriptor, status)
     }
 
     override fun onDescriptorWrite(
-        gatt: BluetoothGatt?,
+        btgatt: BluetoothGatt?,
         descriptor: BluetoothGattDescriptor?,
         status: Int
     ) {
-        super.onDescriptorWrite(gatt, descriptor, status)
-        state = BtLeConnector.State.DescrWrited
-        gattCallbacks.forEach { callback ->
-            callback.onChangeState(state)
-            callback.onDescriptorWrited(gatt, descriptor, status)
-        }
+        super.onDescriptorWrite(btgatt, descriptor, status)
+        bluetoothInterface.connectorState = BtLeConnector.State.DescrWrited
+        bluetoothInterface.descriptoWrite(btgatt, descriptor, status)
     }
 
-    override fun onServiceChanged(gatt: BluetoothGatt) {
-        super.onServiceChanged(gatt)
-        state = BtLeConnector.State.ServiceChanged
-        gattCallbacks.forEach { callback ->
-            callback.onChangeState(state)
-            callback.onServiceChanged(gatt)
-        }
+    override fun onServiceChanged(btgatt: BluetoothGatt) {
+        super.onServiceChanged(btgatt)
+        bluetoothInterface.connectorState = BtLeConnector.State.CharChanged
     }
 
-    fun addEventListener(callback: GattCallback) {
-        gattCallbacks.add(callback)
-    }
-
-    private fun changeState(value: BtLeConnector.State) {
-        state = value
-        gattCallbacks.forEach { callback ->
-            callback.onChangeState(value)
-        }
+    override fun onReliableWriteCompleted(gatt: BluetoothGatt?, status: Int) {
+        super.onReliableWriteCompleted(gatt, status)
     }
 }
