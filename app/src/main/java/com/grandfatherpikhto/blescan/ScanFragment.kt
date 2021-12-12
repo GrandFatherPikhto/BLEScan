@@ -13,9 +13,9 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.grandfatherpikhto.blescan.adapter.RvBtAdapter
 import com.grandfatherpikhto.blescan.databinding.FragmentScanBinding
 import com.grandfatherpikhto.blescan.model.*
+import com.grandfatherpikhto.blescan.service.BluetoothInterface
+import com.grandfatherpikhto.blescan.service.BluetoothInterfaceLazy
 import com.grandfatherpikhto.blescan.service.BtLeScanner
-import com.grandfatherpikhto.blescan.service.BtLeService
-import com.grandfatherpikhto.blescan.service.BtLeServiceConnector
 
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.InternalCoroutinesApi
@@ -37,6 +37,8 @@ class ScanFragment : Fragment() {
         Paired(0x2)
     }
 
+    /** */
+    private val bluetoothInterface: BluetoothInterface by BluetoothInterfaceLazy()
     /** */
     private var _binding: FragmentScanBinding? = null
     /** This property is only valid between onCreateView and  onDestroyView. */
@@ -66,14 +68,21 @@ class ScanFragment : Fragment() {
 
     }
 
+    /**
+     *
+     */
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         mainActivityModel.ready.observe(viewLifecycleOwner, { ready ->
             requireActivity().invalidateOptionsMenu()
         })
-        bindAction(view)
         mainActivityModel.enabled.observe(viewLifecycleOwner, { enabled ->
             requireActivity().invalidateOptionsMenu()
+        })
+        btLeModel.bond.observe(viewLifecycleOwner, { bond ->
+            if(bond) {
+                bindAction(view)
+            }
         })
     }
 
@@ -85,7 +94,6 @@ class ScanFragment : Fragment() {
                     super.onCreateOptionsMenu(menu, menuInflater)
                     bindMenuReaction(menu)
                 }
-                Log.d(TAG, "onCreateOptionsMenu()")
             }
         }
     }
@@ -93,7 +101,7 @@ class ScanFragment : Fragment() {
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
             R.id.scan_bluetooth -> {
-                if(btLeModel.state.value == BtLeService.State.Scanning) {
+                if(btLeModel.scanner.value == BtLeScanner.State.Scanning) {
                     Log.d(TAG, "Stop Scan")
                     btLeModel.changeAction(Action.None)
                 } else {
@@ -103,8 +111,8 @@ class ScanFragment : Fragment() {
                 true
             }
             R.id.paired_bluetooth -> {
-                BtLeServiceConnector.stopScan()
-                BtLeServiceConnector.pairedDevices()
+                bluetoothInterface.stopScan()
+                bluetoothInterface.pairedDevices()
                 true
             }
             else -> { return super.onOptionsItemSelected(item) }
@@ -118,7 +126,7 @@ class ScanFragment : Fragment() {
 
     override fun onStop() {
         super.onStop()
-        BtLeServiceConnector.stopScan()
+        bluetoothInterface.stopScan()
     }
 
     private fun initRvAdapter() {
@@ -128,9 +136,9 @@ class ScanFragment : Fragment() {
                     requireContext(),
                     "Сканируем адрес ${model.address}",
                     Toast.LENGTH_LONG).show()
-                BtLeServiceConnector.stopScan()
+                bluetoothInterface.stopScan()
                 btLeModel.clean()
-                BtLeServiceConnector.scanLeDevices(addresses = arrayOf(model.address), mode = BtLeScanner.Mode.StopOnFind)
+                bluetoothInterface.leScanDevices(addresses = model.address, mode = BtLeScanner.Mode.StopOnFind)
             }
 
             override fun onItemLongClick(model: BtLeDevice, view: View) {
@@ -140,7 +148,6 @@ class ScanFragment : Fragment() {
                     Toast.LENGTH_LONG).show()
                 connectToBt(model)
             }
-
         })
 
         bindRvAdapter()
@@ -151,8 +158,8 @@ class ScanFragment : Fragment() {
      */
     private fun bindMenuReaction(menu: Menu) {
         val menuItemScanStart = menu.findItem(R.id.scan_bluetooth)
-        btLeModel.state.observe(viewLifecycleOwner, { state ->
-            if(state == BtLeService.State.Scanning) {
+        btLeModel.scanner.observe(viewLifecycleOwner, { state ->
+            if(state == BtLeScanner.State.Scanning) {
                 menuItemScanStart?.setIcon(R.drawable.ic_baseline_search_off_24)
                 menuItemScanStart?.setTitle(R.string.stop_scan)
             } else {
@@ -173,35 +180,40 @@ class ScanFragment : Fragment() {
             btLeModel.devices.observe(viewLifecycleOwner, { devices ->
                 rvBtAdapter.setBtDevices(devices.toSet())
             })
-            btLeModel.bound.observe(viewLifecycleOwner, { isBond ->
+            btLeModel.bond.observe(viewLifecycleOwner, { isBond ->
                 // btLeScanService = BtLeScanServiceConnector.service
                 // btLeScanService?.scanLeDevices(name = AppConst.DEFAULT_NAME)
             })
         }
     }
 
+    /**
+     * Следит за изменением LiveData переменной Action.
+     * Запускает/останавливает сканирование или выводит
+     * список сопряжённых устройств
+     * Обрабатывается, только когда сервис уже привязан к
+     * Активности!
+     */
     private fun bindAction (view: View) {
-        btLeModel.bound.observe(viewLifecycleOwner, { isBond ->
-            if(isBond) {
-                btLeModel.action.observe(viewLifecycleOwner, { action ->
-                    Log.d(TAG, "$action")
-                    when(action) {
-                        Action.None -> {
-                            BtLeServiceConnector.service?.stopScan()
-                        }
-                        Action.Scan -> {
-                            btLeModel.clean()
-                            BtLeServiceConnector.scanLeDevices(names = settings.getString("names_filter", ""),
-                                addresses = settings.getString("addresses_filter", ""))
-                        }
-                        Action.Paired -> {
-                            btLeModel.clean()
-                            BtLeServiceConnector.service?.stopScan()
-                            BtLeServiceConnector.service?.pairedDevices()
-                        }
-                        else -> {}
-                    }
-                })
+        Log.d(TAG, "bindAction, bond = true")
+        btLeModel.action.observe(viewLifecycleOwner, { action ->
+            Log.d(TAG, "bindAction: $action")
+            when(action) {
+                Action.None -> {
+                    bluetoothInterface.stopScan()
+                }
+                Action.Scan -> {
+                    Log.d(TAG, "Action: $action")
+                    btLeModel.clean()
+                    bluetoothInterface.leScanDevices(names = settings.getString("names_filter", ""),
+                    addresses = settings.getString("addresses_filter", ""))
+                }
+                Action.Paired -> {
+                    btLeModel.clean()
+                    bluetoothInterface.stopScan()
+                    bluetoothInterface.pairedDevices()
+                }
+                else -> {}
             }
         })
     }
