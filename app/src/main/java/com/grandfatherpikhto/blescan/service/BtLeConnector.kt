@@ -9,7 +9,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.InternalCoroutinesApi
-import java.lang.Exception
+import kotlin.properties.Delegates
 
 @InternalCoroutinesApi
 @DelicateCoroutinesApi
@@ -18,7 +18,6 @@ class BtLeConnector(private val service: BtLeService) {
     companion object {
         const val TAG:String = "BtLeService"
     }
-
     /** */
     enum class State(val value:Int) {
         Unknown(0x00),
@@ -39,32 +38,48 @@ class BtLeConnector(private val service: BtLeService) {
         FatalError(0xFF)
     }
 
-    private var bluetoothAddress:String ?= null
-    /** */
-    private var bluetoothDevice: BluetoothDevice?= null
-    /** */
-    private var bluetoothGatt: BluetoothGatt?= null
     /** */
     private val charWriteMutex = Mutex()
     /** */
     private var btGattCallback:BtGattCallback? = null
     /** */
-    interface ConnectorCallback {
-        fun onChangeGattState(state: State) {}
-        fun onGattDiscovered(bluetoothGatt: BluetoothGatt) {}
-        fun onCharacteristicWrite(bluetoothGatt: BluetoothGatt?, bluetoothGattCharacteristic: BluetoothGattCharacteristic?, state: Int) {}
-        fun onCharacteristicRead(bluetoothGatt: BluetoothGatt?, bluetoothGattCharacteristic: BluetoothGattCharacteristic?, state: Int) {}
-        fun onDescriptorWrite(bluetoothGatt: BluetoothGatt?, bluetoothGattDescriptor: BluetoothGattDescriptor?, state: Int) {}
-        fun onDescriptorRead(bluetoothGatt: BluetoothGatt?, bluetoothGattDescriptor: BluetoothGattDescriptor?, state: Int) {}
-        fun onCharacteristickChanged(bluetoothGatt: BluetoothGatt?, bluetoothGattCharacteristic: BluetoothGattCharacteristic?) {}
-        fun onServiceChanged(bluetoothGatt: BluetoothGatt?) {}
+    private val bluetoothInterface: BluetoothInterface by BluetoothInterfaceLazy()
+    /** */
+    val connectorListener = object: BluetoothListener {
+        override fun onChangeConnectorState(oldState: State, newState: State) {
+            super.onChangeConnectorState(oldState, newState)
+            when (newState) {
+                State.Disconnected -> {
+                    doClose()
+                    doRescan()
+                }
+                State.Error -> {
+                    doClose()
+                    doRescan()
+                }
+                else -> {
+
+                }
+            }
+        }
+
+        override fun onFindDevice(btLeDevice: BtLeDevice?) {
+            super.onFindDevice(btLeDevice)
+            if (bluetoothInterface.scannerState == BtLeScanner.State.Stopped
+                && bluetoothInterface.connectorState == State.Rescan
+            ) {
+                doConnect()
+            }
+        }
+
+        /**
+         * TODO: Не забудь подключить в BtLeService событие Paired!!!
+         */
+        override fun onBluetoothPaired(btLeDevice: BtLeDevice?) {
+            super.onBluetoothPaired(btLeDevice)
+            doConnect()
+        }
     }
-
-    /** */
-    private val connectorCallbacks: MutableList<ConnectorCallback> = mutableListOf()
-    /** */
-    private var state:State = State.Unknown
-
     /**
      *
      */
@@ -72,54 +87,8 @@ class BtLeConnector(private val service: BtLeService) {
         Log.d(TAG, "onCreate()")
 
         if(charWriteMutex.isLocked) charWriteMutex.unlock()
-
         btGattCallback = BtGattCallback()
-        btGattCallback!!.addEventListener(object: BtGattCallback.GattCallback {
-            override fun onChangeState(gattState: State)  {
-                changeState(gattState)
-            }
-
-            override fun onGattDiscovered(bluetoothGatt: BluetoothGatt) {
-                connectorCallbacks.forEach { callback ->
-                    callback.onGattDiscovered(bluetoothGatt)
-                }
-            }
-        })
-
-        service.scanner.addEventListener(object: BtLeScanner.ScannerCallback {
-            override fun onFindDevice(btLeDevice: BtLeDevice?) {
-                btLeDevice?.let { found ->
-                    if (state == State.Rescan) {
-                        service.scanner.stopScan()
-                    }
-                }
-            }
-
-            override fun onChangeState(scannerState: BtLeScanner.State) {
-                super.onChangeState(scannerState)
-                if (scannerState == BtLeScanner.State.Stopped
-                    && state == State.Rescan
-                ) {
-                    doConnect()
-                }
-            }
-        })
-
-        service.receiver.addEventListener(object: BcReceiver.ReceiverCallback {
-            override fun onBluetoothPaired(btLeDevice: BtLeDevice) {
-                super.onBluetoothPaired(btLeDevice)
-                doConnect()
-            }
-        })
-
-        GlobalScope.launch {
-            service.receiver.paired.collect { pairedDevice ->
-                pairedDevice?.let {
-                    Log.d(TAG, "Paired device: ${pairedDevice?.address}")
-                    doConnect()
-                }
-            }
-        }
+        bluetoothInterface.addListener(connectorListener)
     }
 
     /**
@@ -127,12 +96,12 @@ class BtLeConnector(private val service: BtLeService) {
      * после обнаружения устройства
      */
     private fun doRescan() {
-        if(bluetoothAddress != null) {
-            BtLeServiceConnector.scanLeDevices(
-                addresses = arrayOf(bluetoothAddress!!),
+        if(bluetoothInterface.bluetoothDevice != null) {
+            service.scanner.scanLeDevices(
+                addresses = bluetoothInterface.currentDevice!!.address,
                 mode = BtLeScanner.Mode.StopOnFind
             )
-            changeState(State.Rescan)
+            bluetoothInterface.connectorState = State.Rescan
         }
     }
 
@@ -141,14 +110,16 @@ class BtLeConnector(private val service: BtLeService) {
      * После подключения начинает работать синглетон BtGattCallback
      */
     private fun doConnect() {
-        Log.d(TAG, "Пытаемся подключиться к $bluetoothAddress")
-        bluetoothGatt = bluetoothDevice?.connectGatt(
-            service.applicationContext,
-            bluetoothDevice!!.type == BluetoothDevice.DEVICE_TYPE_UNKNOWN,
-            btGattCallback,
-            BluetoothDevice.TRANSPORT_LE
-        )
-        changeState(State.Connecting)
+        Log.d(TAG, "Пытаемся подключиться к ")
+        bluetoothInterface.bluetoothDevice?.let { device ->
+            device.connectGatt(
+                service.applicationContext,
+                device.type == BluetoothDevice.DEVICE_TYPE_UNKNOWN,
+                btGattCallback,
+                BluetoothDevice.TRANSPORT_LE
+            )
+            bluetoothInterface.connectorState = State.Connecting
+        }
     }
 
     /**
@@ -156,30 +127,26 @@ class BtLeConnector(private val service: BtLeService) {
      * Генерирует событие об отключении
      */
     private fun doClose() {
-        bluetoothGatt?.close()
-        bluetoothGatt = null
+        bluetoothInterface.bluetoothGatt?.close()
+        bluetoothInterface.bluetoothGatt = null
     }
 
     /**
      *
      */
     fun close() {
-        bluetoothGatt?.disconnect()
+        bluetoothInterface.bluetoothGatt?.disconnect()
     }
 
-    fun connect(btLeDevice: BtLeDevice) = connect(btLeDevice.address)
-
-    /**
-     * Если устройство не сопряжено, сопрягаем его и ждём оповещение сопряжения
-     * после получения, повторяем попытку подключения.
-     */
-    fun connect(address: String) {
-        bluetoothAddress = address
-        bluetoothDevice = service.adapter.getRemoteDevice(address)
-        if (bluetoothDevice != null) {
-            if (bluetoothDevice!!.bondState == BluetoothDevice.BOND_NONE) {
-                Log.d(TAG, "Пытаемся сопрячь устройство $address")
-                bluetoothDevice!!.createBond()
+    fun connect(btLeDevice: BtLeDevice) {
+        bluetoothInterface.currentDevice = btLeDevice
+        if (bluetoothInterface.currentDevice != null) {
+            bluetoothInterface.bluetoothDevice =
+                bluetoothInterface.bluetoothAdapter?.getRemoteDevice(bluetoothInterface.currentDevice!!.address)
+            if (bluetoothInterface.bluetoothDevice!!.bondState
+                    == BluetoothDevice.BOND_NONE) {
+                Log.d(TAG, "Пытаемся сопрячь устройство ${bluetoothInterface.currentDevice?.address}")
+                bluetoothInterface.bluetoothDevice!!.createBond()
             } else {
                 doConnect()
             }
@@ -188,31 +155,15 @@ class BtLeConnector(private val service: BtLeService) {
         }
     }
 
-    fun addEventListener(connector: ConnectorCallback) {
-        connectorCallbacks.add(connector)
+    /**
+     * Если устройство не сопряжено, сопрягаем его и ждём оповещение сопряжения
+     * после получения, повторяем попытку подключения.
+     */
+    fun connect(address: String) {
+        connect(BtLeDevice(address = address))
     }
 
-    private fun changeState(gattState: State) {
-        state = gattState
-        when(gattState) {
-            State.Disconnected -> {
-                doClose()
-                doRescan()
-            }
-            State.Error -> {
-                doClose()
-                doRescan()
-            }
-            else -> {
-
-            }
-        }
-        connectorCallbacks.forEach { callback ->
-            try {
-                callback.onChangeGattState(gattState)
-            } catch (e : Exception) {
-
-            }
-        }
+    fun destroy() {
+        bluetoothInterface.removeListener(connectorListener)
     }
 }
