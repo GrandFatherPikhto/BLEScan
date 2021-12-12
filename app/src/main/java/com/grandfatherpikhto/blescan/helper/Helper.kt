@@ -50,7 +50,3 @@ fun Int.toByteArray(order: ByteOrder = ByteOrder.BIG_ENDIAN):ByteArray {
 fun Int.toHex():String {
     return this.toUInt().toString(16)
 }
-
-fun BluetoothDevice.toBtLeDevice(defaultAddress: String = "00:00:00:00:00:00", defaultName:String = "Unknown Device"): BtLeDevice {
-    return BtLeDevice(this.address ?: defaultAddress, this.name ?: defaultName, this.bondState)
-}
