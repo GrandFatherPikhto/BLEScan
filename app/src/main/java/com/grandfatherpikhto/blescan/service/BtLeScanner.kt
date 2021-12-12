@@ -5,31 +5,30 @@ import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.InternalCoroutinesApi
 import android.bluetooth.le.ScanFilter
 import android.bluetooth.le.ScanSettings
-import android.util.Log
-import com.grandfatherpikhto.blescan.helper.toBtLeDevice
 import com.grandfatherpikhto.blescan.model.BtLeDevice
+import com.grandfatherpikhto.blescan.model.toBtLeDevice
 import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import kotlin.properties.Delegates
 
 @InternalCoroutinesApi
 @DelicateCoroutinesApi
 class BtLeScanner(private val service: BtLeService) {
-
     companion object {
         const val TAG:String = "BtLeScanService"
     }
 
-    interface ScannerCallback {
-        fun onChangeState(state:State) {}
-        fun onFindDevice(btLeDevice: BtLeDevice?) {}
-        fun onScanError(error: Int) {}
+    enum class State (val value: Int) {
+        Unknown(0x0),
+        Stopped(0x1),
+        Scanning(0x02),
+        Error(0xFF)
     }
 
-    enum class State (val value: Int) {
-        Stopped(0x0),
-        Scanning(0x01),
-        Error(0xFF)
+    interface ScannerCallback {
+        fun onChangeState(oldState:State, newState:State) {}
+        fun onFindDevice(btLeDevice: BtLeDevice?) {}
+        fun onScanError(error: Int) {}
     }
 
     enum class Mode(val value: Int) {
@@ -37,41 +36,31 @@ class BtLeScanner(private val service: BtLeService) {
         StopOnFind(0x01)
     }
 
-    private var state:State = State.Stopped
-    private var device:BtLeDevice? = null
-
+    /** */
+    private val bluetoothInterface:BluetoothInterface by BluetoothInterfaceLazy()
     /** */
     private val scannerCallbacks:MutableList<ScannerCallback> = mutableListOf()
-
     /** */
-    private val bluetoothLeScanner:BluetoothLeScanner by lazy {
-        service.adapter.bluetoothLeScanner
-    }
+    private lateinit var bluetoothLeScanner:BluetoothLeScanner
 
     /** */
     private var leScanCallback: LeScanCallback? = null
-
     /** */
     private var mode = Mode.FindAll
+    /** */
+    private val bluetoothListener:BluetoothListener = object: BluetoothListener {
+        override fun onFindDevice(btLeDevice: BtLeDevice?) {
+            super.onFindDevice(btLeDevice)
+            if(mode == Mode.StopOnFind) {
+                stopScan()
+            }
+        }
+    }
 
     init {
+        bluetoothLeScanner = bluetoothInterface.bluetoothAdapter!!.bluetoothLeScanner
         leScanCallback = LeScanCallback(service)
-        leScanCallback!!.setOnEventListener(object: LeScanCallback.LeScannerCallback {
-            override fun onFindDevice(btLeDevice: BtLeDevice) {
-                if(mode == Mode.StopOnFind) {
-                    stopScan()
-                }
-                scannerCallbacks.forEach { callback ->
-                    callback.onFindDevice(btLeDevice)
-                }
-            }
-
-            override fun onError(error: Int) {
-                scannerCallbacks.forEach { callback ->
-                    callback.onScanError(error)
-                }
-            }
-        })
+        bluetoothInterface.addListener(bluetoothListener)
     }
 
     fun scanLeDevices(addressesList:Array<String> = arrayOf()
@@ -105,35 +94,25 @@ class BtLeScanner(private val service: BtLeService) {
             .setMatchMode(ScanSettings.MATCH_MODE_AGGRESSIVE)
             .build()
         bluetoothLeScanner.startScan(scanFilters, scanSettings, leScanCallback)
-        state = State.Scanning
-        scannerCallbacks.forEach { callback ->
-            callback.onChangeState(State.Scanning)
-        }
+        bluetoothInterface.scannerState = State.Scanning
     }
 
     fun stopScan() {
-        if(state == State.Scanning) {
+        if(bluetoothInterface.scannerState == State.Scanning) {
             bluetoothLeScanner.stopScan(leScanCallback)
             bluetoothLeScanner.flushPendingScanResults(leScanCallback)
-            state = State.Stopped
-            scannerCallbacks.forEach { callback ->
-                callback.onChangeState(state)
-            }
+            bluetoothInterface.scannerState = State.Stopped
         }
     }
 
     fun pairedDevices() {
-        service.adapter.bondedDevices.forEach { found ->
-            GlobalScope.launch {
-                device = found.toBtLeDevice()
-                scannerCallbacks.forEach { callback ->
-                    callback.onFindDevice(found?.toBtLeDevice())
-                }
-            }
+        bluetoothInterface.bluetoothAdapter?.bondedDevices?.forEach { device ->
+            bluetoothInterface.deviceFound = device.toBtLeDevice()
         }
     }
 
-    fun addEventListener(callback: ScannerCallback) {
-        scannerCallbacks.add(callback)
+    fun destroy() {
+        leScanCallback?.destroy()
+        bluetoothInterface.removeListener(bluetoothListener)
     }
 }
