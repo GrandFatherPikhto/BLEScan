@@ -1,18 +1,12 @@
 package com.grandfatherpikhto.blescan.model
 
-import android.bluetooth.BluetoothAdapter
-import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import com.grandfatherpikhto.blescan.MainActivity
-import com.grandfatherpikhto.blescan.service.BcReceiver
-import com.grandfatherpikhto.blescan.service.BtLeServiceConnector
+import com.grandfatherpikhto.blescan.service.*
 import kotlinx.coroutines.DelicateCoroutinesApi
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.InternalCoroutinesApi
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.launch
 
 @InternalCoroutinesApi
 @DelicateCoroutinesApi
@@ -21,19 +15,46 @@ class MainActivityModel: ViewModel() {
         const val TAG:String = "MainViewModel"
     }
 
+    /** */
+    private val bluetoothInterface: BluetoothInterface by BluetoothInterfaceLazy()
+    /** */
+    private val bluetoothListener = object: BluetoothListener {
+        override fun onBluetoothEnabled(enabled: Boolean) {
+            super.onBluetoothEnabled(enabled)
+            _enabled.postValue(enabled)
+        }
+
+        override fun onServiceBound(oldValue: BtLeService?, newValue: BtLeService?) {
+            super.onServiceBound(oldValue, newValue)
+            _service.postValue(newValue)
+            if(newValue == null) {
+                _bond.postValue(false)
+            } else {
+                _bond.postValue(true)
+            }
+        }
+    }
+
+    private val _service = MutableLiveData<BtLeService?>(null)
+    val service:LiveData<BtLeService?> = _service
+
+    private val _bond = MutableLiveData<Boolean>(false)
+    val bond:LiveData<Boolean> get() = _bond
+
     private val _device = MutableLiveData<BtLeDevice?>(null)
-    val device:LiveData<BtLeDevice?> = _device
+    val device:LiveData<BtLeDevice?> get() = _device
 
     private val _ready = MutableLiveData<Boolean>(true)
-    val ready:LiveData<Boolean> = _ready
+    val ready:LiveData<Boolean> get() = _ready
 
     private val _enabled = MutableLiveData<Boolean>(false)
-    val enabled:LiveData<Boolean> = _enabled
+    val enabled:LiveData<Boolean> get() = _enabled
 
     private val _current = MutableLiveData<MainActivity.Current>(MainActivity.Current.Scanner)
-    val current:LiveData<MainActivity.Current> = _current
+    val current:LiveData<MainActivity.Current> get() = _current
 
     fun changeDevice(value: BtLeDevice) {
+        bluetoothInterface.currentDevice = value
         _device.postValue(value)
     }
 
@@ -56,11 +77,11 @@ class MainActivityModel: ViewModel() {
     }
 
     init {
-        GlobalScope.launch {
-            BtLeServiceConnector.enabled.collect { enabled ->
-                Log.d(TAG, "State: $enabled")
-                _enabled.postValue(enabled)
-            }
-        }
+        bluetoothInterface.addListener(bluetoothListener)
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        bluetoothInterface.removeListener(bluetoothListener)
     }
 }
