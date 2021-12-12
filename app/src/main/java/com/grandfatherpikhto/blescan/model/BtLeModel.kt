@@ -1,19 +1,14 @@
 package com.grandfatherpikhto.blescan.model
 
 import android.bluetooth.BluetoothGatt
+import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
 import com.grandfatherpikhto.blescan.ScanFragment
-import com.grandfatherpikhto.blescan.service.BtLeService
-import com.grandfatherpikhto.blescan.service.BtLeServiceConnector
-import com.grandfatherpikhto.blescan.service.LeScanCallback
+import com.grandfatherpikhto.blescan.service.*
 import kotlinx.coroutines.DelicateCoroutinesApi
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.InternalCoroutinesApi
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.launch
 
 @DelicateCoroutinesApi
 @InternalCoroutinesApi
@@ -23,23 +18,33 @@ class BtLeModel: ViewModel() {
         const val TAG:String = "BtLeDeviceModel"
     }
     /** */
-    private val _state = MutableLiveData<BtLeService.State>(BtLeService.State.Error)
-    val state:LiveData<BtLeService.State> = _state
+    private val bluetoothInterface:BluetoothInterface by BluetoothInterfaceLazy()
+    /** */
+    private val _service = MutableLiveData<BtLeService?>(null)
+    val service:LiveData<BtLeService?> get() = _service
+    /** */
+    private val _scanner = MutableLiveData<BtLeScanner.State>(BtLeScanner.State.Unknown)
+    val scanner:LiveData<BtLeScanner.State> = _scanner
+    /** */
+    private val _connector = MutableLiveData<BtLeConnector.State>(BtLeConnector.State.Unknown)
+    val connector:LiveData<BtLeConnector.State> = _connector
     /** */
     private val _gatt = MutableLiveData<BluetoothGatt?>(null)
     val gatt:LiveData<BluetoothGatt?> = _gatt
+    /** */
     private val _address = MutableLiveData<String?>(null)
     val address:LiveData<String?> = _address
     /** */
-    private val _action = MutableLiveData<ScanFragment.Action>(ScanFragment.Action.None)
+    private val _action:MutableLiveData<ScanFragment.Action>
+        = MutableLiveData(ScanFragment.Action.None)
     val action:LiveData<ScanFragment.Action> = _action
     /** */
     private val devicesList = mutableListOf<BtLeDevice>()
     private val _devices = MutableLiveData<List<BtLeDevice>>(listOf<BtLeDevice>())
     val devices:LiveData<List<BtLeDevice>> = _devices
     /** */
-    private val _bound = MutableLiveData<Boolean>(false)
-    val bound:LiveData<Boolean> = _bound
+    private val _bond = MutableLiveData<Boolean>(false)
+    val bond:LiveData<Boolean> = _bond
     /** */
     private val _device = MutableLiveData<BtLeDevice?>(null)
     val device:LiveData<BtLeDevice?> = _device
@@ -47,55 +52,67 @@ class BtLeModel: ViewModel() {
     private val _enabled = MutableLiveData<Boolean>(false)
     val enabled:LiveData<Boolean> = _enabled
 
+    private val bluetoothListener = object: BluetoothListener {
+        override fun onBluetoothEnabled(enabled: Boolean) {
+            super.onBluetoothEnabled(enabled)
+            _enabled.postValue(enabled)
+        }
+
+        override fun onFindDevice(btLeDevice: BtLeDevice?) {
+            super.onFindDevice(btLeDevice)
+            _device.postValue(btLeDevice)
+            btLeDevice?.let { found ->
+                devicesList.add(found)
+                _devices.postValue(devicesList)
+            }
+        }
+
+        override fun onGattChanged(bluetoothGatt: BluetoothGatt?) {
+            super.onGattChanged(bluetoothGatt)
+            _gatt.postValue(bluetoothGatt)
+        }
+
+        override fun onServiceBound(oldValue: BtLeService?, newValue: BtLeService?) {
+            super.onServiceBound(oldValue, newValue)
+            Log.d(TAG, "Bond: $newValue")
+            if(newValue == null) {
+                _bond.postValue(false)
+            } else {
+                _bond.postValue(true)
+            }
+            _service.postValue(newValue)
+        }
+
+        override fun onChangeScannerState(
+            oldState: BtLeScanner.State,
+            newState: BtLeScanner.State
+        ) {
+            super.onChangeScannerState(oldState, newState)
+            _scanner.postValue(newState)
+        }
+
+        override fun onChangeConnectorState(
+            oldState: BtLeConnector.State,
+            newState: BtLeConnector.State
+        ) {
+            super.onChangeConnectorState(oldState, newState)
+            _connector.postValue(newState)
+        }
+
+        override fun onSetCurrentDevice(oldValue: BtLeDevice?, newValue: BtLeDevice?) {
+            super.onSetCurrentDevice(oldValue, newValue)
+            _address.postValue(newValue?.address)
+        }
+    }
+
     /** */
     init {
-        GlobalScope.launch {
-            BtLeServiceConnector.state.collect { value ->
-                _state.postValue(value)
-            }
-        }
-
-        GlobalScope.launch {
-            BtLeServiceConnector.gatt.collect { value ->
-                _gatt.postValue(value)
-            }
-        }
-        viewModelScope.launch {
-            BtLeServiceConnector.bound.collect { bondValue ->
-                _bound.postValue(bondValue)
-                if(bondValue) {
-                    BtLeServiceConnector.state.collect { stateValue ->
-                        _state.postValue(stateValue)
-                    }
-                }
-            }
-        }
-
-        viewModelScope.launch {
-            BtLeServiceConnector.device.collect { finded ->
-                _device.postValue(finded)
-                if(finded != null) {
-                    if (devicesList.find { it.address == finded!!.address } == null) {
-                        devicesList.add(finded!!)
-                        _devices.postValue(devicesList.toList())
-                    }
-                }
-            }
-        }
-
-        viewModelScope.launch {
-            BtLeServiceConnector.enabled.collect { enabled ->
-                _enabled.postValue(enabled)
-            }
-        }
+        bluetoothInterface.addListener(bluetoothListener)
     }
 
     fun changeAction(value:ScanFragment.Action) {
+        Log.d(TAG, "Action: $value")
         _action.postValue(value)
-    }
-
-    override fun onCleared() {
-        super.onCleared()
     }
 
     fun clean() {
@@ -105,5 +122,11 @@ class BtLeModel: ViewModel() {
 
     fun changeAddress(bluetoothAddress: String) {
         _address.postValue(bluetoothAddress)
+        bluetoothInterface.currentDevice = BtLeDevice(address = bluetoothAddress)
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        bluetoothInterface.removeListener(bluetoothListener)
     }
 }
