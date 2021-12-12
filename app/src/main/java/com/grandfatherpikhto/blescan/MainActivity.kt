@@ -2,14 +2,11 @@ package com.grandfatherpikhto.blescan
 
 import android.Manifest
 import android.bluetooth.BluetoothAdapter
-import android.bluetooth.BluetoothManager
 import android.content.Context
 import android.content.Intent
-import android.content.pm.LauncherApps
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.util.Log
-import com.google.android.material.snackbar.Snackbar
 import androidx.appcompat.app.AppCompatActivity
 import androidx.navigation.findNavController
 import androidx.navigation.ui.AppBarConfiguration
@@ -18,7 +15,6 @@ import androidx.navigation.ui.setupActionBarWithNavController
 import android.view.Menu
 import android.view.MenuItem
 import android.widget.Toast
-import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.core.content.ContextCompat
@@ -28,10 +24,7 @@ import com.grandfatherpikhto.blescan.databinding.ActivityMainBinding
 import com.grandfatherpikhto.blescan.model.MainActivityModel
 import com.grandfatherpikhto.blescan.service.*
 import kotlinx.coroutines.DelicateCoroutinesApi
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.InternalCoroutinesApi
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.flow.*
 
 
 @DelicateCoroutinesApi
@@ -48,14 +41,10 @@ class MainActivity : AppCompatActivity() {
         Settings(R.id.SettingsFragment)
     }
 
-    /** Менеджер блютуз. Нужен для запроса адаптера. Очень хочется убрать эту фигню из MainActivity */
-    private val bluetoothManager: BluetoothManager by lazy {
-        getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
-    }
-    /** Адаптер Bluetooth. Обычно, он один, поэтому не заморачиваемся с проверкой */
-    private val bluetoothAdapter:BluetoothAdapter by lazy {
-        bluetoothManager.adapter
-    }
+    /** */
+    private val bluetoothInterface:BluetoothInterface by BluetoothInterfaceLazy()
+    /** */
+    private var btLeServiceConnector:BtLeServiceConnector = BtLeServiceConnector()
 
     /** Главная модель. Видна везде */
     private val mainActivityModel:MainActivityModel by viewModels()
@@ -65,6 +54,10 @@ class MainActivity : AppCompatActivity() {
 
     /**
      * Запрос группы разрешений
+     * Ланчер необходимо вынести в глобальные переменные, потому что
+     * он должен быть инициализирован ДО запуска Активности.
+     * В противном случае, будет ошибка запроса, если мы вздумаем
+     * перезапросить разрешения после запуска полного запуска приложения
      */
     private val permissionsLauncher =
         registerForActivityResult(
@@ -86,6 +79,10 @@ class MainActivity : AppCompatActivity() {
 
     /**
      * Ланчер для запроса на включение bluetooth
+     * Тоже самое: ланчер надо вынести в глобальные переменные,
+     * чтобы он инициализировался ДО запуска Активности.
+     * Иначе, после старта виджета перезапросить включение Блютуз
+     * уже не получится
      */
     private val bluetoothLauncher
             = registerForActivityResult(
@@ -124,8 +121,6 @@ class MainActivity : AppCompatActivity() {
         mainActivityModel.current.observe(this, { current ->
             doNavigate(current)
         })
-
-        mainActivityModel.changeEnabled(bluetoothAdapter.isEnabled)
     }
 
     /**
@@ -168,7 +163,7 @@ class MainActivity : AppCompatActivity() {
      */
     override fun onPause() {
         super.onPause()
-        unbindService(BtLeServiceConnector)
+        unbindService(btLeServiceConnector)
     }
 
     /**
@@ -177,7 +172,7 @@ class MainActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         Intent(this, BtLeService::class.java).also { intent ->
-            bindService(intent, BtLeServiceConnector, Context.BIND_AUTO_CREATE)
+            bindService(intent, btLeServiceConnector, Context.BIND_AUTO_CREATE)
         }
     }
 
@@ -192,7 +187,6 @@ class MainActivity : AppCompatActivity() {
             } else {
                 itemEnableBluetooth?.title = getString(R.string.action_enable_bluetooth)
             }
-            Log.d(TAG, "bindMenuReaction $enabled")
         })
     }
 
@@ -216,7 +210,6 @@ class MainActivity : AppCompatActivity() {
                     permission
                 ) == PackageManager.PERMISSION_GRANTED
             ) {
-                Log.d(TAG, "Разрешение на $permission уже есть")
                 mainActivityModel.andReady(true)
             } else {
                 launchPermissions.add(permission)
@@ -233,11 +226,9 @@ class MainActivity : AppCompatActivity() {
      */
     private fun bindNavBar() {
         val navHostFragment = supportFragmentManager.findFragmentById(R.id.nav_host_fragment_content_main) as NavHostFragment
-        val navController = navHostFragment?.findNavController()
-        if(navController != null) {
-            appBarConfiguration = AppBarConfiguration(navController.graph)
-            setupActionBarWithNavController(navController, appBarConfiguration)
-        }
+        val navController = navHostFragment.findNavController()
+        appBarConfiguration = AppBarConfiguration(navController.graph)
+        setupActionBarWithNavController(navController, appBarConfiguration)
     }
 
     /**
@@ -245,7 +236,7 @@ class MainActivity : AppCompatActivity() {
      */
     private fun doNavigate(current: Current) {
         val navHostFragment = supportFragmentManager.findFragmentById(R.id.nav_host_fragment_content_main) as NavHostFragment
-        val navController = navHostFragment?.findNavController()
+        val navController = navHostFragment.findNavController()
         if(navController.currentDestination?.id != current.value) {
             navController.navigate(current.value)
         }
@@ -255,8 +246,8 @@ class MainActivity : AppCompatActivity() {
      * Если Блютуз выключен, включить. Если включён, выключить
      */
     private fun changeBluetoothState() {
-        if(bluetoothAdapter.isEnabled) {
-            bluetoothAdapter.disable()
+        if(bluetoothInterface.bluetoothEnabled) {
+            bluetoothInterface.bluetoothDisable()
         } else {
             requestEnableBluetooth()
         }
