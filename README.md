@@ -352,7 +352,7 @@ Fix: Replace with androidx.fragment.app.FragmentContainerView
 
 ### [ScanFragment](https://github.com/GrandFatherPikhto/BLEScan/blob/master/app/src/main/java/com/grandfatherpikhto/blescan/ScanFragment.kt)
 
-«Умолчальный» фрагмент.
+«Умолчальный» фрагмент, с которого начинается запуск приложения (Home в nav_graph).
 
 Запускается первым. Контейнер для списка найденных устройств. Использует [RecycleView](https://developer.android.com/reference/androidx/recyclerview/widget/RecyclerView), в простейшем варианте. Для его работы создан небольшой адаптер [RvBtAdapter](https://github.com/GrandFatherPikhto/BLEScan/blob/master/app/src/main/java/com/grandfatherpikhto/blescan/adapter/RvBtAdapter.kt). Адаптер сделан очень просто, буквально по [официальному руководству](https://developer.android.com/guide/topics/ui/layout/recyclerview). Так, что подробно описывать его здесь не будем.
 
@@ -963,6 +963,39 @@ if (bluetoothInterface.bluetoothDevice!!.bondState
     doConnect()
 }
 
+```
+
+При отключении от устройства важно дождаться состояния `Disconnected`. Если этого не сделать, 
+
+во-первых, устройство будет недоступно для сканирования и подключения довольно долгий период (от 30 секунд до 2 минут)
+
+во-вторых, будет увеличиваться счётчик активных подключений к Bluetooth в Android. В результате, подключение к устройству будет постоянно сбрасываться, поскольку в Android ограничено количество подключений (в зависимости от версии и реализации).
+
+Для ожидания используется сопрограмма (coroutine) [runBlocking](https://kotlin.github.io/kotlinx.coroutines/kotlinx-coroutines-core/kotlinx.coroutines/run-blocking.html)
+
+```kotlin
+    /**
+     * Дождаться состояния Disconnect.
+     * Если этого не сделать, устройство в течение 30-180 секунд
+     * будет недоступно для повторного подключения и сканирования
+     */
+    fun close() {
+        reconnect = false
+        runBlocking {
+            launch {
+                bluetoothInterface.bluetoothGatt?.let { gatt ->
+                    gatt.disconnect()
+                    Log.d(TAG, "Ждём закрытия")
+                    while (bluetoothInterface.connectorState != State.Disconnected) {
+                        delay(100)
+                        Log.d(TAG, "Проверка state ${bluetoothInterface.connectorState}")
+                    }
+                    bluetoothInterface.bluetoothGatt?.close()
+                    Log.d(TAG, "Дождались")
+                }
+            }
+        }
+    }
 ```
 
 #### Класс обработки обратных вызовов процедуры подключения/исследования/обмена данными/отключения GATT-устройства [LeGattCallback](./app/src/main/java/com/grandfatherpikhto/blescan/service/LeGattCallback.kt)
