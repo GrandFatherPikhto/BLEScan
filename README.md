@@ -6,10 +6,8 @@
 
 ## Зачем?
 
-библиотека
-[NordicSemiconductor Android BLE Library](https://github.com/NordicSemiconductor/Android-BLE-Library/)
-полностью устраивает решает большую часть проблем, работы со стеком BLE на платформе Android.
-C 'нативным' стеком BLE, мало кто хочет связываться, учитвая просто огромный список порой, довольно странных сложностей (Issues), которые неизбежно возникают при создании собственного стека работы с BLE Android. К сожалению, официальном руководстве [Android BLE](https://developer.android.com/guide/topics/connectivity/bluetooth/ble-overview) об этом почти ничего не говорится.
+Библиотека
+[NordicSemiconductor Android BLE Library](https://github.com/NordicSemiconductor/Android-BLE-Library/) полностью устраивает решает большую часть проблем, работы со стеком BLE на платформе Android. C 'нативным' стеком BLE, мало кто хочет связываться, учитвая просто огромный список порой, довольно странных сложностей (Issues), которые неизбежно возникают при создании собственного стека работы с BLE Android. К сожалению, официальном руководстве [Android BLE](https://developer.android.com/guide/topics/connectivity/bluetooth/ble-overview) об этом почти ничего не говорится.
 
 К примеру,
 [проблема работы фильтров при сканировании BLE устройств](https://stackoverflow.com/questions/34065210/android-ble-device-scan-with-filter-is-not-working/34092300), так до сих пор и не решена на многих устройствах.
@@ -25,9 +23,9 @@ C 'нативным' стеком BLE, мало кто хочет связыва
 
 *Чисто писано в бумаге, да забыли про овраги, как по ним ходить © Лев Николаевич Толстой*
 
-Официальный стек [Bluetooth LE](https://developer.android.com/guide/topics/connectivity/bluetooth/ble-overview) Android написан внятно и понятно. Однако, существует содержит длинный, список упорно не исправляемых разработчиками проблем (Issues). Если хотите, загляните в финал документа, там есть несколько ссылок, в т.ч. [Android BLE Issues от Google](https://support.google.com/android/answer/9769184?hl=en).
+Официальная документация по стеку [Bluetooth LE](https://developer.android.com/guide/topics/connectivity/bluetooth/ble-overview) Android написана внятно и прозрачно. Однако, существует содержит длинный, список упорно не исправляемых разработчиками проблем (Issues). Если хотите, загляните в финал документа, там есть несколько ссылок, в т.ч. [Android BLE Issues от Google](https://support.google.com/android/answer/9769184?hl=en).
 
-Вполне опрятный список проблем есть у [SweetBlue Android BLE Issues](https://sweetblue.io/docs/Android-BLE-Issues)
+Однако, список не документированных проблем достаточно длинный. Скажем, вполне опрятный список есть у [SweetBlue Android BLE Issues](https://sweetblue.io/docs/Android-BLE-Issues)
 
 Наконец, самый толковый документ для начинающего BLE-разработчика — это цикл статей Мартина ван Велле:
 
@@ -43,7 +41,7 @@ C 'нативным' стеком BLE, мало кто хочет связыва
 3. [Перевод статьи Мартина ван Велле](https://habr.com/ru/post/538768/) Часть 3. Чтение/Запись характеристик
 4. [Перевод статьи Мартина ван Велле](https://habr.com/ru/post/539740/) Часть 4. Сопряжение устройств
 
-Есть небольшой, но очень дельный ~~китаёзный~~ гайд [Chee Yi Ong](https://punchthrough.com/author/cong/) — [The Ultimate Guide to Android Bluetooth Low Energy](https://punchthrough.com/android-ble-guide/). Настоятельно рекомендую для чтения, если Вы всё-таки решили «залезть» в тему BLE.
+Существует небольшой, но очень дельный ~~китаёзный~~ гайд [Chee Yi Ong](https://punchthrough.com/author/cong/) — [The Ultimate Guide to Android Bluetooth Low Energy](https://punchthrough.com/android-ble-guide/). Настоятельно рекомендую для чтения, если Вы всё-таки решили «залезть» в тему BLE.
 
 Можно с уверенностью утверждать, что если Вы будете следовать в разработке своей библиотеки рекомендациям эти руководства, Ваше приложение будет работать хотя бы на 80% современных мобильных устройств, учитывая что особо не хочется поддерживать всё, что ниже версии Marshmallow (хотя, это не так уж и трудно — описано довольно подробно) и на 12-й версии описывают какие-то трудно объяснимые проблемы.
 
@@ -53,10 +51,10 @@ C 'нативным' стеком BLE, мало кто хочет связыва
 
 Пожалуй, основная проблема BLE — это нестабильный процесс подключения к устройству
 
-1. [`BluetoothGatt.discoverServices`](https://developer.android.com/reference/android/bluetooth/BluetoothGatt#discoverServices())
+1. [BluetoothGatt.discoverServices](https://developer.android.com/reference/android/bluetooth/BluetoothGatt#discoverServices())
    Довольно часто возвращает `false`. Некоторые попытки сниффинга обмена данными по Bluetooth говорят о нарушениях протокола Bluetooth 4+ в ОС Android. Самый простой способ, предложенный, опять-таки [Nordic-Semiconductor](), быстрое сканирование устройства с фильтром по адресу и повторная попытка подключения. Согласно официальному руководству, за 30 секунд у нас всего 5 попыток. После этого устройство блокируется системой примерно на 1 минуту.
 
-2. [`BluetoothDevice.connectGatt`](https://developer.android.com/reference/android/bluetooth/BluetoothDevice#connectGatt(android.content.Context,%20boolean,%20android.bluetooth.BluetoothGattCallback)) при неправильном использовании параметра `autoConnect` так же может вернуть ошибку со статусом **6** или **131** (плохо объяснённые в официальном руководстве). Причём правильное значение параметра, `autoConnect`, зависит от версии Android и модели мобильного телефона. Недокументированная мистика!
+2. [BluetoothDevice.connectGatt](https://developer.android.com/reference/android/bluetooth/BluetoothDevice#connectGatt(android.content.Context,%20boolean,%20android.bluetooth.BluetoothGattCallback)) при неправильном использовании параметра `autoConnect` так же может вернуть ошибку со статусом **6** или **131** (плохо объяснённые в официальном руководстве). Причём правильное значение параметра, `autoConnect`, зависит от версии Android и модели мобильного телефона. Недокументированная мистика!
    Штатное решение, придуманное программистами NordicSemiconductor: в качестве значения `autoConnect` использовать `bluetoothDevice!!.type == luetoothDevice.DEVICE_TYPE_UNKNOWN`. Подробнее, см. [Martin van Wellie // Making Android BLE work — part 2](https://medium.com/@martijn.van.welie/making-android-ble-work-part-2-47a3cdaade07?source=user_profile---------2-------------------------------)
 
 3. [BluetoothGattCallback.onConnectionStateChange](https://stackoverflow.com/questions/38666462/android-catching-ble-connection-fails-disconnects) не всегда срабатывает при отключении устройства, если скажем, оно не сопряжено с телефоном (некоторые устройства без сопряжения автоматически  разрывают связь через 30 секунд)
@@ -307,7 +305,7 @@ Fix: Replace with androidx.fragment.app.FragmentContainerView
 ```
 
 Штатный код вызова
-[`findNavController`](https://developer.android.com/reference/androidx/navigation/Navigation#findNavController(android.app.Activity,kotlin.Int))
+[findNavController](https://developer.android.com/reference/androidx/navigation/Navigation#findNavController(android.app.Activity,kotlin.Int))
 
 ```kotlin
         val navController = findNavController(R.id.nav_host_fragment_content_main)
@@ -316,7 +314,7 @@ Fix: Replace with androidx.fragment.app.FragmentContainerView
 ```
 
 Работать уже не будет. Так, что его надо заменить на обращение к
-[`supportFragmentManager`](https://developer.android.com/reference/androidx/fragment/app/FragmentActivity#getSupportFragmentManager())
+[supportFragmentManager](https://developer.android.com/reference/androidx/fragment/app/FragmentActivity#getSupportFragmentManager())
 (см. [Navigation](https://developer.android.com/guide/navigation))
 
 ```kotlin
@@ -506,10 +504,10 @@ Fix: Replace with androidx.fragment.app.FragmentContainerView
 ### Передачу данных между сервисами и виджетами можно организовать аж семью способами
 
 1. Можно создать широковещательные приемники/передатчики и рассылать/получать уведомления.
-   при помощи [`Broadcastreceiver`](https://developer.android.com/reference/android/content/BroadcastReceiver),
-   [`IntentFilter`](https://developer.android.com/reference/android/content/IntentFilter),
-   [`sendBroadcast`](https://developer.android.com/reference/android/content/Context#sendBroadcast(android.content.Intent)),
-   как это достаточно подробно описано в примерах [`broadcasts`](https://developer.android.com/guide/components/broadcasts).
+   при помощи [Broadcastreceiver](https://developer.android.com/reference/android/content/BroadcastReceiver),
+   [IntentFilter](https://developer.android.com/reference/android/content/IntentFilter),
+   [sendBroadcast](https://developer.android.com/reference/android/content/Context#sendBroadcast(android.content.Intent)),
+   как это достаточно подробно описано в примерах [broadcasts](https://developer.android.com/guide/components/broadcasts).
 
 ```java
 Intent intent = new Intent("com.grandfatherpikhto.blescan.NEW_DEVICE_DETECTED");
@@ -532,7 +530,7 @@ Intent().also { intent ->
 }
 ```
 
-И не забыть добавить описание сообщений в [`AndroidManifest.xml`](./app/src/main/AndroidManifest.xml)
+И не забыть добавить описание сообщений в [AndroidManifest.xml](./app/src/main/AndroidManifest.xml)
 
 ```xml
 <receiver android:name=".MyBroadcastReceiver"  android:exported="true">
@@ -546,9 +544,9 @@ Intent().also { intent ->
 а. Нельзя быстро передавать объекты и скорость передачи относительно невысока, а нагрузка на Android при больших потоках данных, возрастает.
 б. Можно передавать только простые данные. Такие, как `String`, `Int`, `Float` и т.д.
 
-2. Если бы нагрузка была небольшой, можно было бы использовать [`Preferences`](https://developer.android.com/reference/androidx/preference/package-summary). Однако, если, например, нужно управлять устройством, типа Адресной Светодиодной Лентой, поток данных будет значительным и хотелось бы, чтобы задержка при передаче данных была бы минимальной. Этот способ не подойдёт.
+2. Если бы нагрузка была небольшой, можно было бы использовать [Preferences](https://developer.android.com/reference/androidx/preference/package-summary). Однако, если, например, нужно управлять устройством, типа Адресной Светодиодной Лентой, поток данных будет значительным и хотелось бы, чтобы задержка при передаче данных была бы минимальной. Этот способ не подойдёт.
 
-3. Для кратковременного совместного использования сложных непостоянных определенных пользователем объектов можно использовать синглетон приложений. Класс [`android.app.Application`](https://developer.android.com/reference/android/app/Application).
+3. Для кратковременного совместного использования сложных непостоянных определенных пользователем объектов можно использовать синглетон приложений. Класс [android.app.Application](https://developer.android.com/reference/android/app/Application).
 
    Он имеет несколько методов жизненного цикла и будет автоматически создан `Android`, если зарегистрировать его в [AndroidManifest.xml](./app/src/main/AndroidManifest.xml):
 
@@ -559,15 +557,15 @@ Intent().also { intent ->
   </application>
 ```
 
-Доступ к синглетону приложения можно получить через [`getApplication()`](https://developer.android.com/reference/android/app/Activity#getApplication())  из любого действия или из [службы](https://developer.android.com/reference/android/app/Service#getApplication()).
+Доступ к синглетону приложения можно получить через [getApplication()](https://developer.android.com/reference/android/app/Activity#getApplication())  из любого действия или из [службы](https://developer.android.com/reference/android/app/Service#getApplication()).
 
 4. Можно создать публичное статическое поле/метод.
 
    Сделать данные доступными для всех действий/служб — использовать общедоступные статические поля и/или методы. Доступ к этим статическим полям легко получить из любого другого класса в приложении. Чтобы поделиться объектом, действием, которое создает ваш объект, устанавливает статическое поле, указывающее на этот объект, а любое другое действие, которое хочет использовать этот объект, можно просто обратиться к этому статическому полю через имя класса-держателя.
 
-5. Можно использовать [`HashMap`](https://developer.android.com/reference/java/util/HashMap)
+5. Можно использовать [HashMap](https://developer.android.com/reference/java/util/HashMap)
    слабюых ссылок на объекты
-   [`WeakReferences`](https://developer.android.com/reference/java/lang/ref/WeakReference)
+   [WeakReferences](https://developer.android.com/reference/java/lang/ref/WeakReference)
    для объектов с длинными ключами.
 
    Когда действие хочет передать объект другому действию, оно просто помещает объект на карту и отправляет ключ (который является уникальным Long на основе счетчика или отметки времени)
@@ -575,7 +573,7 @@ Intent().also { intent ->
 
 6. Синглтон-класс
 
-   У использования статического синглтона есть преимущества. Например, можно ссылаться на объекты, не используя [`getApplication()`](https://developer.android.com/reference/android/app/Activity#getApplication()) к классу, зависящему от приложения, или можно сделать интерфейс на все подклассы Application, чтобы различные модули могли ссылаться на этот интерфейс вместо этого.
+   У использования статического синглтона есть преимущества. Например, можно ссылаться на объекты, не используя [getApplication()](https://developer.android.com/reference/android/app/Activity#getApplication()) к классу, зависящему от приложения, или можно сделать интерфейс на все подклассы Application, чтобы различные модули могли ссылаться на этот интерфейс вместо этого.
 
    Жизненный цикл статики не находится под вашим контролем; поэтому, чтобы соответствовать модели жизненного цикла, класс приложения должен инициировать и удалять эти статические объекты в методах `onCreate()` и `onTerminate()` класса приложения.
 
@@ -583,25 +581,21 @@ Intent().also { intent ->
    сохранять от одного вызова действия к другому, необходимо представить эти данные как состояние, которое сохраняется действием, когда ему сообщается, что оно может исчезнуть.
    Для совместного использования сложных постоянных определенных пользователем объектов есть следующие подходы:
 
-   • [`Application Preferences`](https://developer.android.com/jetpack/androidx/releases/preference)
-   • [`Files`](https://developer.android.com/reference/java/io/File)
-   • [`contentProviders`](https://developer.android.com/reference/android/content/ContentProvider)
-   • [`SQLite`](https://developer.android.com/training/data-storage/sqlite) DB
+   • [Application Preferences](https://developer.android.com/jetpack/androidx/releases/preference)
+   • [Files](https://developer.android.com/reference/java/io/File)
+   • [contentProviders](https://developer.android.com/reference/android/content/ContentProvider)
+   • [SQLite](https://developer.android.com/training/data-storage/sqlite) DB
 
-   Если общие данные необходимо сохранить в точках, где процесс приложения может быть остановлен,
-   данные можно помкестить в постоянное хранилище, такое как настройки приложения,
-   база данных [`SQLite`](https://developer.android.com/training/data-storage/sqlite),
-   файлы или [`ContentProviders`](https://developer.android.com/reference/android/content/ContentProvider).
+   Если общие данные необходимо сохранить в точках, где процесс приложения может быть остановлен, данные можно помкестить в постоянное хранилище, такое как настройки приложения, база данных [SQLite](https://developer.android.com/training/data-storage/sqlite), файлы или [ContentProviders](https://developer.android.com/reference/android/content/ContentProvider).
+   
    Подробнее в разделе [хранилище данных](https://developer.android.com/training/data-storage/room).
 
-   В данном случае выбран синглтон (объект). Может быть, то не очень оптимально в смысле экономии
-   памяти, но удобно в использовании.
-   Создано два класса: [`BtLeServiceConnector`](./app/src/main/java/com/grandfatherpikhto/blescan/service/BtLeServiceConnector.kt)
-   и [`BtLeServiceConnector`](./app/src/main/java/com/grandfatherpikhto/blescan/service/BtLeServiceConnector.kt)
+   В данном случае выбран синглтон (объект). Может быть, то не очень оптимально в смысле экономии памяти, но удобно в использовании.
+   Создано два класса: [BtLeServiceConnector](./app/src/main/java/com/grandfatherpikhto/blescan/service/BtLeServiceConnector.kt) и [BtLeServiceConnector](./app/src/main/java/com/grandfatherpikhto/blescan/service/BtLeServiceConnector.kt)
 
 ### Активация сервиса
 
-Привязка сервиса находится в [`MainActivity`](./app/src/main/java/com/grandfatherpikhto/blescan/MainActivity.kt). Можно использовать [`BleScanApp`](./app/src/main/java/com/grandfatherpikhto/blescan/BleScanApp.kt) и наследовать сервисы от [`LifecycleService`](https://developer.android.com/reference/androidx/lifecycle/LifecycleService) при повороте экрана сервисы не будут уничтожаться, скажем, при повороте экрана или уходе приложения в фоновый режим.
+Привязка сервиса находится в [MainActivity](./app/src/main/java/com/grandfatherpikhto/blescan/MainActivity.kt). Можно использовать [BleScanApp](./app/src/main/java/com/grandfatherpikhto/blescan/BleScanApp.kt) и наследовать сервисы от [LifecycleService](https://developer.android.com/reference/androidx/lifecycle/LifecycleService) при повороте экрана сервисы не будут уничтожаться, скажем, при повороте экрана или уходе приложения в фоновый режим.
 
 Класс [BtLeServiceConnector](./app/src/main/java/com/grandfatherpikhto/blescan/service/BtLeServiceConnector.kt) наследован от [ServiceConnection](https://developer.android.com/reference/android/content/ServiceConnection) и используется для привязывания (вызова) сервиса. Соответственно, вызов можно, конечно, повторять из из каждого фрагмента, но если сервис уже создан, будет возвращён уже существующий сервис.
 
@@ -616,7 +610,7 @@ Intent().also { intent ->
     }
 ```
 
-и отвязывание сервиса происходит по событию жизненного цикла `onStop()`
+и отвязывание (unbind) сервиса происходит по событию жизненного цикла `onStop()`
 
 ```kotlin
     override fun onPause() {
