@@ -3,9 +3,8 @@ package com.grandfatherpikhto.blescan.service
 import android.bluetooth.*
 import android.util.Log
 import com.grandfatherpikhto.blescan.model.BtLeDevice
+import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.DelicateCoroutinesApi
-import kotlinx.coroutines.InternalCoroutinesApi
 
 @InternalCoroutinesApi
 @DelicateCoroutinesApi
@@ -14,24 +13,26 @@ class BtLeConnector(private val service: BtLeService) {
     companion object {
         const val TAG:String = "BtLeService"
     }
-    /** */
+    /**
+     * Список состояний GATT, процедуры подключения, пересканирования
+     */
     enum class State(val value:Int) {
-        Unknown(0x00),
-        Disconnecting(0x01),
-        Disconnected(0x02),
-        Connecting(0x03),
-        Connected(0x04),
-        Discovering(0x05),
-        Discovered(0x06),
-        Rescan(0x07),
-        CharWrited(0x08),
-        CharReaded(0x09),
-        CharChanged(0x0A),
-        DescrWrited(0x0B),
-        DescrReaded(0x0C),
-        ServiceChanged(0x0D),
-        Error(0xFE),
-        FatalError(0xFF)
+        Unknown(0x00),       // Просто, для инициализации
+        Disconnecting(0x03), // Отключение от GATT
+        Disconnected(0x02),  // Отключены
+        Connecting(0x03),    // Процесс подключения к GATT
+        Connected(0x04),     // Подключены
+        Discovering(0x05),   // Начали исследовать сервисы
+        Discovered(0x06),    // Сервисы исследованы
+        Rescan(0x07),        // Запущено пересканирование по адресу устройства
+        CharWrited(0x08),    // Характеристика записана
+        CharReaded(0x09),    // Характеристика прочитана
+        CharChanged(0x0A),   // Дескриптор изменён
+        DescrWrited(0x0B),   // Дескриптор записан
+        DescrReaded(0x0C),   // Дескриптор прочитан
+        ServiceChanged(0x0D),// Сервис изменился
+        Error(0xFE),         // Получена ошибка
+        FatalError(0xFF)     // Получена фатальная ошибка. Возвращаемся к Фрагменту сканирования устройств
     }
 
     /** */
@@ -40,6 +41,10 @@ class BtLeConnector(private val service: BtLeService) {
     private var leGattCallback:LeGattCallback? = null
     /** */
     private val bluetoothInterface: BluetoothInterface by BluetoothInterfaceLazy()
+    /** Нужно для того, чтобы когда вызывается функция close(), не запускалось бы
+     * повторное событие подключения
+     **/
+    private var reconnect:Boolean = true
     /** */
     val connectorListener = object: BluetoothListener {
         override fun onChangeConnectorState(oldState: State, newState: State) {
@@ -47,11 +52,15 @@ class BtLeConnector(private val service: BtLeService) {
             when (newState) {
                 State.Disconnected -> {
                     doClose()
-                    doRescan()
+                    if(reconnect) {
+                        doRescan()
+                    }
                 }
                 State.Error -> {
                     doClose()
-                    doRescan()
+                    if(reconnect) {
+                        doRescan()
+                    }
                 }
                 else -> {
 
@@ -64,7 +73,9 @@ class BtLeConnector(private val service: BtLeService) {
             if (bluetoothInterface.scannerState == BtLeScanner.State.Stopped
                 && bluetoothInterface.connectorState == State.Rescan
             ) {
-                doConnect()
+                if(reconnect) {
+                    doConnect()
+                }
             }
         }
 
@@ -131,10 +142,25 @@ class BtLeConnector(private val service: BtLeService) {
      *
      */
     fun close() {
-        bluetoothInterface.bluetoothGatt?.disconnect()
+        reconnect = false
+        runBlocking {
+            launch {
+                bluetoothInterface.bluetoothGatt?.let { gatt ->
+                    gatt.disconnect()
+                    Log.d(TAG, "Ждём закрытия")
+                    while (bluetoothInterface.connectorState != State.Disconnected) {
+                        delay(100)
+                        Log.d(TAG, "Проверка state ${bluetoothInterface.connectorState}")
+                    }
+                    bluetoothInterface.bluetoothGatt?.close()
+                    Log.d(TAG, "Дождались")
+                }
+            }
+        }
     }
 
     fun connect(btLeDevice: BtLeDevice) {
+        reconnect = true
         bluetoothInterface.currentDevice = btLeDevice
         if (bluetoothInterface.currentDevice != null) {
             bluetoothInterface.bluetoothDevice =
