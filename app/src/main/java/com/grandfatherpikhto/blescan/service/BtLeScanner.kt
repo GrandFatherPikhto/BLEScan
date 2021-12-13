@@ -45,7 +45,9 @@ class BtLeScanner(private val service: BtLeService) {
     private var leScanCallback: LeScanCallback? = null
     /** */
     private var mode = Mode.FindAll
-    /** */
+    /**
+     * Если установлен режим Mode.StopOnFind, процесс сканирования останавливается
+     */
     private val bluetoothListener:BluetoothListener = object: BluetoothListener {
         override fun onFindDevice(btLeDevice: BtLeDevice?) {
             super.onFindDevice(btLeDevice)
