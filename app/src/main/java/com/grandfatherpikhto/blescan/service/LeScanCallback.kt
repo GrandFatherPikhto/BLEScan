@@ -20,10 +20,6 @@ class LeScanCallback(service: BtLeService): ScanCallback() {
         const val TAG: String = "LeScanCallback"
     }
 
-    interface LeScannerCallback {
-        fun onFindDevice(btLeDevice: BtLeDevice?)
-        fun onError(error: Int)
-    }
     /** */
     private val addresses = mutableListOf<String>()
     /** */
@@ -50,9 +46,11 @@ class LeScanCallback(service: BtLeService): ScanCallback() {
         return true
     }
 
+    /**
+     *
+     */
     private fun emitDevice(bluetoothDevice: BluetoothDevice?) {
         if(bluetoothDevice != null) {
-            // Log.d(TAG, "emitDevice [${bluetoothDevice.name}, ${bluetoothDevice.address}, checkName: ${checkName(bluetoothDevice)}, checkAddress: ${checkAddress(bluetoothDevice)}]")
             if(checkName(bluetoothDevice)
                 &&  checkAddress(bluetoothDevice)) {
                 bluetoothInterface.deviceFound = bluetoothDevice.toBtLeDevice()
