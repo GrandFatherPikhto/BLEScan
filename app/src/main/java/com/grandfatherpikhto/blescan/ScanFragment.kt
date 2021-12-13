@@ -146,7 +146,7 @@ class ScanFragment : Fragment() {
                     requireContext(),
                     "Подключаемся к ${model.address}",
                     Toast.LENGTH_LONG).show()
-                connectToBt(model)
+                connectToBluetoothDevice(model)
             }
         })
 
@@ -218,7 +218,7 @@ class ScanFragment : Fragment() {
         })
     }
 
-    private fun connectToBt(model: BtLeDevice) {
+    private fun connectToBluetoothDevice(model: BtLeDevice) {
         mainActivityModel.changeDevice(model)
         mainActivityModel.changeCurrent(MainActivity.Current.Device)
     }
