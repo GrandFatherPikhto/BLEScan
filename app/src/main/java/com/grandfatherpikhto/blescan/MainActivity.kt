@@ -199,7 +199,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * Проверка группы разрешений
+     * Запрос группы разрешений
      */
     private fun requestPermissions(permissions: Array<String>) {
         val launchPermissions:MutableList<String> = mutableListOf<String>()
