@@ -149,13 +149,10 @@ class BtLeConnector(private val service: BtLeService) {
             launch {
                 bluetoothInterface.bluetoothGatt?.let { gatt ->
                     gatt.disconnect()
-                    Log.d(TAG, "Ждём закрытия")
                     while (bluetoothInterface.connectorState != State.Disconnected) {
                         delay(100)
-                        Log.d(TAG, "Проверка state ${bluetoothInterface.connectorState}")
                     }
                     bluetoothInterface.bluetoothGatt?.close()
-                    Log.d(TAG, "Дождались")
                 }
             }
         }
