@@ -11,7 +11,7 @@ import kotlin.properties.Delegates
  */
 @DelicateCoroutinesApi
 @InternalCoroutinesApi
-class BtGattCallback  : BluetoothGattCallback() {
+class LeGattCallback  : BluetoothGattCallback() {
     companion object {
         const val TAG: String = "BtGattCallback"
         const val MAX_TRY_CONNECT = 6
