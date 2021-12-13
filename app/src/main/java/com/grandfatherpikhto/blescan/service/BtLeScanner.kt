@@ -39,8 +39,6 @@ class BtLeScanner(private val service: BtLeService) {
     /** */
     private val bluetoothInterface:BluetoothInterface by BluetoothInterfaceLazy()
     /** */
-    private val scannerCallbacks:MutableList<ScannerCallback> = mutableListOf()
-    /** */
     private lateinit var bluetoothLeScanner:BluetoothLeScanner
 
     /** */
