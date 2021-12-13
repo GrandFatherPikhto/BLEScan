@@ -139,7 +139,9 @@ class BtLeConnector(private val service: BtLeService) {
     }
 
     /**
-     *
+     * Дождаться состояния Disconnect.
+     * Если этого не сделать, устройство в течение 30-60 секунд
+     * будет недоступно для повторного подключения и сканирования
      */
     fun close() {
         reconnect = false
