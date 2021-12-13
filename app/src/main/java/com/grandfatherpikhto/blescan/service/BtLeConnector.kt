@@ -3,13 +3,9 @@ package com.grandfatherpikhto.blescan.service
 import android.bluetooth.*
 import android.util.Log
 import com.grandfatherpikhto.blescan.model.BtLeDevice
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.InternalCoroutinesApi
-import kotlin.properties.Delegates
 
 @InternalCoroutinesApi
 @DelicateCoroutinesApi
@@ -41,7 +37,7 @@ class BtLeConnector(private val service: BtLeService) {
     /** */
     private val charWriteMutex = Mutex()
     /** */
-    private var btGattCallback:BtGattCallback? = null
+    private var leGattCallback:LeGattCallback? = null
     /** */
     private val bluetoothInterface: BluetoothInterface by BluetoothInterfaceLazy()
     /** */
@@ -87,7 +83,7 @@ class BtLeConnector(private val service: BtLeService) {
         Log.d(TAG, "onCreate()")
 
         if(charWriteMutex.isLocked) charWriteMutex.unlock()
-        btGattCallback = BtGattCallback()
+        leGattCallback = LeGattCallback()
         bluetoothInterface.addListener(connectorListener)
     }
 
@@ -115,7 +111,7 @@ class BtLeConnector(private val service: BtLeService) {
             device.connectGatt(
                 service.applicationContext,
                 device.type == BluetoothDevice.DEVICE_TYPE_UNKNOWN,
-                btGattCallback,
+                leGattCallback,
                 BluetoothDevice.TRANSPORT_LE
             )
             bluetoothInterface.connectorState = State.Connecting
