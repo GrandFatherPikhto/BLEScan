@@ -17,22 +17,22 @@ class BtLeConnector(private val service: BtLeService) {
      * Список состояний GATT, процедуры подключения, пересканирования
      */
     enum class State(val value:Int) {
-        Unknown(0x00),       // Просто, для инициализации
-        Disconnecting(0x03), // Отключение от GATT
-        Disconnected(0x02),  // Отключены
-        Connecting(0x03),    // Процесс подключения к GATT
-        Connected(0x04),     // Подключены
-        Discovering(0x05),   // Начали исследовать сервисы
-        Discovered(0x06),    // Сервисы исследованы
-        Rescan(0x07),        // Запущено пересканирование по адресу устройства
-        CharWrited(0x08),    // Характеристика записана
-        CharReaded(0x09),    // Характеристика прочитана
-        CharChanged(0x0A),   // Дескриптор изменён
-        DescrWrited(0x0B),   // Дескриптор записан
-        DescrReaded(0x0C),   // Дескриптор прочитан
-        ServiceChanged(0x0D),// Сервис изменился
-        Error(0xFE),         // Получена ошибка
-        FatalError(0xFF)     // Получена фатальная ошибка. Возвращаемся к Фрагменту сканирования устройств
+        Unknown(0x00),        // Просто, для инициализации
+        Disconnecting(0x03),  // Отключение от GATT
+        Disconnected(0x02),   // Отключены
+        Connecting(0x03),     // Процесс подключения к GATT
+        Connected(0x04),      // Подключены
+        Discovering(0x05),    // Начали исследовать сервисы
+        Discovered(0x06),     // Сервисы исследованы
+        Rescan(0x07),         // Запущено пересканирование по адресу устройства
+        CharWrited(0x08),     // Характеристика записана
+        CharReaded(0x09),     // Характеристика прочитана
+        CharChanged(0x0A),    // Дескриптор изменён
+        DescrWrited(0x0B),    // Дескриптор записан
+        DescrReaded(0x0C),    // Дескриптор прочитан
+        ServiceChanged(0x0D), // Сервис изменился
+        Error(0xFE),          // Получена ошибка
+        FatalError(0xFF)      // Получена фатальная ошибка. Возвращаемся к Фрагменту сканирования устройств
     }
 
     /** */
