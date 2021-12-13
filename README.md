@@ -2,47 +2,77 @@
 
 ![Программа BLEScan, скрин 01](./blescan01.png "Программа BLEScan, скрин 1")
 ![Программа BLEScan, скрин 02](./blescan02.png "Программа BLEScan, скрин 2")
+![Программа BLEScan, скрин 03](./blescan03.png "Программа BLEScan, скрин 3")
 
 ## Зачем?
 
-Честно говоря, библиотека
+библиотека
 [NordicSemiconductor Android BLE Library](https://github.com/NordicSemiconductor/Android-BLE-Library/)
-полностью устраивает всех, кто хочет работать со стеком BLE на платформе Android.
-C 'нативным' стеком BLE, возможно просто мало кто хочет связываться, учитвая просто огромный список сложностей (Issues),
-которые возникают при создании собственного стека работы с BLE Android. К сожалению, официальном руководстве
-[Android BLE](https://developer.android.com/guide/topics/connectivity/bluetooth/ble-overview) об этом говорится очень немного.
+полностью устраивает решает большую часть проблем, работы со стеком BLE на платформе Android.
+C 'нативным' стеком BLE, мало кто хочет связываться, учитвая просто огромный список порой, довольно странных сложностей (Issues), которые неизбежно возникают при создании собственного стека работы с BLE Android. К сожалению, официальном руководстве [Android BLE](https://developer.android.com/guide/topics/connectivity/bluetooth/ble-overview) об этом почти ничего не говорится.
 
 К примеру,
 [проблема работы фильтров при сканировании BLE устройств](https://stackoverflow.com/questions/34065210/android-ble-device-scan-with-filter-is-not-working/34092300), так до сих пор и не решена на многих устройствах.
 
-Конечно, есть прекрасная облегчённая библиотека Мартина Велле [BLESSED](https://github.com/weliem/blessed-android) написанная на Java
+Также, есть прекрасная облегчённая библиотека Мартина Велле [BLESSED](https://github.com/weliem/blessed-android) написанная на Java
 и аналогичная версия на Kotlin [Coroutines BLESSED](https://github.com/weliem/blessed-android-coroutines)
 
 Однако, иногда бывает нужно сделать что-то совершенно своё, особенное. Для этого надо хорошее понимание основных проблемм работы со стеком BLE.
 
-То есть, создание собственной библиотеки BLE имеет, скорее учебное значение, нежели практическое применение.
+То есть, создание собственной библиотеки BLE имеет, скорее учебное значение, нежели практическое применение. Хотя, этой библиотекой интерсивно пользуюсь для работы, например, с [ESP32](https://www.espressif.com)
 
-## Основные проблемы
+## Как?
 
-Пожалуй, основная проблема BLE — это нестабильное подключение к устройству.
+*Чисто писано в бумаге, да забыли про овраги, как по ним ходить © Лев Николаевич Толстой*
+
+Официальный стек [Bluetooth LE](https://developer.android.com/guide/topics/connectivity/bluetooth/ble-overview) Android написан внятно и понятно. Однако, существует содержит длинный, список упорно не исправляемых разработчиками проблем (Issues). Если хотите, загляните в финал документа, там есть несколько ссылок, в т.ч. [Android BLE Issues от Google](https://support.google.com/android/answer/9769184?hl=en).
+
+Вполне опрятный список проблем есть у [SweetBlue Android BLE Issues](https://sweetblue.io/docs/Android-BLE-Issues)
+
+Наконец, самый толковый документ для начинающего BLE-разработчика — это цикл статей Мартина ван Велле:
+
+1. [Making Android BLE work — part 1 // Martin van Welie](https://medium.com/@martijn.van.welie/making-android-ble-work-part-1-a736dcd53b02?source=user_profile---------3-------------------------------) Часть 1. Как заставить Android BLE работать - часть 1
+2. [Making Android BLE work — part 2 // Martin van Welie](https://medium.com/@martijn.van.welie/making-android-ble-work-part-2-47a3cdaade07?source=user_profile---------2-------------------------------) Часть 2. Подключение, отключение, исследование сервисов
+3. [Making Android BLE work — part 3 // Martin van Welie](https://medium.com/@martijn.van.welie/making-android-ble-work-part-3-117d3a8aee23?source=user_profile---------1-------------------------------) Часть 3. чтение/запись характеристик; включение/выключение уведомлений
+4. [Making Android BLE work — part 4 // Martin van Welie](https://medium.com/@martijn.van.welie/making-android-ble-work-part-4-72a0b85cb442?source=user_profile---------0-------------------------------) Часть 4. Сопряжение с устройствами
+
+Есть вполне нормальный перевод этого цикла на Хабре:
+
+1. [Перевод статьи Мартина ван Велле](https://habr.com/ru/post/536392/) Часть 1. Сканирование
+2. [Перевод статьи Мартина ван Велле](https://habr.com/ru/post/537526/) Часть 2. Подключение/Отключение
+3. [Перевод статьи Мартина ван Велле](https://habr.com/ru/post/538768/) Часть 3. Чтение/Запись характеристик
+4. [Перевод статьи Мартина ван Велле](https://habr.com/ru/post/539740/) Часть 4. Сопряжение устройств
+
+Есть небольшой, но очень дельный ~~~китаёзный гайд~~~ [Chee Yi Ong](https://punchthrough.com/author/cong/) — [The Ultimate Guide to Android Bluetooth Low Energy](https://punchthrough.com/android-ble-guide/). Настоятельно рекомендую для чтения, если Вы всё-таки решили «залезть» в тему BLE.
+
+Можно с уверенностью утверждать, что если Вы будете следовать в разработке своей библиотеки рекомендациям эти руководства, Ваше приложение будет работать хотя бы на 80% современных мобильных устройств, учитывая что особо не хочется поддерживать всё, что ниже версии Marshmallow (хотя, это не так уж и трудно — описано довольно подробно) и на 12-й версии описывают какие-то трудно объяснимые проблемы.
+
+В частности, [Android 12 Новые разрешения Bluetooth](https://stackoverflow.com/questions/67722950/android-12-new-bluetooth-permissions). Однако, утверждается, что эти проблемы исправлены. Нет гарантии, что не возникнут новые.
+
+### Самые известные проблемы
+
+Пожалуй, основная проблема BLE — это нестабильный процесс подключения к устройству
 
 1. [`BluetoothGatt.discoverServices`](https://developer.android.com/reference/android/bluetooth/BluetoothGatt#discoverServices())
-    Довольно часто возвращает `false`. Некоторые попытки сниффинга обмена данными по Bluetooth говорят о нарушениях протокола Bluetooth 4+ в ОС Android.
+   Довольно часто возвращает `false`. Некоторые попытки сниффинга обмена данными по Bluetooth говорят о нарушениях протокола Bluetooth 4+ в ОС Android. Самый простой способ, предложенный, опять-таки [Nordic-Semiconductor](), быстрое сканирование устройства с фильтром по адресу и повторная попытка подключения. Согласно официальному руководству, за 30 секунд у нас всего 5 попыток. После этого устройство блокируется системой примерно на 1 минуту.
 
-2. [`BluetoothDevice.connectGatt`](https://developer.android.com/reference/android/bluetooth/BluetoothDevice#connectGatt(android.content.Context,%20boolean,%20android.bluetooth.BluetoothGattCallback))
-    при неправильном использовании параметра `autoConnect` так же может вернуть ошибку со статусом 6 или 131 (плохо объяснённые в официальном руководстве). Причём правильное значение параметра, `autoConnect`, зависит от версии Android и модели мобильного телефона. Недокументированная мистика!
-    Штатное решение, придуманное программистами NordicSemiconductor: в качестве значения `autoConnect` использовать `bluetoothDevice!!.type == BluetoothDevice.DEVICE_TYPE_UNKNOWN`. Подробнее, см. [Martin van Wellie // Making Android BLE work — part 2](https://medium.com/@martijn.van.welie/making-android-ble-work-part-2-47a3cdaade07?source=user_profile---------2-------------------------------)
+2. [`BluetoothDevice.connectGatt`](https://developer.android.com/reference/android/bluetooth/BluetoothDevice#connectGatt(android.content.Context,%20boolean,%20android.bluetooth.BluetoothGattCallback)) при неправильном использовании параметра `autoConnect` так же может вернуть ошибку со статусом **6** или **131** (плохо объяснённые в официальном руководстве). Причём правильное значение параметра, `autoConnect`, зависит от версии Android и модели мобильного телефона. Недокументированная мистика!
+   Штатное решение, придуманное программистами NordicSemiconductor: в качестве значения `autoConnect` использовать `bluetoothDevice!!.type == luetoothDevice.DEVICE_TYPE_UNKNOWN`. Подробнее, см. [Martin van Wellie // Making Android BLE work — part 2](<https://medium.com/@martijn.van.welie/> making-android-ble-work-part-2-47a3cdaade07?source=user_profile---------2-------------------------------)
 
-3. [BluetoothGattCallback.onConnectionStateChange](https://stackoverflow.com/questions/38666462/android-catching-ble-connection-fails-disconnects)
-    не всегда срабатывает при отключении устройства, если скажем, оно не сопряжено с телефоном (некоторые устройства без сопряжения автоматически
-    разрывают связь через 30 секунд)
+3. [BluetoothGattCallback.onConnectionStateChange](https://stackoverflow.com/questions/38666462/android-catching-ble-connection-fails-disconnects) не всегда срабатывает при отключении устройства, если скажем, оно не сопряжено с телефоном (некоторые устройства без сопряжения автоматически  разрывают связь через 30 секунд)
 
-4. Количество [разрешений](https://developer.android.com/reference/android/Manifest.permission),
-    необходимых для
-    [включения/выключения, сканирования, считывания рекламы](https://developer.android.com/guide/topics/connectivity/bluetooth/permissions)
-    [`Bluetooth`](https://developer.android.com/guide/topics/connectivity/bluetooth),
-    [BLE](https://developer.android.com/guide/topics/connectivity/bluetooth/ble-overview),
-    постоянно колеблется от одной версии к другой. И с каждой версией список только растёт:
+4. Количество [разрешений](https://developer.android.com/reference/android/Manifest.permission), необходимых для [включения/выключения, сканирования, считывания рекламы](https://developer.android.com/guide/topics/connectivity/bluetooth/permissions) [`Bluetooth`](https://developer.android.com/guide/topics/connectivity/bluetooth), [BLE](https://developer.android.com/guide/topics/connectivity/bluetooth/ble-overview), постоянно растёт от одной версии к другой. И с каждой версией список только растёт.
+
+5. Как уже и было сказано, режим фильтрации сканирования по адресу на многих устройствах до сих пор не работает. По какой-то причине этот дефект не устранён за последние... да лет пять тому, как, чтобы не соврать. Поэтому, нужно делать свой фильтр, что совсем не сложно, но не понятно, почему до сих пор не реализован в `штатном` режиме?
+
+## Структура программы
+
+### [MainActivity](./app/src/main/java/com/grandfatherpikhto/blescan/MainActivity.kt)
+
+Здесь происходит запрос на привязывание/отвязывание сервиса, запрос необходимых разрешений, запрос на включение/выключение адаптера Bluetooth. Здесь же происходит навигация по фрагментам: [ScanFragment]() и [DeviceFragment]().
+
+
+Начнём с запроса разрешений на доступ к сканированию, подключению, сопряжению и обмен данными с Bluetooth:
 
 ```xml
 <manifest>
@@ -73,573 +103,127 @@ C 'нативным' стеком BLE, возможно просто мало к
 </manifest>
 ```
 
-    На первых порах сильное удивление вызвает необходимость давать разрешение на локацию. Причём, эти запросы уровня `dangerous`, т.е., требуют программного запроса на доступ.
+На первых порах, некое изумление вызвает необходимость давать разрешение на локацию. Но это ничего, со временем привыкаешь и начинаешь более ли менее понимать логику системы. Запрос на доступ к локации, относится к уровню `dangerous` и требует программного запроса на доступ.
 
-    Запросы уровня `dangerous`
-    [android.permission.ACCESS_FINE_LOCATION](https://developer.android.com/reference/android/Manifest.permission#ACCESS_FINE_LOCATION),
-    [android.permission.ACCESS_COARSE_LOCATION](https://developer.android.com/reference/android/Manifest.permission#ACCESS_COARSE_LOCATION),
-    [android.permission.ACCESS_BACKGROUND_LOCATION](https://developer.android.com/reference/android/Manifest.permission#ACCESS_COARSE_LOCATION)
-    нужно запрашивать напрямую, скажем, из `Активности`. Для этого созданы две функции, чтобы реализовать запрос массива разрешений:
+Запросы уровня `dangerous`: [android.permission.ACCESS_FINE_LOCATION](https://developer.android.com/reference/android/Manifest.permission#ACCESS_FINE_LOCATION), [android.permission.ACCESS_COARSE_LOCATION](https://developer.android.com/reference/android/Manifest.permission#ACCESS_COARSE_LOCATION), [android.permission.ACCESS_BACKGROUND_LOCATION](https://developer.android.com/reference/android/Manifest.permission#ACCESS_COARSE_LOCATION) нужно запрашивать напрямую, скажем, из `Активности`. Причём, ланчеры запросов надо создать до формирования самой `Активности`, иначе мы сможем запрашивать разрешения или запрос на включение/выключение Bluetooth только в процессе запуска приложения.
 
 ```kotlin
     /**
-     * Проверка группы разрешений
+     * Запрос группы разрешений
+     * Ланчер необходимо вынести в глобальные переменные, потому что
+     * он должен быть инициализирован ДО запуска Активности.
+     * В противном случае, будет ошибка запроса, если мы вздумаем
+     * перезапросить разрешения после запуска полного запуска приложения
      */
-    private fun requestPermissions(permissions: MutableList<String>) {
-        var launchPermissions: MutableList<String> = arrayListOf()
+    private val permissionsLauncher =
+        registerForActivityResult(
+            ActivityResultContracts.RequestMultiplePermissions()) { results ->
+            results?.entries?.forEach { result ->
+                val name = result.key
+                val isGranted = result.value
+                if (isGranted) {
+                    Toast.makeText(this, "Разрешение на $name получено", Toast.LENGTH_SHORT)
+                        .show()
+                    mainActivityModel.andReady(true)
+                } else {
+                    Toast.makeText(this, "Разрешение на $name не дано", Toast.LENGTH_SHORT)
+                        .show()
+                    mainActivityModel.andReady(false)
+                }
+            }
+        }
+
+    /**
+     * Ланчер для запроса на включение bluetooth
+     * Тоже самое: ланчер надо вынести в глобальные переменные,
+     * чтобы он инициализировался ДО запуска Активности.
+     * Иначе, после старта виджета перезапросить включение Блютуз
+     * уже не получится
+     */
+    private val bluetoothLauncher
+            = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()) { result ->
+        if(result.resultCode == RESULT_OK) {
+            mainActivityModel.andReady(true)
+        } else {
+            mainActivityModel.andReady(false)
+        }
+    }
+```
+
+Теперь можно сделать пару функций для запросов разрешений и на включение Bluetooth.
+
+```kotlin
+    /**
+     * Запрос на включение Bluetooth
+     */
+    private fun requestEnableBluetooth() {
+        val enableBtIntent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
+        bluetoothLauncher.launch(enableBtIntent)
+    }
+
+    /**
+     * Запрос группы разрешений
+     */
+    private fun requestPermissions(permissions: Array<String>) {
+        val launchPermissions:MutableList<String> = mutableListOf<String>()
+
         permissions.forEach { permission ->
             if (ContextCompat.checkSelfPermission(
                     this,
                     permission
                 ) == PackageManager.PERMISSION_GRANTED
             ) {
-                Log.d(TAG, "Разрешение на $permission уже есть")
+                mainActivityModel.andReady(true)
             } else {
                 launchPermissions.add(permission)
             }
         }
 
-        permissionsLauncher(launchPermissions)
-    }
-
-    /**
-     * Запрос группы разрешений
-     */
-    private fun permissionsLauncher(permissions: List<String>) {
-        if (permissions.isNotEmpty()) {
-            val launcher =
-                registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { results ->
-                    results?.entries?.forEach { result ->
-                        val name = result.key
-                        val isGranted = result.value
-                        if (isGranted) {
-                            Toast.makeText(this, "Разрешение на $name получено", Toast.LENGTH_SHORT)
-                                .show()
-                        } else {
-                            Toast.makeText(this, "Разрешение на $name не дано", Toast.LENGTH_SHORT)
-                                .show()
-                        }
-                    }
-                }
-            launcher.launch(permissions.toTypedArray())
+        if(launchPermissions.isNotEmpty()) {
+            permissionsLauncher.launch(launchPermissions.toTypedArray())
         }
     }
 ```
 
-    И запрос будет выглядеть так:
+Например, можно запрашивать разрешения на доступ при запуске приложения, а запрос на включение/выключение адаптера Bluetooth, «повесить» на опцию главного меню.
 
-```kotlin
-        requestPermissions(
-            mutableListOf(
-                Manifest.permission.ACCESS_FINE_LOCATION,
-                Manifest.permission.ACCESS_COARSE_LOCATION,
-                Manifest.permission.ACCESS_BACKGROUND_LOCATION
-            )
-        )
-```
+Привязывание сервисов так же находится здесь, чтобы согласовать жизненный цикл активности и работы сервиса. Строго говоря, этого можно и не делать и перенести привязывание сервиса в класс наследованный от [Application](https://developer.android.com/reference/android/app/Application) [BleScanApp](./app/src/main/java/com/grandfatherpikhto/blescan/BleScanApp.kt), или вовсе отказаться от сервиса, как от ненужного костыля.
 
-5. Также, режим фильтрации сканирования по адресу на многих устройствах до сих пор не работает. По какой-то
-    причине этот дефект не устранён за последние... да лет пять тому, как, чтобы не соврать.
-    Поэтому, нужно делать свой фильтр.
+Чтобы [BleScanApp](./app/src/main/java/com/grandfatherpikhto/blescan/BleScanApp.kt) создавался, нужно указать его в [AndroidManifext.xml](./app/src/main/AndroidManifest.xml)
 
-## Простейший сканнер
-
-Учитывая, что фильтры на многих устройствах не работают, лучше сразу заложить возможность фильтрования имён и адресов.
-
-### Сервисы
-
-Стоит ли делать сканнер сервисом, если он и так уже сервис или можно вызвать его в Активности/Фрагменте?
-В данном случае, приянто решение скомпоновать сканирование/подключение в одной упаковке. Поскольку в документации довольно строго сказано, что работа с Bluetooth должна выполняться в основном UI-потоке приложения, вызов будет удобнее сделать именно в сервисе, поскольку, для стабильного подключения к устройству иногда придётся делать кратковременное сканирование устройств с фильтром по адресу подключаемогоу устройства, а значит сканирование должно быть доступно из разных объектов программы, в т.ч. из сервиса подключения к BLE-устройству.
-
-Таким образом, будет один сервис:
-
-1. [`BtLeService`](./app/src/main/java/com/grandfatherpikhto/blescan/service/BtLeService.kt) — сервис подключения к BLE устройству
-
-После того, как созданы классы сервисов, надо прописать их в [`AndroidManifest.xml`](./app/src/main/AndroidManifest.xml):
 
 ```xml
-<?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-        package="com.grandfatherpikhto.blescan">
-    <application>
-        <service android:name=".service.BtLeService" android:enabled="true" />
-    </application>
-</manifest>
+<application>
+    <service android:name=".service.BtLeService" android:enabled="true" />
+</application>
 ```
 
-в данной ситуации не будем использовать
-[`LifecycleService`](https://developer.android.com/reference/androidx/lifecycle/LifecycleService))
-хотя его возможности позволят отлично синхронизировать жизненные циклы `MainActivity` и сервиса.
-Воспользуемся старым добрым [`Service`](https://developer.android.com/guide/components/services)
-с привязкой при помощи [`IBinder`](https://developer.android.com/reference/android/os/IBinder) и
-[`ServiceConnection`](https://developer.android.com/reference/android/content/ServiceConnection).
-
-### Передачу данных между сервисами и объектами можно организовать при помощи трёх способов
-
-1. Можно создать широковещательные приемники/передатчики и рассылать/получать уведомления.
-   при помощи [`Broadcastreceiver`](https://developer.android.com/reference/android/content/BroadcastReceiver),
-   [`IntentFilter`](https://developer.android.com/reference/android/content/IntentFilter),
-   [`sendBroadcast`](https://developer.android.com/reference/android/content/Context#sendBroadcast(android.content.Intent)),
-   как это достаточно подробно описано в примерах [`broadcasts`](https://developer.android.com/guide/components/broadcasts).
-
-```java
-Intent intent = new Intent("com.grandfatherpikhto.blescan.NEW_DEVICE_DETECTED");
-// Intent intent = new Intent();
-// intent.setAction("com.grandfatherpikhto.blescan.NEW_DEVICE_DETECTED");
-
-intent.putExtra("device", device.name);
-intent.putExtra("address", device.address);
-intent.putExtra("bond", device.getBondState());
-sendBroadcast(intent);
-```
+В этой реализации сервис привязан к жизненному циклу [MainActivity](./app/src/main/java/com/grandfatherpikhto/blescan/MainActivity.kt) и отвязывается c отключением от устройства при каждом повороте экрана или переходе приложения в фоновый режим:
 
 ```kotlin
-Intent().also { intent ->
-    intent.setAction("com.grandfatherpikhto.blescan.NEW_DEVICE_DETECTED")
-    intent.putExtra("device", device.name);
-    intent.putExtra("address", device.address);
-    intent.putExtra("bond", device.bondState);
-    sendBroadcast(intent)
-}
-```
+    /**
+     * Событие жизненного цикла Activity() onPause()
+     */
+    override fun onPause() {
+        super.onPause()
+        unbindService(btLeServiceConnector)
+    }
 
-И не забыть добавить описание сообщений в [`AndroidManifest.xml`](./app/src/main/AndroidManifest.xml)
-
-```xml
-<receiver android:name=".MyBroadcastReceiver"  android:exported="true">
-   <intent-filter>
-      <action android:name="com.grandfatherpikhto.blescan.NEW_DEVICE_DETECTED"/>
-   </intent-filter>
-</receiver>
-```
-
-Недостаток широковещательного приёмника/передатчик состоит в том, что нельзя сразу передавать
-объекты и скорость передачи относительно невысока, а нагрузка на Android при больших потоках
-данных, возрастает.
-
-2. Если бы нагрузка была небольшой, можно было бы использовать
-  [`Preferences`](https://developer.android.com/reference/androidx/preference/package-summary).
-
-3. Для кратковременного совместного использования сложных непостоянных определенных пользователем объектов рекомендуются следующие подходы:
-  a. Класс [`android.app.Application`](https://developer.android.com/reference/android/app/Application).
-  Он имеет несколько методов жизненного цикла и будет автоматически создан Android, если зарегистрировать его в
-  [AndroidManifest.xml](./app/src/main/AndroidManifest.xml):
-
-```xml
-  <application
-      android:name=".BLEScanApp">
-
-  </application>
-```
-
-  Доступ к синглетону приложения можно получить через
-  [`getApplication()`](https://developer.android.com/reference/android/app/Activity#getApplication())
-  из любого действия или из [службы](https://developer.android.com/reference/android/app/Service#getApplication()).
-
-4. Публичное статическое поле/метод
-  Альтернативный способ сделать данные доступными для всех действий/служб — использовать
-  общедоступные статические поля и/или методы. Вы можете получить доступ к этим статическим
-  полям из любого другого класса в вашем приложении. Чтобы поделиться объектом, действие,
-  которое создает ваш объект, устанавливает статическое поле, указывающее на этот объект,
-  а любое другое действие, которое хочет использовать этот объект, просто обращается к
-  этому статическому полю.
-
-5. Можно использовать [`HashMap`](https://developer.android.com/reference/java/util/HashMap)
-  слабюых ссылок на объекты
-  [`WeakReferences`](https://developer.android.com/reference/java/lang/ref/WeakReference)
-  для объектов с длинными ключами.
-
-   Когда действие хочет передать объект другому действию, оно просто помещает объект на карту
-   и отправляет ключ (который является уникальным Long на основе счетчика или отметки времени)
-   действию получателя через дополнительные функции намерения.
-   Действие получателя извлекает объект с помощью этого ключа.
-
-6. Синглтон-класс
-
-   У использования статического синглтона есть преимущества. Например, можно ссылаться на объекты,
-   не используя [`getApplication()`](https://developer.android.com/reference/android/app/Activity#getApplication())
-   к классу, зависящему от приложения,
-   или можно сделать интерфейс на все подклассы Application, чтобы различные модули могли
-   ссылаться на этот интерфейс вместо этого.
-
-   Жизненный цикл статики не находится под вашим контролем; поэтому, чтобы соответствовать
-   модели жизненного цикла, класс приложения должен инициировать и удалять эти статические
-   объекты в методах `onCreate()` и `onTerminate()` класса приложения.
-
-7. Постоянные объекты. Даже если кажется, что приложение продолжает работать, система может
-   остановить его процесс и перезапустить его позже. Если у нас есть данные, которые необходимо
-   сохранять от одного вызова действия к другому, необходимо представить эти данные как состояние,
-   которое сохраняется действием, когда ему сообщается, что оно может исчезнуть.
-   Для совместного использования сложных постоянных определенных пользователем объектов есть
-   следующие подходы:
-
-    • [`Application Preferences`](https://developer.android.com/jetpack/androidx/releases/preference)
-    • [`Files`](https://developer.android.com/reference/java/io/File)
-    • [`contentProviders`](https://developer.android.com/reference/android/content/ContentProvider)
-    • [`SQLite`](https://developer.android.com/training/data-storage/sqlite) DB
-
-   Если общие данные необходимо сохранить в точках, где процесс приложения может быть остановлен,
-   данные можно помкестить в постоянное хранилище, такое как настройки приложения,
-   база данных [`SQLite`](https://developer.android.com/training/data-storage/sqlite),
-   файлы или [`ContentProviders`](https://developer.android.com/reference/android/content/ContentProvider).
-   Подробнее в разделе [хранилище данных](https://developer.android.com/training/data-storage/room).
-
-   В данном случае выбран синглтон (объект). Может быть, то не очень оптимально в смысле экономии
-   памяти, но удобно в использовании.
-   Создано два класса: [`BtLeServiceConnector`](./app/src/main/java/com/grandfatherpikhto/blescan/service/BtLeServiceConnector.kt)
-   и [`BtLeServiceConnector`](./app/src/main/java/com/grandfatherpikhto/blescan/service/BtLeServiceConnector.kt)
-
-### Активация сервиса
-
-Пока, привязка сервиса находится в
-[`MainActivity`](./app/src/main/java/com/grandfatherpikhto/blescan/MainActivity.kt). Можно использовать [`BleScanApp`](./app/src/main/java/com/grandfatherpikhto/blescan/BleScanApp.kt)
-и наследовать сервисы от [`LifecycleService`](https://developer.android.com/reference/androidx/lifecycle/LifecycleService) при повороте экрана сервисы не будут уничтожаться, скажем, при повороте экрана или уходе приложения в фоновый режим.
-
-Вызов реализован через [Intent](https://developer.android.com/reference/android/content/Intent) по событию жизненного цикла [MainActivity](./app/src/main/java/com/grandfatherpikhto/blescan/MainActivity.kt) `onStart()`:
-
-```kotlin
+    /**
+     * Событие жизненного цикла Activity() onResume()
+     */
     override fun onResume() {
         super.onResume()
         Intent(this, BtLeService::class.java).also { intent ->
-            bindService(intent, BtLeServiceConnector, Context.BIND_AUTO_CREATE)
+            bindService(intent, btLeServiceConnector, Context.BIND_AUTO_CREATE)
         }
     }
 ```
 
-и отвязывание сервиса происходит по событию жизненного цикла `onStop()`
+#### Навигация фрагментов
 
-```kotlin
-    override fun onPause() {
-        super.onPause()
-        unbindService(BtLeServiceConnector)
-    }
-```
-
-Понятно, что когда счётчик привязок обнуляется, сервис уничтожается. Если добавить такой же вызов, скажем в [BleScanApp](./app/src/main/java/com/grandfatherpikhto/blescan/BLEScanApp.kt),
-жизненный цикл сервиса будет равен жизненному циклу приложения. Правда, в таком решении есть свои сложности: обычный сервис не может действовать в фоновом режиме.
-
-### Сервис [BtLeService](./app/src/main/java/com/grandfatherpikhto/blescan/service/BtLeService.kt)
-
-#### Сканирование
-
-Соответственно, общение с сервисом осуществляется через объект
-[BtLeServiceConnector](./app/src/main/java/com/grandfatherpikhto/blescan/service/BtLeService.kt)
-наследованный от [ServiceConnection](https://developer.android.com/reference/android/content/ServiceConnection). Фактически, это синглетон, жизненный цикл которого равен жизненному циклу приложения.
-
-Для связи с ним используются не объекты
-[LiveData](https://developer.android.com/topic/libraries/architecture/livedata) и
-[MutableLiveData](https://developer.android.com/reference/androidx/lifecycle/MutableLiveData),
-а Сопрограммы Kotlin (Kotlin Koroutines)
-[MutableStateFlow](https://kotlin.github.io/kotlinx.coroutines/kotlinx-coroutines-core/kotlinx.coroutines.flow/-mutable-state-flow/index.html),
-[StateFlow](https://kotlin.github.io/kotlinx.coroutines/kotlinx-coroutines-core/kotlinx.coroutines.flow/-state-flow/index.html) и
-[MutableSharedFlow](https://kotlin.github.io/kotlinx.coroutines/kotlinx-coroutines-core/kotlinx.coroutines.flow/-mutable-shared-flow/),
-[SharedFlow](https://kotlin.github.io/kotlinx.coroutines/kotlinx-coroutines-core/kotlinx.coroutines.flow/-shared-flow/index.html)
-
-В принципе, этого можно было и не делать, но жизненный цикл
-[потоков сопрограмм](https://developer.android.com/kotlin/flow/stateflow-and-sharedflow)
-по ряду причин лучше приспособлен ко взаимодействию с сервисами и другими объектами, не содержащими
-в контексте `View Lifecycle`
-
-В сервисе [BtLeService](./app/src/main/java/com/grandfatherpikhto/blescan/service/BtLeService.kt) реализован интерфейс `привязывания`:
-
-```kotlin
-    /**
-     * Класс, используемый для клиента Binder. Поскольку мы знаем, что эта служба всегда
-     * выполняется в том же процессе, что и ее клиенты, нам не нужно иметь дело с IPC.
-     */
-    inner class LocalBinder : Binder() {
-        /** Возвращает экземпляр LocalService, чтобы можно было использовать общедоступные методы */
-        fun getService(): BtLeService = this@BtLeService
-    }
-
-    /** Binder given to clients */
-    private val binder = LocalBinder()
-
-    /**
-     * Привязывание сервиса "штатным" BindService
-     * Вызывается, когда клиент (MainActivity в случае этого приложения) выходит на передний план
-     * и связывается с этой службой. Когда это произойдет, служба должна перестать быть службой
-     * переднего плана.
-     */
-    override fun onBind(intent: Intent): IBinder? {
-        Log.d(TAG, "onBind()")
-        return binder
-    }
-```
-
-Соответственно, в объекте [BtLeServiceConnector](./app/src/main/java/com/grandfatherpikhto/blescan/service/BtLeServiceConnector.kt)
-можно реализовать перегрузку функций обратного вызова события `привязки`:
-
-```kotlin
-    override fun onServiceConnected(p0: ComponentName?, serviceBinder: IBinder?) {
-        // Log.d(TAG, "Сервис подключён")
-        btLeService = (serviceBinder as BtLeService.LocalBinder).getService()
-        GlobalScope.launch {
-            sharedBound.tryEmit(true)
-            btLeService?.state?.collect { value ->
-                sharedState.tryEmit(value)
-            }
-        }
-        // ...............
-    }
-```
-
-[BtLeServiceConnector](./app/src/main/java/com/grandfatherpikhto/blescan/service/BtLeServiceConnector.kt) наследуется от [ServiceConnection](https://developer.android.com/reference/android/content/ServiceConnection) и, в первую очередь реализует перегрузку метода [ServiceConnection.onServiceConnected (ComponentName name,
-                IBinder service)](https://developer.android.com/reference/android/content/ServiceConnection#onServiceConnected(android.content.ComponentName,%20android.os.IBinder))
-
-Cвязь с сервисом налажена. Понятно, что общение активности и фрагментом с синглтоном
-[BtLeServiceConnector](./app/src/main/java/com/grandfatherpikhto/blescan/service/BtLeServiceConnector.kt)
-лучше подерживать через модель [BtLeModel](./app/src/main/java/com/grandfatherpikhto/blescan/model/BtLeModel.kt):
-
-```kotlin
-    init {
-        GlobalScope.launch {
-            BtLeServiceConnector.state.collect { value ->
-                _state.postValue(value)
-            }
-        }
-
-        GlobalScope.launch {
-            BtLeServiceConnector.gatt.collect { value ->
-                _gatt.postValue(value)
-            }
-        }
-        // ....
-    }
-```
-
-Правда, количество «обёрнутых» обращений к различным объектам несколько раздражает.
-
-Объект
-[BtLeServiceConnector](./app/src/main/java/com/grandfatherpikhto/blescan/service/BtLeServiceConnector.kt)
-обращается к объекту [LeScanCallback](./app/src/main/java/com/grandfatherpikhto/blescan/service/BtLeService.kt) также, через [BtLeService.kt](./app/src/main/java/com/grandfatherpikhto/blescan/service/BtLeService.kt). Он наследован от [ScanCallback](https://developer.android.com/reference/android/bluetooth/le/ScanCallback)
-и внутри реализована перегрузка методов:
-
-```kotlin
-    /**
-     * Ошибка сканирования. Пока, никак не обрабатывается
-     */
-    override fun onScanFailed(errorCode: Int) {
-        super.onScanFailed(errorCode)
-        _error.tryEmit(errorCode)
-        Log.e(TAG, "Fail scan with error $errorCode")
-    }
-
-    /**
-     * Пакетный режим (сразу несколько устройств)
-     * Честно говоря, ни разу не видел, чтобы этот режим отрабатывал.
-     */
-    override fun onBatchScanResults(results: MutableList<ScanResult>?) {
-        super.onBatchScanResults(results)
-        results?.forEach { result ->
-            // Log.d(TAG, "[BatchScan] Найдено устройство: ${result.device.address} ${result.device.name}")
-            if(result?.device != null)
-                emitDevice(result.device)
-        }
-    }
-
-    /**
-     * Найдено одно устройство.
-     */
-    override fun onScanResult(callbackType: Int, result: ScanResult?) {
-        super.onScanResult(callbackType, result)
-        // Log.d(TAG, "[Scan] Найдено устройство: ${result?.device?.address} ${result?.device?.name}")
-        if(result != null && result.device != null) {
-            emitDevice(result.device)
-        }
-    }
-```
-
-Оповещение о найденном устройстве сделано через связку
-
-```kotlin
-    /** */
-    private val _device = MutableSharedFlow<BtLeDevice?> (replay = 10 )
-    val device = _device.asSharedFlow()
-```
-
-Если использовать [StateFlow](https://kotlin.github.io/kotlinx.coroutines/kotlinx-coroutines-core/kotlinx.coroutines.flow/-mutable-state-flow/index.html), то повтор данных события обновления вызывать не будет. А значит,
-в некоторых случаях, например, при повторном поиске, данные будут утеряны.
-
-В классе [LeScanCallback](./app/src/main/java/com/grandfatherpikhto/blescan/service/LeScanCallback.kt)
-реализованы фильтры по имени устройства и по его адресу. В принципе,
-можно сделать фильтрацию по сервисам и характеристикам, но тогда надо подключаться к каждому
-найденному устройству, а это уже будет более громоздко.
-
-```kotlin
-    private fun checkName(bluetoothDevice: BluetoothDevice): Boolean {
-        // Log.d(TAG, "checkName: ${names.size}")
-        if(names.isNotEmpty()) {
-            // Log.d(TAG, "checkName: ${names.contains(bluetoothDevice.name)}")
-            if (bluetoothDevice.name == null) return false
-            return names.contains(bluetoothDevice.name)
-        }
-        return true
-    }
-
-    private fun checkAddress(bluetoothDevice: BluetoothDevice): Boolean {
-        // Log.d(TAG, "checkAddress: ${addresses.joinToString (", ")}, ${addresses.isNotEmpty()}")
-        if(addresses.isNotEmpty()) {
-            // Log.d(TAG, "Contains: ${addresses.contains(bluetoothDevice.address)}")
-            return addresses.contains(bluetoothDevice.address)
-        }
-        return true
-    }
-```
-
-Фильтрация по адресу понадобится при подключении к устройству. Часто случается, так, что метод
-[BluetoothDevice.connectGatt()](https://developer.android.com/reference/android/bluetooth/BluetoothDevice?hl=en#connectGatt(android.content.Context,%20boolean,%20android.bluetooth.BluetoothGattCallback)) возвращает ошибку (6, 133). Чтобы устранить её, надо провести быстрое сканирование по адресу устройства подключения и снова повторить попытку подключения.
-
-Реализацию вызова подключения можно увидеть, при помощи короткого нажатия на плашку устройства в списке найденных устройств. Сканирование будет повторено, но уже с фильтром адреса этого устройства.
-Как только устройство будет найдено, сканирование будет остановлено.
-
-(Долгое нажатие приведёт к попытке подключения к устройству)
-
-Сканнер BLE-устройств готов.
-
-### Подключение к GATT
-
-Сам процесс подключения очень подробно описан в статье
-[Martin van Wellie // Making Android BLE work — part 2](https://medium.com/@martijn.van.welie/making-android-ble-work-part-2-47a3cdaade07?source=user_profile---------2-------------------------------)
-
-Тонких моментов три
-
-1. Если устройство не сопряжено, его надо сопрячь. Если вызвали действие сопряжения, приложение ожидает оповщения от [BCReceiver](./app/src/main/java/com/grandfatherpikhto/blescan/service/BсReceiver.kt) о состоявшемся сопряжении. Если сопряжение произошло, можно попробовать подключиться к устройству.
-
-```kotlin
-    /**
-     * Если устройство не сопряжено, сопрягаем его и ждём оповещение сопряжения
-     * после получения, повторяем попытку подключения.
-     */
-    fun connect(address: String? = null) {
-        if(address != null) {
-            bluetoothAddress = address
-            bluetoothDevice = bluetoothAdapter.getRemoteDevice(address)
-            if(bluetoothDevice != null) {
-                if(bluetoothDevice!!.bondState == BluetoothDevice.BOND_NONE) {
-                    Log.d(TAG, "Пытаемся сопрячь устройство $address")
-                    bluetoothDevice!!.createBond()
-                } else {
-                    doConnect()
-                }
-            } else {
-                doRescan()
-            }
-        }
-    }
-```
-
-Для перехвата подобных событий в сервисе реализован перехват широковещательных сообщений со следующими фильтрами:
-
-```kotlin
-    /**
-     * Создаём фильтр перехвата для различных широковещательных событий
-     * В данном случае, нужны только фильтры для перехвата
-     * В данном случае, нужны только фильтры для перехвата
-     * запроса на сопряжение устройства и завершения сопряжения
-     * И интересует момент "Устройство найдено" на случай рескана устройств
-     * по адресу или имени
-     */
-    private fun makeIntentFilter(): IntentFilter {
-        val intentFilter = IntentFilter()
-        intentFilter.addAction(BluetoothAdapter.ACTION_REQUEST_ENABLE)
-        intentFilter.addAction(BluetoothAdapter.ACTION_STATE_CHANGED)
-        intentFilter.addAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED)
-        intentFilter.addAction(BluetoothDevice.ACTION_PAIRING_REQUEST)
-        intentFilter.addAction(BluetoothDevice.ACTION_FOUND)
-
-        return intentFilter
-    }
-
-```
-
-   В классе сервиса [BtLeService.kt](./app/src/main/java/com/grandfatherpikhto/blescan/service/BtLeService.kt)
-   вызываются настройки фильтра [широковещательных оповещений](https://developer.android.com/reference/android/content/BroadcastReceiver)
-   теперь, приложение в курсе, когда произошло сопряжение, когда поменялся статус подключения
-   [BluetoothAdapter](https://developer.android.com/s/results?q=BluetoothAdapter) (обычно, он один на телефоне, поэтому, запрашиваем его, как единственный) 
-
-   Состояние Bluetooth отслеживается при помощи параметра `enable`. Это удобно, т.к. скажем, подключение меню во фрагменте [ScanerFragmetn.kt](./app/src/main/java/com/grandfatherpikhto/blescan/ScannerFragment.kt) завсит от того, включён ли BluetoothAdapter мобильного телефона.
-
-1. На большинстве устройств, если подключение происходит первый раз, параметр метода
-   [BluetoothDevice.connectGatt](https://developer.android.com/reference/android/bluetooth/BluetoothDevice#connectGatt(android.content.Context,%20boolean,%20android.bluetooth.BluetoothGattCallback)) `autoConnect` должен быть `true`. Обычно, устройство
-   которое ни разу не подключалось, содержит в поле `тип`
-   [BluetoothDevice.DEVICE_TYPE_UNKNOWN](https://developer.android.com/reference/android/bluetooth/BluetoothDevice#DEVICE_TYPE_UNKNOWN)
-   Если подключение происходит не в первый раз, мы должны передать `false`    Этому условию
-   соответствует проверка равенства
-   `bluetoothDevice!!.type == BluetoothDevice.DEVICE_TYPE_UNKNOWN`
-
-   Если это поле выставить неправильно, все попытки подключения в
-   [BtGattCallback.kt](./app/src/main/java/com/grandfatherpikhto/blescan/service/BtGattCallback.kt) будут
-   возвращать либо статус 6, либо 133. Об этом почти ничего не сказано в пакете документации
-   [BluetoothDevice.connectGatt()](https://developer.android.com/reference/android/bluetooth/BluetoothDevice#connectGatt(android.content.Context,%20boolean,%20android.bluetooth.BluetoothGattCallback))
-
-   ~~~Примечание: Вообще говоря, ошибка 133 — это известная проблема Android. Bluetooth-сниффер, показывает, что телефон сначала отправляет LL_VERSION_IND, а затем он отправляет LL_FEATURE_REQ,  прежде  чем    периферийное устройство отправиляет свой LL_VERSION_IND. Другими словами, телефон инициирует процедуру управления LL до завершения первой, и это явное нарушение спецификации Bluetooth.  На этом этапе SoftDevice отключается.~~~
-
-```kotlin
-    /**
-     * Пытается подключиться к сервису GATT
-     * После подключения начинает работать синглетон BtGattCallback
-     */
-    private fun doConnect() {
-        Log.d(TAG, "Пытаемся подключиться к $bluetoothAddress")
-        bluetoothGatt = bluetoothDevice?.connectGatt(
-            applicationContext,
-            bluetoothDevice!!.type == BluetoothDevice.DEVICE_TYPE_UNKNOWN,
-            btGattCallback,
-            BluetoothDevice.TRANSPORT_LE
-        )
-        sharedState.tryEmit(State.Connecting)
-    }
-```
-
-3. Если всё сделано правильно и процесс подключюения всё-равно вернул в
-   [BluetoothGattCallback.onConnectionStateChange(gatt, status, newState)](https://developer.android.com/reference/android/bluetooth/BluetoothGattCallback#onConnectionStateChange(android.bluetooth.BluetoothGatt,%20int,%20int)) `state = 133`, `state = 6` нужно пересканировать устройство с фильтром по его адресу и остановкой после обнаружения:
-
-```kotlin
-    /**
-     * Запрос на пересканирование с адресом устройства и остановкой сканирования
-     * после обнаружения устройства
-     */
-    private fun doRescan() {
-        if(bluetoothAddress != null) {
-            BtLeServiceConnector.scanLeDevice(
-                addresses = listOf(bluetoothAddress!!), mode = BtLeService.Mode.StopOnFind
-            )
-            sharedState.tryEmit(State.Rescan)
-        }
-    }
-```
-
-   Как только в классе [BtLeConnector.kt](./app/src/main/java/com/grandfatherpikhto/blescan/service/BtLeConnector.kt) при сканировании обнаруживается нужное устройство он прекращает работу, согласно настройке `BtLeService.Mode.StopOnFind`. Сервис отслеживает сообщение об обнаружении устройства и повторяет попытку подключения:
-
-```kotlin
-        service.scanner.addEventListener(object: BtLeScanner.ScannerCallback {
-            override fun onFindDevice(btLeDevice: BtLeDevice?) {
-                btLeDevice?.let { found ->
-                    if (state == State.Rescan) {
-                        service.scanner.stopScan()
-                    }
-                }
-            }
-
-            override fun onChangeState(scannerState: BtLeScanner.State) {
-                super.onChangeState(scannerState)
-                if (scannerState == BtLeScanner.State.Stopped
-                    && state == State.Rescan
-                ) {
-                    doConnect()
-                }
-            }
-        })
-
-```
-
-Всё, что осталось — перехватить событие [onServicesDiscovered(btgatt: BluetoothGatt?, status: Int)]() и заполнить список
-сервисов, характеристик и дескрипторов.
-
-### Навигация фрагментов
-
-В этом примере навигация сделана довольно грубая. В [MainActivity](./app/src/main/java/com/grandfatherpikhto/blescan/MainActivity.kt)
+В этом примере навигация сделана довольно грубо. В [MainActivity](./app/src/main/java/com/grandfatherpikhto/blescan/MainActivity.kt)
 создан `enum class Current`, значения которого указывают на объекты навигации из
 [nav_graph.xml](./app/src/main/res/navigation/nav_graph.xml)
 
@@ -666,7 +250,7 @@ Cвязь с сервисом налажена. Понятно, что обще�
 
 Всё, что остаётся — просто менять запись на нужное значение и, соответственно, переключаться между
 [ScanFragment](./app/src/main/java/com/grandfatherpikhto/blescan/ScanFragment.kt) и
-[DeviceFragment](./app/src/main/java/com/grandfatherpikhto/blescan/DeviceFragment.kt)
+[DeviceFragment](./app/src/main/java/com/grandfatherpikhto/blescan/DeviceFragment.kt). Текущий фрагмент хранится в модели, так что при повороте экрана или уходе приложения в фоновый режим, будет восстанавливаться выбранный фрагмент.
 
 События запуска сканирования и подключения к устройству обрабатываются внутри фрагментов.
 
@@ -689,7 +273,7 @@ Cвязь с сервисом налажена. Понятно, что обще�
 
 Однако, этот тэг является устаревшим и если последовать совету автокорректировщика
 
-```
+```text
 Use FragmentContainerView instead of the <fragment> tag
 
 Replace the <fragment> tag with FragmentContainerView.
@@ -766,18 +350,694 @@ Fix: Replace with androidx.fragment.app.FragmentContainerView
         })
 ```
 
+### [ScanFragment](https://github.com/GrandFatherPikhto/BLEScan/blob/master/app/src/main/java/com/grandfatherpikhto/blescan/ScanFragment.kt)
+
+«Умолчальный» фрагмент.
+
+Запускается первым. Контейнер для списка найденных устройств. Использует [RecycleView](https://developer.android.com/reference/androidx/recyclerview/widget/RecyclerView), в простейшем варианте. Для его работы создан небольшой адаптер [RvBtAdapter](https://github.com/GrandFatherPikhto/BLEScan/blob/master/app/src/main/java/com/grandfatherpikhto/blescan/adapter/RvBtAdapter.kt). Адаптер сделан очень просто, буквально по [официальному руководству](https://developer.android.com/guide/topics/ui/layout/recyclerview). Так, что подробно описывать его здесь не будем.
+
+Может быть, не стоило валить в одну кучу все данные сканирования устройств и подключения в одну модель, но данный пример невелик, поэтому, данные сканирования и подключения находятся в [BtLeModel](./app/src/main/java/com/grandfatherpikhto/blescan/model/BtLeModel.kt)
+
+Устройства хранятся в списке, причём, по каждому новому устройству идёт сигнал обновления всего списка. Это не красиво, но больше вряд ли в списке будет больше 20 устройств, поэтому, в модели сделано так:
+
+```kotlin
+        override fun onFindDevice(btLeDevice: BtLeDevice?) {
+            super.onFindDevice(btLeDevice)
+            _device.postValue(btLeDevice)
+            btLeDevice?.let { found ->
+                devicesList.add(found)
+                _devices.postValue(devicesList)
+            }
+        }
+```
+
+В свою очередь, [ScanFragment](./app/src/main/java/com/grandfatherpikhto/blescan/ScanFragment.kt) просто отслеживает содержимое списка:
+
+```kotlin
+    private fun bindRvAdapter () {
+        binding.apply {
+            rvBtList.adapter = rvBtAdapter
+            rvBtList.layoutManager = LinearLayoutManager(requireContext())
+            if(btLeModel.devices != null) {
+                rvBtAdapter.setBtDevices(btLeModel.devices.value!!.toSet())
+            }
+
+            btLeModel.devices.observe(viewLifecycleOwner, { devices ->
+                rvBtAdapter.setBtDevices(devices.toSet())
+            })
+            btLeModel.bond.observe(viewLifecycleOwner, { isBond ->
+                // btLeScanService = BtLeScanServiceConnector.service
+                // btLeScanService?.scanLeDevices(name = AppConst.DEFAULT_NAME)
+            })
+        }
+    }
+```
+
+Состояния — сканирование, остановка сканирования, получение списка сопряжённых устройств, так же хранятся в [BtLeModel](https://github.com/GrandFatherPikhto/BLEScan/blob/master/app/src/main/java/com/grandfatherpikhto/blescan/model/BtLeModel.kt).
+
+```kotlin
+    /**
+     * Следит за изменением LiveData переменной Action.
+     * Запускает/останавливает сканирование или выводит
+     * список сопряжённых устройств
+     * Обрабатывается, только когда сервис уже привязан к
+     * Активности!
+     */
+    private fun bindAction (view: View) {
+        Log.d(TAG, "bindAction, bond = true")
+        btLeModel.action.observe(viewLifecycleOwner, { action ->
+            Log.d(TAG, "bindAction: $action")
+            when(action) {
+                Action.None -> {
+                    bluetoothInterface.stopScan()
+                }
+                Action.Scan -> {
+                    Log.d(TAG, "Action: $action")
+                    btLeModel.clean()
+                    bluetoothInterface.leScanDevices(names = settings.getString("names_filter", ""),
+                    addresses = settings.getString("addresses_filter", ""))
+                }
+                Action.Paired -> {
+                    btLeModel.clean()
+                    bluetoothInterface.stopScan()
+                    bluetoothInterface.pairedDevices()
+                }
+                else -> {}
+            }
+        })
+    }
+```
+
+Короткий клик по плашке найденного устройства останавливает текущее сканирование и запускает повторное сканирование с фильтром по адресу устройства. Сделано просто так, для проверки работы фильтра.
+
+```kotlin
+    private fun initRvAdapter() {
+        rvBtAdapter.setOnItemClickListener(object : RvItemClick<BtLeDevice> {
+            override fun onItemClick(model: BtLeDevice, view: View) {
+                Toast.makeText(
+                    requireContext(),
+                    "Сканируем адрес ${model.address}",
+                    Toast.LENGTH_LONG).show()
+                bluetoothInterface.stopScan()
+                btLeModel.clean()
+                bluetoothInterface.leScanDevices(addresses = model.address, mode = BtLeScanner.Mode.StopOnFind)
+            }
+
+            override fun onItemLongClick(model: BtLeDevice, view: View) {
+                Toast.makeText(
+                    requireContext(),
+                    "Подключаемся к ${model.address}",
+                    Toast.LENGTH_LONG).show()
+                connectToBluetoothDevice(model)
+            }
+        })
+
+        bindRvAdapter()
+    }
+```
+
+Длительный клик — попытка подключения к устройству. Это передаётся в главную модель [MainActivityModel](https://github.com/GrandFatherPikhto/BLEScan/blob/master/app/src/main/java/com/grandfatherpikhto/blescan/model/MainActivityModel.kt). Поскольку, она общая для Главной Активности и всех фрагментов. Экземпляр модели Главной Активности вызывается при помощи `private val mainActivityModel:MainActivityModel by activityViewModels()`, а значит, это — синглетон
+
+```kotlin
+    private fun connectToBluetoothDevice(model: BtLeDevice) {
+        mainActivityModel.changeDevice(model)
+        mainActivityModel.changeCurrent(MainActivity.Current.Device)
+    }
+```
+
+Главная Активность следит за `current` и переключает текующий фрагмент на [DeviceFragment](https://github.com/GrandFatherPikhto/BLEScan/blob/master/app/src/main/java/com/grandfatherpikhto/blescan/DeviceFragment.kt)
+
+Длительное нажатие на плашку найденного устройства активирует попытку подключения к устройству.
+
+### [DeviceFragment](./app/src/main/java/com/grandfatherpikhto/blescan/DeviceFragment.kt)
+
+Фактически, это тоже контейнер для [RecycleView](https://developer.android.com/reference/androidx/recyclerview/widget/RecyclerView) с адаптером [RvGattAdapter](./app/src/main/java/com/grandfatherpikhto/blescan/adapter/RvGattAdapter.kt). После исследования `GATT`, прокручивается простой цикл:
+
+```kotlin
+        btLeModel.gatt.observe(viewLifecycleOwner, { gatt ->
+            gatt?.let { rvGattAdapter.setGatt(it) }
+            gatt?.services?.forEach { service ->
+                Log.d(TAG, "Service: ${service.uuid} ${service.type}")
+                service?.characteristics?.forEach { characteristic ->
+                    Log.d(TAG, "Characteristic: ${characteristic.uuid} ${characteristic.properties}")
+                    characteristic?.descriptors?.forEach { descriptor ->
+                        Log.d(TAG, "Descriptor: ${descriptor.uuid}")
+                    }
+                }
+            }
+        })
+```
+
+и список заполняется значениями сервисов, характеристик и дескрипторов. Чтобы не усложнять работу списка здесь не реализована псевдодревовидная структура отображения, хотя это не так уж сложно и для этого вовсе не надо реализовывать вложенные списки. Достаточно просто перехватить вызов
+
+```kotlin
+    override fun getItemViewType(position: Int): Int {
+        // return super.getItemViewType(position)
+        return profile[position].first.value
+    }
+```
+
+и в `bind` привязывать разные плашки, с разным отступом и разным содержимым. Впрочем, Вы это можете реализовать самостоятельно.
+
+### Сервис [BtLeService](./app/src/main/java/com/grandfatherpikhto/blescan/service/BtLeService.kt)
+
+Прежде всего, обмен данными между сервисом и приложениями достаточно... нет, не сложен, но несколько осложнён. Это можно сделать пятью способами:
+
+### Передачу данных между сервисами и виджетами можно организовать аж семью способами
+
+1. Можно создать широковещательные приемники/передатчики и рассылать/получать уведомления.
+   при помощи [`Broadcastreceiver`](https://developer.android.com/reference/android/content/BroadcastReceiver),
+   [`IntentFilter`](https://developer.android.com/reference/android/content/IntentFilter),
+   [`sendBroadcast`](https://developer.android.com/reference/android/content/Context#sendBroadcast(android.content.Intent)),
+   как это достаточно подробно описано в примерах [`broadcasts`](https://developer.android.com/guide/components/broadcasts).
+
+```java
+Intent intent = new Intent("com.grandfatherpikhto.blescan.NEW_DEVICE_DETECTED");
+// Intent intent = new Intent();
+// intent.setAction("com.grandfatherpikhto.blescan.NEW_DEVICE_DETECTED");
+
+intent.putExtra("device", device.name);
+intent.putExtra("address", device.address);
+intent.putExtra("bond", device.getBondState());
+sendBroadcast(intent);
+```
+
+```kotlin
+Intent().also { intent ->
+    intent.setAction("com.grandfatherpikhto.blescan.NEW_DEVICE_DETECTED")
+    intent.putExtra("device", device.name);
+    intent.putExtra("address", device.address);
+    intent.putExtra("bond", device.bondState);
+    sendBroadcast(intent)
+}
+```
+
+И не забыть добавить описание сообщений в [`AndroidManifest.xml`](./app/src/main/AndroidManifest.xml)
+
+```xml
+<receiver android:name=".MyBroadcastReceiver"  android:exported="true">
+   <intent-filter>
+      <action android:name="com.grandfatherpikhto.blescan.NEW_DEVICE_DETECTED"/>
+   </intent-filter>
+</receiver>
+```
+
+У широковещательного приёмника/передатчик два основных недостатка
+а. Нельзя быстро передавать объекты и скорость передачи относительно невысока, а нагрузка на Android при больших потоках данных, возрастает.
+б. Можно передавать только простые данные. Такие, как `String`, `Int`, `Float` и т.д.
+
+2. Если бы нагрузка была небольшой, можно было бы использовать [`Preferences`](https://developer.android.com/reference/androidx/preference/package-summary). Однако, если, например, нужно управлять устройством, типа Адресной Светодиодной Лентой, поток данных будет значительным и хотелось бы, чтобы задержка при передаче данных была бы минимальной. Этот способ не подойдёт.
+
+3. Для кратковременного совместного использования сложных непостоянных определенных пользователем объектов можно использовать синглетон приложений. Класс [`android.app.Application`](https://developer.android.com/reference/android/app/Application).
+
+   Он имеет несколько методов жизненного цикла и будет автоматически создан `Android`, если зарегистрировать его в [AndroidManifest.xml](./app/src/main/AndroidManifest.xml):
+
+```xml
+  <application
+      android:name=".BLEScanApp">
+
+  </application>
+```
+
+Доступ к синглетону приложения можно получить через [`getApplication()`](https://developer.android.com/reference/android/app/Activity#getApplication())  из любого действия или из [службы](https://developer.android.com/reference/android/app/Service#getApplication()).
+
+4. Можно создать публичное статическое поле/метод.
+
+   Сделать данные доступными для всех действий/служб — использовать общедоступные статические поля и/или методы. Доступ к этим статическим полям легко получить из любого другого класса в приложении. Чтобы поделиться объектом, действием, которое создает ваш объект, устанавливает статическое поле, указывающее на этот объект, а любое другое действие, которое хочет использовать этот объект, можно просто обратиться к этому статическому полю через имя класса-держателя.
+
+5. Можно использовать [`HashMap`](https://developer.android.com/reference/java/util/HashMap)
+   слабюых ссылок на объекты
+   [`WeakReferences`](https://developer.android.com/reference/java/lang/ref/WeakReference)
+   для объектов с длинными ключами.
+
+   Когда действие хочет передать объект другому действию, оно просто помещает объект на карту и отправляет ключ (который является уникальным Long на основе счетчика или отметки времени)
+   действию получателя через дополнительные функции намерения. Действие получателя извлекает объект с помощью этого ключа. Прежде всего, `Слабые Ссылки` хороши тем, что их удобно использовать для объектов со непостоянным жизненным циклом. Однако, и пользоваться ими намного сложнее, чем обычными статическими полями.
+
+6. Синглтон-класс
+
+   У использования статического синглтона есть преимущества. Например, можно ссылаться на объекты, не используя [`getApplication()`](https://developer.android.com/reference/android/app/Activity#getApplication()) к классу, зависящему от приложения, или можно сделать интерфейс на все подклассы Application, чтобы различные модули могли ссылаться на этот интерфейс вместо этого.
+
+   Жизненный цикл статики не находится под вашим контролем; поэтому, чтобы соответствовать модели жизненного цикла, класс приложения должен инициировать и удалять эти статические объекты в методах `onCreate()` и `onTerminate()` класса приложения.
+
+7. Постоянные объекты. Даже если кажется, что приложение продолжает работать, система может остановить его процесс и перезапустить его позже. Если у нас есть данные, которые необходимо
+   сохранять от одного вызова действия к другому, необходимо представить эти данные как состояние, которое сохраняется действием, когда ему сообщается, что оно может исчезнуть.
+   Для совместного использования сложных постоянных определенных пользователем объектов есть следующие подходы:
+
+   • [`Application Preferences`](https://developer.android.com/jetpack/androidx/releases/preference)
+   • [`Files`](https://developer.android.com/reference/java/io/File)
+   • [`contentProviders`](https://developer.android.com/reference/android/content/ContentProvider)
+   • [`SQLite`](https://developer.android.com/training/data-storage/sqlite) DB
+
+   Если общие данные необходимо сохранить в точках, где процесс приложения может быть остановлен,
+   данные можно помкестить в постоянное хранилище, такое как настройки приложения,
+   база данных [`SQLite`](https://developer.android.com/training/data-storage/sqlite),
+   файлы или [`ContentProviders`](https://developer.android.com/reference/android/content/ContentProvider).
+   Подробнее в разделе [хранилище данных](https://developer.android.com/training/data-storage/room).
+
+   В данном случае выбран синглтон (объект). Может быть, то не очень оптимально в смысле экономии
+   памяти, но удобно в использовании.
+   Создано два класса: [`BtLeServiceConnector`](./app/src/main/java/com/grandfatherpikhto/blescan/service/BtLeServiceConnector.kt)
+   и [`BtLeServiceConnector`](./app/src/main/java/com/grandfatherpikhto/blescan/service/BtLeServiceConnector.kt)
+
+### Активация сервиса
+
+Привязка сервиса находится в [`MainActivity`](./app/src/main/java/com/grandfatherpikhto/blescan/MainActivity.kt). Можно использовать [`BleScanApp`](./app/src/main/java/com/grandfatherpikhto/blescan/BleScanApp.kt) и наследовать сервисы от [`LifecycleService`](https://developer.android.com/reference/androidx/lifecycle/LifecycleService) при повороте экрана сервисы не будут уничтожаться, скажем, при повороте экрана или уходе приложения в фоновый режим.
+
+Класс [BtLeServiceConnector](./app/src/main/java/com/grandfatherpikhto/blescan/service/BtLeServiceConnector.kt) наследован от [ServiceConnection](https://developer.android.com/reference/android/content/ServiceConnection) и используется для привязывания (вызова) сервиса. Соответственно, вызов можно, конечно, повторять из из каждого фрагмента, но если сервис уже создан, будет возвращён уже существующий сервис.
+
+Вызов реализован через [Intent](https://developer.android.com/reference/android/content/Intent) по событию жизненного цикла [MainActivity](./app/src/main/java/com/grandfatherpikhto/blescan/MainActivity.kt) `onStart()`
+
+```kotlin
+    override fun onResume() {
+        super.onResume()
+        Intent(this, BtLeService::class.java).also { intent ->
+            bindService(intent, BtLeServiceConnector, Context.BIND_AUTO_CREATE)
+        }
+    }
+```
+
+и отвязывание сервиса происходит по событию жизненного цикла `onStop()`
+
+```kotlin
+    override fun onPause() {
+        super.onPause()
+        unbindService(BtLeServiceConnector)
+    }
+```
+
+Когда счётчик привязок обнуляется, сервис уничтожается. Если добавить такой же вызов, скажем в [BleScanApp](./app/src/main/java/com/grandfatherpikhto/blescan/BLEScanApp.kt),
+жизненный цикл сервиса будет равен жизненному циклу приложения. Правда, в таком решении есть свои сложности: обычный сервис не может действовать в фоновом режиме. Тогда лучше наследовать сервис от [LifecycleService](https://developer.android.com/reference/androidx/lifecycle/LifecycleService), чтобы при уходе приложения в фоновый режим, сервис переходил бы в `Foreground`-режим.
+
+### Обмен данными между объектами сервиса и сервисом и пользовательским интерфейсом
+
+Все данные между объектами сервиса сделаны через коллбэки (интерфейсы) и набор переменных с шаблоном [Delegates.observable](). Решение старомодное и неудобное, но работает быстро.
+
+[BluetoothInterface.kt](./app/src/main/java/com/grandfatherpikhto/blescan/service/BluetoothInterface.kt). Фактически, это синглетон, жизненный цикл которого равен жизненному циклу приложения. Вообще, все события, данные, получаемые от сканера, коннектора, передаваемые/получаемые от Фрагментов и Активности проходят через [BluetoothInterface.kt](./app/src/main/java/com/grandfatherpikhto/blescan/service/BluetoothInterface.kt).
+
+Класс [BluetoothInterface.kt](./app/src/main/java/com/grandfatherpikhto/blescan/service/BluetoothInterface.kt) — самый громоздкий в этом приложении. Ради эксперимента весь обмен данными построен при помощи [интерфейсов](https://kotlinlang.org/docs/interfaces.html) и делегат [Delegates.observable](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.properties/-delegates/observable.html). Было бы разумно исползовать, к примеру «горячие» потоки [MutableSharedFlow](https://kotlin.github.io/kotlinx.coroutines/kotlinx-coroutines-core/kotlinx.coroutines.flow/-mutable-shared-flow.html?query=fun%20%3CT%3E%20MutableSharedFlow(replay:%20Int%20=%200,%20extraBufferCapacity:%20Int%20=%200,%20onBufferOverflow:%20BufferOverflow%20=%20BufferOverflow.SUSPEND):%20MutableSharedFlow%3CT%3E), [SharedFlow](https://kotlin.github.io/kotlinx.coroutines/kotlinx-coroutines-core/kotlinx.coroutines.flow/-shared-flow/index.html?query=interface%20SharedFlow%3Cout%20T%3E%20:%20Flow%3CT%3E), [MutableStateFlow](https://kotlin.github.io/kotlinx.coroutines/kotlinx-coroutines-core/kotlinx.coroutines.flow/-mutable-shared-flow.html?query=fun%20%3CT%3E%20MutableSharedFlow(replay:%20Int%20=%200,%20extraBufferCapacity:%20Int%20=%200,%20onBufferOverflow:%20BufferOverflow%20=%20BufferOverflow.SUSPEND):%20MutableSharedFlow%3CT%3E), [StateFlow](https://kotlin.github.io/kotlinx.coroutines/kotlinx-coroutines-core/kotlinx.coroutines.flow/-abstract-flow/index.html?query=abstract%20class%20AbstractFlow%3CT%3E%20:%20Flow%3CT%3E%20,%20CancellableFlow%3CT%3E). (О применении на Андроид, см. [SharedFlow/StateFlow](https://developer.android.com/kotlin/flow/stateflow-and-sharedflow))
+
+Их применение во многом сходно с [LiveData](https://developer.android.com/topic/libraries/architecture/livedata), [MutableLiveData](https://developer.android.com/reference/androidx/lifecycle/MutableLiveData) однако, в сервисе лучше применять именно Сопрограммы Котлин, поскольку его можно привязывать к различным жизненным циклам, а не только к жизненным циклам виджетов. Их будем применять в моделях, используемых в Активности и Фрагментах.
+
+Вообще-то, использование [интерфейсов](https://kotlinlang.org/docs/interfaces.html) довольно сильно загромождает код программы. Во-первых, массив `listener`-слушателей нужно постоянно обновлять, в соответствии с жизненными циклами слушателей. Любая ошибка и приложение начинает непредсказуемо «падать».
+
+В принципе, этого можно было и не делать, однако [интерфейсы](https://kotlinlang.org/docs/interfaces.html) работают ощутимо быстрее, чем Сопрограммы.
+
+При помощи [BluetoothInterfaceLazy](./app/src/main/java/com/grandfatherpikhto/blescan/service/BluetoothInterfaceLazy.kt) реализовано однократное ленивое (`lazy`) создание синглтона [BluetoothInterface](app/src/main/java/com/grandfatherpikhto/blescan/service/BluetoothInterface.kt). Достаточно вызвать
+
+```kotlin
+private var bluetoothInterface by BluetoothInterfaceLazy()
+```
+
+И в любом компоненте приложения будет либо создан экземпляр класса, либо будет получен уже имещийся объект в [ленивом](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/lazy.html) режиме (т.е., объект будет вызван только тогда, когда к нему непосредственно будет обращение) Это очень удобно и позволяет избежать кучи ошибок доступа, связанных с порядком инициализации переменных внутри объектов, связанных с интерфейсом.
+
+В сервисе [BtLeService](./app/src/main/java/com/grandfatherpikhto/blescan/service/BtLeService.kt) реализован интерфейс `привязывания`:
+
+```kotlin
+    /**
+     * Класс, используемый для клиента Binder. Поскольку мы знаем, что эта служба всегда
+     * выполняется в том же процессе, что и ее клиенты, нам не нужно иметь дело с IPC.
+     */
+    inner class LocalBinder : Binder() {
+        /** Возвращает экземпляр LocalService, чтобы можно было использовать общедоступные методы */
+        fun getService(): BtLeService = this@BtLeService
+    }
+
+    /** Binder given to clients */
+    private val binder = LocalBinder()
+
+    /**
+     * Привязывание сервиса "штатным" BindService
+     * Вызывается, когда клиент (MainActivity в случае этого приложения) выходит на передний план
+     * и связывается с этой службой. Когда это произойдет, служба должна перестать быть службой
+     * переднего плана.
+     */
+    override fun onBind(intent: Intent): IBinder? {
+        Log.d(TAG, "onBind()")
+        return binder
+    }
+```
+
+Примечание: Если при передаче данных использовать [StateFlow](https://kotlin.github.io/kotlinx.coroutines/kotlinx-coroutines-core/kotlinx.coroutines.flow/-mutable-state-flow/index.html), то повтор данных события обновления вызывать не будет. А значит, в некоторых случаях, например, при повторном поиске, данные будут утеряны. Поэтому, если отказаться от интерфейсов, такие последовательности надо делать при помощи [SharedFlow](https://kotlin.github.io/kotlinx.coroutines/kotlinx-coroutines-core/kotlinx.coroutines.flow/-shared-flow/)
+
+
+### Коннетор сервиса [BtLeServiceConnector](./app/src/main/java/com/grandfatherpikhto/blescan/service/BtLeServiceConnector.kt)
+
+Объект [BtLeServiceConnector](./app/src/main/java/com/grandfatherpikhto/blescan/service/BtLeServiceConnector.kt)
+может реализовать перегрузку функций обратного вызова события `привязки`:
+
+```kotlin
+    override fun onServiceConnected(p0: ComponentName?, serviceBinder: IBinder?) {
+        // Log.d(TAG, "Сервис подключён")
+        btLeService = (serviceBinder as BtLeService.LocalBinder).getService()
+        bluetoothInterface.service = btLeService
+        // ...............
+    }
+```
+
+[BtLeServiceConnector](./app/src/main/java/com/grandfatherpikhto/blescan/service/BtLeServiceConnector.kt) наследуется от [ServiceConnection](https://developer.android.com/reference/android/content/ServiceConnection) и, в первую очередь реализует перегрузку метода [ServiceConnection.onServiceConnected (ComponentName name,
+IBinder service)](https://developer.android.com/reference/android/content/ServiceConnection#onServiceConnected(android.content.ComponentName,%20android.os.IBinder))
+
+*Примечание: Осталась одна проблема: почему-то, при связывании конструктор сервиса `onCreate()` и `onBind()` вызвается дважды или даже, трижды. Это в достаточной мере неудобно, но с этим пока приходится мириться.*
+
+Cвязь с сервисом налажена. Понятно, что общение активности и фрагментом с синглтоном [BluetoothInterface](./app/src/main/java/com/grandfatherpikhto/blescan/service/BluetoothInterface.kt) лучше подерживать через модель [BtLeModel](./app/src/main/java/com/grandfatherpikhto/blescan/model/BtLeModel.kt):
+
+При помощи метода добалвения и удаления слушателей, можно управлять процессом перехвата событий на «борту» [BluetoothInterface](./app/src/main/java/com/grandfatherpikhto/blescan/service/BluetoothInterface.kt). Однако, каждая ошибка, связанная с неправильным трактованием жизненного цикла слушателей приведёт к падению приложения. Здесь нужно быть очень внимательным.
+
+```kotlin
+   /** */
+    fun addListener(listener: BluetoothListener) {
+        bluetoothListener.add(listener)
+    }
+
+    fun removeListener(listener: BluetoothListener): Boolean {
+        return bluetoothListener.remove(listener)
+    }
+```
+
+Далее, реализуется набор свойств, необходимых для работы с `Bluetooth`. Например, найденные сканером устройства:
+
+```kotlin
+    /** */
+    var deviceFound:BtLeDevice? by Delegates.observable(null) { _, _, newValue ->
+        bluetoothListener.forEach { listener ->
+            listener.onFindDevice(newValue)
+        }
+    }
+```
+
+Благодаря делегату [Delegates.observable](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.properties/-delegates/observable.html) любое изменение свойства `deviceFound` будет вызывать опрос в цикле всех `слушателей` и вызов соответствующего коллбэка из [BluetoothListener](./app/src/main/java/com/grandfatherpikhto/blescan/service/BluetoothListener.kt). Таким образом, все подписанные на изменения этого свойства, получат уведомление (вызов `onFindDevice`).
+
+Метод древний, как `Java`, громоздкий и не безопасный, однако, достаточно быстрый и интуитивино понятный.
+
+Правда, количество «обёрнутых» обращений к различным объектам несколько раздражает. [BluetoothInterface](./app/src/main/java/com/grandfatherpikhto/blescan/service/BluetoothInterface.kt) — самый пухлый класс в приложении. Используй мы здесь «горячие» потоки, он был бы в два раза меньше и не нёс бы угрозы падения приложении, если мы при уничтожении компонента забыли вовремя вызвать `removeListener`.
+
+Здесь же для удобства работы с сервисом, «обёрнуты» функции подключения к устройству, запуска и остановки сканирования и т.д.
+
+```kotlin
+    fun leScanDevices(addresses: String? = null, names: String? = null, mode: BtLeScanner.Mode = BtLeScanner.Mode.FindAll)
+        = service?.scanLeDevices(addresses = addresses, names = names, mode = mode)
+    fun leScanDevices(addresses: Array<String> = arrayOf(), names: Array<String> = arrayOf(), mode: BtLeScanner.Mode = BtLeScanner.Mode.FindAll)
+        = service?.scanLeDevices(addresses = addresses, names = names, mode = mode)
+    fun stopScan() = service?.stopScan()
+    fun pairedDevices() = service?.pairedDevices()
+
+    fun connect(address:String) = service?.connect(address = address)
+    fun connect(btLeDevice: BtLeDevice) = service?.connect(btLeDevice)
+    fun close() = service?.close()
+
+    fun bluetoothDisable() {
+        bluetoothAdapter?.disable()
+    }
+```
+
+Контроль связывания с интерфейсом осуществлён через [BtLeServiceConnector](./app/src/main/java/com/grandfatherpikhto/blescan/service/BtLeServiceConnector.kt) и этот класс сделан минимальным, хотя есть некоторый соблазн интерфейсы запихать именно в него. Всё, что здесь происходит — перехват подключения к сервису [BtLeService](./app/src/main/java/com/grandfatherpikhto/blescan/service/BtLeService.kt):
+
+```kotlin
+    override fun onServiceConnected(p0: ComponentName?, serviceBinder: IBinder?) {
+        Log.d(TAG, "Сервис подключён")
+        btLeService = (serviceBinder as BtLeService.LocalBinder).getService()
+        bluetoothInterface.service = btLeService
+    }
+```
+
+### Класс сканирования устройств [BtLeScanner](./app/src/main/java/com/grandfatherpikhto/blescan/service/BtLeScanner.kt)
+
+Оповещение о найденном устройстве сделано через связку
+
+```kotlin
+    /** */
+    private val _device = MutableSharedFlow<BtLeDevice?> (replay = 10 )
+    val device = _device.asSharedFlow()
+```
+
+В классе [LeScanCallback](./app/src/main/java/com/grandfatherpikhto/blescan/service/LeScanCallback.kt)
+реализованы фильтры по имени устройства и по его адресу. В принципе,
+можно сделать фильтрацию по сервисам и характеристикам, но тогда надо подключаться к каждому
+найденному устройству, а это уже будет более громоздко.
+
+```kotlin
+    private fun checkName(bluetoothDevice: BluetoothDevice): Boolean {
+        // Log.d(TAG, "checkName: ${names.size}")
+        if(names.isNotEmpty()) {
+            // Log.d(TAG, "checkName: ${names.contains(bluetoothDevice.name)}")
+            if (bluetoothDevice.name == null) return false
+            return names.contains(bluetoothDevice.name)
+        }
+        return true
+    }
+
+    private fun checkAddress(bluetoothDevice: BluetoothDevice): Boolean {
+        // Log.d(TAG, "checkAddress: ${addresses.joinToString (", ")}, ${addresses.isNotEmpty()}")
+        if(addresses.isNotEmpty()) {
+            // Log.d(TAG, "Contains: ${addresses.contains(bluetoothDevice.address)}")
+            return addresses.contains(bluetoothDevice.address)
+        }
+        return true
+    }
+```
+
+Фильтрация по адресу понадобится при подключении к устройству. Часто случается, так, что метод
+[BluetoothDevice.connectGatt()](https://developer.android.com/reference/android/bluetooth/BluetoothDevice?hl=en#connectGatt(android.content.Context,%20boolean,%20android.bluetooth.BluetoothGattCallback)) возвращает ошибку (6, 133). Чтобы устранить её, надо провести быстрое сканирование по адресу устройства подключения и снова повторить попытку подключения.
+
+Реализацию вызова подключения можно увидеть, при помощи короткого нажатия на плашку устройства в списке найденных устройств. Сканирование будет повторено, но уже с фильтром адреса этого устройства.
+Как только устройство будет найдено, сканирование будет остановлено.
+
+```kotlin
+    /**
+     * Если установлен режим Mode.StopOnFind, процесс сканирования останавливается
+     */
+    private val bluetoothListener:BluetoothListener = object: BluetoothListener {
+        override fun onFindDevice(btLeDevice: BtLeDevice?) {
+            super.onFindDevice(btLeDevice)
+            if(mode == Mode.StopOnFind) {
+                stopScan()
+            }
+        }
+    }
+```
+
+(Долгое нажатие приведёт к попытке подключения к устройству)
+
+### Класс управления процедурой сканирования [BtLeScanner](./app/src/main/java/com/grandfatherpikhto/blescan/service/BtLeScanner.kt)
+
+Создаёт объект [BluetoothLeScanner](https://developer.android.com/reference/android/bluetooth/le/BluetoothLeScanner), получает экземпляр [BluetoothInterface](./app/src/main/java/com/grandfatherpikhto/blescan/service/BluetoothInterface.kt)
+
+Режимов сканирования два:
+
+```kotlin
+    enum class Mode(val value: Int) {
+        FindAll(0x00),   // Сканировать непрерывно, вне зависимости от того, найдено ли устройство из списка фильтров или нет
+        StopOnFind(0x01) // Остановить сканирование, если найдено устройство из списка фильтров
+    }
+
+```
+
+Содержит процедуры запуска сканирования, остановки сканирования
+
+```kotlin
+fun scanLeDevices(addressesList:Array<String> = arrayOf()
+                      , namesList:Array<String> = arrayOf()
+                      , modeScan: Mode = Mode.FindAll) { 
+                          //...
+                      }
+
+fun scanLeDevices(addresses: String? = null,
+                    names: String? = null,
+                    mode: Mode = Mode.FindAll) {
+    // ...
+    startScan()
+}
+
+fun stopScan() {
+    // ...
+}
+```
+
+Основная часть работы совершается в интерфейсе обратных вызовов, наследованном от [BluetoothLeScanner](https://developer.android.com/reference/android/bluetooth/le/BluetoothLeScanner)
+
+#### Класс обработки обратного вызова BLE-сканнера [LeScanCallback](./app/src/main/java/com/grandfatherpikhto/blescan/service/LeScanCallback.kt)
+
+Здесь происходит обработка найденных устройств.
+
+Перехватываются обратные вызовы
+
+```kotlin
+    /**
+     * Пакетный режим (сразу несколько устройств)
+     * Срабатывает по вызову flushPendingScanResults()
+     * после остановки сканирования
+     */
+    override fun onBatchScanResults(results: MutableList<ScanResult>?) {
+        super.onBatchScanResults(results)
+        results?.forEach { result ->
+            // Log.d(TAG, "[BatchScan] Найдено устройство: ${result.device.address} ${result.device.name}")
+            emitDevice(result.device)
+        }
+    }
+
+    /**
+     * Найдено одно устройство.
+     */
+    override fun onScanResult(callbackType: Int, result: ScanResult?) {
+        super.onScanResult(callbackType, result)
+        // Log.d(TAG, "[Scan] Найдено устройство: ${result?.device?.address} ${result?.device?.name}")
+        if(result != null && result.device != null) {
+            emitDevice(result.device)
+        }
+    }
+```
+
+Если фильтр совпадает или пуст, вызывается генерация события `deviceFound`
+
+```kotlin
+    /**
+     * Проверяет соответствует ли устройство списку фильтров
+     * Если фильтр совпадает или пуст, генерирует событие обнаруженного устройства
+     */
+    private fun emitDevice(bluetoothDevice: BluetoothDevice?) {
+        if(bluetoothDevice != null) {
+            if(checkName(bluetoothDevice)
+                &&  checkAddress(bluetoothDevice)) {
+                bluetoothInterface.deviceFound = bluetoothDevice.toBtLeDevice()
+            }
+        }
+    }
+```
+
+### Класс подключения устройств [BtLeConnector](./app/src/main/java/com/grandfatherpikhto/blescan/service/BtLeConnector.kt)
+
+Содержит в себе достаточно полный набор состояний, описывающий процесс подключения, отключения, получения и отправки данных через GATT:
+
+```kotlin
+    /**
+     * Список состояний GATT, процедуры подключения, пересканирования
+     */
+    enum class State(val value:Int) {
+        Unknown(0x00),       // Просто, для инициализации
+        Disconnecting(0x01), // Отключение от GATT
+        Disconnected(0x02),  // Отключены
+        Connecting(0x03),    // Процесс подключения к GATT
+        Connected(0x04),     // Подключены
+        Discovering(0x05),   // Начали исследовать сервисы
+        Discovered(0x06),    // Сервисы исследованы
+        Rescan(0x07),        // Запущено пересканирование по адресу устройства
+        CharWrited(0x08),    // Характеристика записана
+        CharReaded(0x09),    // Характеристика прочитана
+        CharChanged(0x0A),   // Дескриптор изменён
+        DescrWrited(0x0B),   // Дескриптор записан
+        DescrReaded(0x0C),   // Дескриптор прочитан
+        ServiceChanged(0x0D),// Сервис изменился
+        Error(0xFE),         // Получена ошибка
+        FatalError(0xFF)     // Получена фатальная ошибка. Возвращаемся к Фрагменту сканирования устройств
+    }
+```
+
+Может и не стоило создавать свой собственный список, а просто воспользоваться набором штатных значений [BluetoothProfile](https://developer.android.com/reference/android/bluetooth/BluetoothProfile)? Возможно. Просто, так немного удобнее, поскольку состояния `Discovering`, `Discovered`, вообще находятся вне пула состояний `BluetoothProfile`
+
+В классе просто собраны возможные наборы состояний, которые могут возникать в процессе работы с GATT устройства. При необходимости, вызывается пересканирование устройства по адресу:
+
+```kotlin
+    /**
+     * Запрос на пересканирование с адресом устройства и остановкой сканирования
+     * после обнаружения устройства
+     */
+    private fun doRescan() {
+        if(bluetoothInterface.bluetoothDevice != null) {
+            service.scanner.scanLeDevices(
+                addresses = bluetoothInterface.currentDevice!!.address,
+                mode = BtLeScanner.Mode.StopOnFind
+            )
+            bluetoothInterface.connectorState = State.Rescan
+        }
+    }
+```
+
+Здесь же создаётся запрос на сопряжение устройства и попытка повторного подключения после сопряжения:
+
+```kotlin
+if (bluetoothInterface.bluetoothDevice!!.bondState
+        == BluetoothDevice.BOND_NONE) {
+    Log.d(TAG, "Пытаемся сопрячь устройство ${bluetoothInterface.currentDevice?.address}")
+    bluetoothInterface.bluetoothDevice!!.createBond()
+} else {
+    doConnect()
+}
+
+```
+
+#### Класс обработки обратных вызовов процедуры подключения/исследования/обмена данными/отключения GATT-устройства [LeGattCallback](./app/src/main/java/com/grandfatherpikhto/blescan/service/LeGattCallback.kt)
+
+Наследован от интерфейса [BluetoothGattCallback]() и перехватывает все состояния подключения, передачи, приёма данных и ошибки. В частности, после исследования GATT, сообщает об этом.
+
+```kotlin
+    override fun onServicesDiscovered(btgatt: BluetoothGatt?, status: Int) {
+        super.onServicesDiscovered(btgatt, status)
+        bluetoothInterface.connectorState = BtLeConnector.State.Discovered
+        if(status == BluetoothGatt.GATT_SUCCESS) {
+            if(btgatt != null) {
+                bluetoothInterface.bluetoothGatt = btgatt
+            }
+        }
+    }
+```
+
+По этому событию в списке [DeviceFragment]() создаётся список сервисов, характеристик и дескрипторов.
+
+Если получены статус 6 или 133, отправляем сообщение об ошибке, по котором [BtLeConnector]() запрашивает рескан устройства по адресу, а потом повторную попытку подключения.
+
+```kotlin
+if(status == 6 || status == 133) {
+    Log.d(TAG, "onConnectionStateChange $status $newState запустить рескан")
+    if (tryConnectCounter >= MAX_TRY_CONNECT - 1) {
+        tryConnectCounter = 0
+        bluetoothInterface.connectorState = BtLeConnector.State.FatalError
+    } else {
+        bluetoothInterface.connectorState = BtLeConnector.State.Error
+        tryConnectCounter++
+    }
+}
+```
+
+### Класс обработки широковещательных событий [BcReceiver](./app/src/main/java/com/grandfatherpikhto/blescan/service/BcReceiver.kt)
+
+В основном, нужен для того, чтобы перехватить событие сопряжения устройства и инициализировать повторное подключение. Проблема в том, что событие `BluetoothDevice.ACTION_BOND_STATE_CHANGED` генерируется при любом подключении к устройству. Поэтому, сначала надо перехватить запрос `BluetoothDevice.ACTION_PAIRING_REQUEST`, а потом сравнить адрес устройства в запросе на сопряжение, и при совпадении сформировать событие "Устройство сопряжено".
+
+Это делается в синглтоне [BluetoothInterface](./app/src/main/java/com/grandfatherpikhto/blescan/service/BluetoothInterface.kt):
+
+```kotlin
+    fun changeBluetoothBondState(bluetoothDevice: BluetoothDevice?, oldValue: Int, newValue: Int) {
+        bluetoothPairing?.let { pairing ->
+            if ( bluetoothDevice != null
+                && pairing.address == bluetoothDevice.address
+                && oldValue == BluetoothDevice.BOND_BONDING
+                && newValue == BluetoothDevice.BOND_BONDED ) {
+                bluetoothPairing = pairing
+            }
+            bluetoothListener.forEach { listener ->
+                listener.onBluetoothPaired(pairing.toBtLeDevice())
+            }
+        }
+
+        bluetoothListener.forEach { callback ->
+            callback.onChangeBluetoothBondState(bluetoothDevice, oldValue, newValue)
+        }
+    }
+```
+
+Сервис взаимодействия с BLE устройством завершён
+
 ## Материалы
 
 1. [Все работы Мартина Ван Велле](https://medium.com/@martijn.van.welie) Самое толковое и подробное описание работы с Bluetooth BLE, с кучей ссылок на различные источники.
-    Подробно о сканировании устройств. Почему-то не отражена проблема сканирования устройств с фильтрами.
+   Подробно о сканировании устройств. Почему-то не отражена проблема сканирования устройств с фильтрами.
 2. [Making Android BLE work — part 1 // Martijn van Welie](https://medium.com/@martijn.van.welie/making-android-ble-work-part-1-a736dcd53b02?source=user_profile---------3-------------------------------) Часть 1. Как заставить Android BLE работать - часть 1
 3. [Making Android BLE work — part 2 // Martijn van Welie](https://medium.com/@martijn.van.welie/making-android-ble-work-part-2-47a3cdaade07?source=user_profile---------2-------------------------------) Часть 2. Подключение, отключение, исследование сервисов
 4. [Making Android BLE work — part 3 // Martijn van Welie](https://medium.com/@martijn.van.welie/making-android-ble-work-part-3-117d3a8aee23?source=user_profile---------1-------------------------------) Часть 3. чтение/запись характеристик; включение/выключение уведомлений
 5. [Making Android BLE work — part 4 // Martijn van Welie](https://medium.com/@martijn.van.welie/making-android-ble-work-part-4-72a0b85cb442?source=user_profile---------0-------------------------------) Часть 4. Сопряжение с устройствами
-6. [Перевод работы Мартина Велле](https://habr.com/ru/post/536392/) Часть 1. Сканирование
-7. [Перевод работы Мартина Велле](https://habr.com/ru/post/537526/) Часть 2. Подключение/Отключение
-8. [Перевод работы Мартина Велле](https://habr.com/ru/post/538768/) Часть 3. Чтение/Запись характеристик
-9. [Перевод работы Мартина Велле](https://habr.com/ru/post/539740/) Часть 4. Сопряжение устройств
+6. [Перевод статьи Мартина ван Велле](https://habr.com/ru/post/536392/) Часть 1. Сканирование
+7. [Перевод статьи Мартина ван Велле](https://habr.com/ru/post/537526/) Часть 2. Подключение/Отключение
+8. [Перевод статьи Мартина ван Велле](https://habr.com/ru/post/538768/) Часть 3. Чтение/Запись характеристик
+9. [Перевод статьи Мартина ван Велле](https://habr.com/ru/post/539740/) Часть 4. Сопряжение устройств
 10. [BLESSED](https://github.com/weliem/blessed-android) A very compact Bluetooth Low Energy (BLE) library for Android 5 and higher, that makes working with BLE on Android very easy.
 11. [BLESSED](https://github.com/weliem/blessed-android-coroutines) A very compact Bluetooth Low Energy (BLE) library for Android 8 and higher, that makes working with BLE on Android very easy. It is powered by Kotlin's Coroutines and turns asynchronous GATT methods into synchronous methods! It is based on the Blessed Java library and has been rewritten in Kotlin using Coroutines.
 12. [(Talk) Bluetooth Low Energy On Android // Stuart Kent](https://www.stkent.com/2017/09/18/ble-on-android.html) (Обсуждение) Bluetooth Low Energy на Android // Стюарт Кент //
