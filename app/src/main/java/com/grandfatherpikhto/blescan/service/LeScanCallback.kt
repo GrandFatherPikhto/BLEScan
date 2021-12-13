@@ -47,7 +47,8 @@ class LeScanCallback(service: BtLeService): ScanCallback() {
     }
 
     /**
-     *
+     * Проверяет соответствует ли устройство списку фильтров
+     * Если фильтр совпадает или пуст, генерирует событие обнаруженного устройства
      */
     private fun emitDevice(bluetoothDevice: BluetoothDevice?) {
         if(bluetoothDevice != null) {
