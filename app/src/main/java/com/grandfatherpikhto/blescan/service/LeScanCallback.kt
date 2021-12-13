@@ -70,7 +70,8 @@ class LeScanCallback(service: BtLeService): ScanCallback() {
 
     /**
      * Пакетный режим (сразу несколько устройств)
-     * Честно говоря, ни разу не видел, чтобы этот режим отрабатывал.
+     * Срабатывает по вызову flushPendingScanResults()
+     * после остановки сканирования
      */
     override fun onBatchScanResults(results: MutableList<ScanResult>?) {
         super.onBatchScanResults(results)
