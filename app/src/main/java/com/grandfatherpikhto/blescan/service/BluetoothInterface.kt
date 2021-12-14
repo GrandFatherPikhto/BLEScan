@@ -222,4 +222,7 @@ class BluetoothInterface {
     fun bluetoothDisable() {
         bluetoothAdapter?.disable()
     }
+
+    fun writeCharacteristic(uuid:String, value:ByteArray) = service?.writeCharacteristic(uuid, value)
+    fun writeDescriptor(uuid: String, value: ByteArray) = service?.writeDescriptor(uuid, value)
 }
