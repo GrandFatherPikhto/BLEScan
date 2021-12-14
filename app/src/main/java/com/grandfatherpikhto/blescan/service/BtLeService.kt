@@ -40,6 +40,7 @@ class BtLeService: Service() {
     private lateinit var bcReceiver:BcReceiver
     val receiver get() = bcReceiver
     /** */
+    private lateinit var btCharIO: BtCharIO
 
     /** Binder given to clients */
     private val binder = LocalBinder()
@@ -85,6 +86,7 @@ class BtLeService: Service() {
         bcReceiver    = BcReceiver(this)
         btLeScanner   = BtLeScanner(this)
         btLeConnector = BtLeConnector(this)
+        btCharIO      = BtCharIO(this)
 
         applicationContext.registerReceiver(bcReceiver, makeIntentFilter())
 
@@ -97,9 +99,12 @@ class BtLeService: Service() {
     override fun onDestroy() {
         super.onDestroy()
         Log.d(TAG, "onDestroy()")
+
         btLeConnector.destroy()
         btLeScanner.destroy()
         bcReceiver.destroy()
+        btCharIO.destroy()
+
         applicationContext.unregisterReceiver(bcReceiver)
     }
 
@@ -132,6 +137,9 @@ class BtLeService: Service() {
     fun close() {
         btLeConnector.close()
     }
+
+    fun writeCharacteristic(uuid:String, value:ByteArray) = btCharIO.writeCharacteristic(uuid, value)
+    fun writeDescriptor(uuid: String, value: ByteArray) = btCharIO.writeDescriptor(uuid, value)
 
     /**
      * Создаём фильтр перехвата для различных широковещательных событий
