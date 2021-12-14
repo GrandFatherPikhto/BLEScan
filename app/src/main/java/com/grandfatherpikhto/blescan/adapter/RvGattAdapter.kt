@@ -4,55 +4,106 @@ import android.bluetooth.BluetoothGatt
 import android.bluetooth.BluetoothGattCharacteristic
 import android.bluetooth.BluetoothGattDescriptor
 import android.bluetooth.BluetoothGattService
+import android.os.ParcelUuid
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.grandfatherpikhto.blescan.R
-import com.grandfatherpikhto.blescan.databinding.BtPropertyBinding
+import com.grandfatherpikhto.blescan.databinding.BtCharacteristicBinding
+import com.grandfatherpikhto.blescan.databinding.BtDescriptorBinding
 import com.grandfatherpikhto.blescan.databinding.BtServiceBinding
+import com.grandfatherpikhto.blescan.helper.isGeneric
+import com.grandfatherpikhto.blescan.helper.to16
 import com.grandfatherpikhto.blescan.model.RvItemClick
+import com.grandfatherpikhto.blescan.service.BtCharIO
+import com.grandfatherpikhto.blescan.service.GenericUuids
+import com.grandfatherpikhto.blescan.service.GenericUuids.genericName
 import java.util.*
 
 class RvGattAdapter : RecyclerView.Adapter<RvGattAdapter.ProfileHolder>(){
-    enum class Type(val value: Int) {
+    enum class ViewType(val value: Int) {
         None(0x00),
-        Service(0x01),
-        Characteristic(0x02),
-        Descriptor(0x03)
+        Service(R.layout.bt_service),
+        Characteristic(R.layout.bt_characteristic),
+        Descriptor(R.layout.bt_descriptor);
+        companion object {
+            fun getByValue(value: Int):ViewType? = values().firstOrNull { it.value == value }
+        }
     }
     companion object {
         const val TAG:String = "RvGattAdapter"
     }
     /** Список устройств */
-    private var profile:MutableList<Pair<Type, Any>> = mutableListOf()
+    private var profile:MutableList<Pair<ViewType, Any>> = mutableListOf()
     private var gatt:BluetoothGatt? = null
 
     /** Коллбэк для обработки нажатия и долгого нажатия на элемент списка */
-    private var itemClick: RvItemClick<Pair<Type, Any>>? = null
+    private var itemClick: RvItemClick<Pair<ViewType, Any>>? = null
     /** Холдер для лэйаута устройства */
-    class ProfileHolder(item: View): RecyclerView.ViewHolder(item) {
+    class ProfileHolder(private val item: View): RecyclerView.ViewHolder(item) {
         /** Привязка к элементам лэйаута устройства */
-        private val binding = BtPropertyBinding.bind(item)
+        // private val binding = BtPropertyBinding.bind(item)
 
-        fun bind(property: Pair<Type, Any>) {
-            with(binding) {
-                when (property.first) {
-                    Type.Service -> {
-                        property.second.also { tvPropertyUuid.text = (property.second as BluetoothGattService).uuid.toString() }
-                        binding.tvPropName.text = itemView.context.getString(R.string.characteristic)
-                    }
-                    Type.Characteristic -> {
-                        property.second.also { tvPropertyUuid.text = (property.second as BluetoothGattCharacteristic).uuid.toString() }
-                        binding.tvPropName.text = itemView.context.getString(R.string.characteristic)
-                    }
-                    Type.Descriptor -> {
-                        property.second.also { tvPropertyUuid.text = (property.second as BluetoothGattDescriptor).uuid.toString() }
-                        binding.tvPropName.text = itemView.context.getString(R.string.descriptor)
-                    }
-                    else -> { }
+        private fun bindService(property: Pair<ViewType, Any>) {
+            val binding = BtServiceBinding.bind(item)
+            val service = property.second as BluetoothGattService
+            val uuidParcel = ParcelUuid(service.uuid)
+            binding.apply {
+                if (uuidParcel.isGeneric()) {
+                    tvServiceTitle.text = GenericUuids.genericName(uuidParcel, GenericUuids.Type.Service)
+                    tvServiceUuid.text  = "0x${uuidParcel.to16().toString(16)}"
+                } else {
+                    tvServiceTitle.text = item.context.getString(R.string.custom_service)
+                    tvServiceUuid.text  = uuidParcel.toString()
                 }
+            }
+        }
+
+        private fun bindCharacteristic(property: Pair<ViewType, Any>) {
+            val binding = BtCharacteristicBinding.bind(item)
+            val characteristic = property.second as BluetoothGattCharacteristic
+            val uuidParcel = ParcelUuid(characteristic.uuid)
+            binding.apply {
+                if (uuidParcel.isGeneric()) {
+                    tvCharacteristicTitle.text = genericName(uuidParcel, GenericUuids.Type.Characteristic)
+                    tvCharactericticUuid.text  = "0x${uuidParcel.to16().toString(16)}"
+                } else {
+                    tvCharacteristicTitle.text = item.context.getString(R.string.custom_characteristic)
+                    tvCharactericticUuid.text  = uuidParcel.toString()
+                }
+            }
+        }
+
+        private fun bindDescriptor(property: Pair<ViewType, Any>) {
+            val binding    = BtDescriptorBinding.bind(item)
+            val descriptor = property.second as BluetoothGattDescriptor
+            val uuidParcel = ParcelUuid(descriptor.uuid)
+            binding.apply {
+                if (uuidParcel.isGeneric()) {
+                    tvDescriptorTitle.text = genericName(uuidParcel, GenericUuids.Type.Descriptor)
+                    tvDescriptorUuid.text  = "0x${uuidParcel.to16().toString(16)}"
+                } else {
+                    tvDescriptorTitle.text = item.context.getString(R.string.custom_descriptor)
+                    tvDescriptorUuid.text  = uuidParcel.toString()
+                }
+            }
+        }
+
+        fun bind(property: Pair<ViewType, Any>) {
+            when (property.first) {
+                ViewType.Service -> {
+                    bindService(property)
+                }
+                ViewType.Characteristic -> {
+                    bindCharacteristic(property)
+                }
+                ViewType.Descriptor -> {
+                    bindDescriptor(property)
+                }
+                else -> { }
             }
         }
     }
@@ -65,7 +116,14 @@ class RvGattAdapter : RecyclerView.Adapter<RvGattAdapter.ProfileHolder>(){
     /** Создаём очередной элемент лэйаута холдера. Операция ресурсоёмкая */
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ProfileHolder {
         Log.d(TAG, "onCreateViewHolder: viewType $viewType")
-        val view = LayoutInflater.from(parent.context).inflate(R.layout.bt_property, parent, false)
+
+        when(ViewType.getByValue(viewType)) {
+            ViewType.Service -> {}
+            ViewType.Characteristic -> {}
+            ViewType.Descriptor -> {}
+            else -> {}
+        }
+        val view = LayoutInflater.from(parent.context).inflate(viewType, parent, false)
         return ProfileHolder(view)
     }
 
@@ -100,11 +158,11 @@ class RvGattAdapter : RecyclerView.Adapter<RvGattAdapter.ProfileHolder>(){
         this.profile.clear()
         gatt = bluetoothGatt
         gatt?.services?.forEach { service ->
-            profile.add(Pair(Type.Service, service))
+            profile.add(Pair(ViewType.Service, service))
             service.characteristics?.forEach { characteristic ->
-                profile.add(Pair(Type.Characteristic, characteristic))
+                profile.add(Pair(ViewType.Characteristic, characteristic))
                 characteristic.descriptors?.forEach { descriptor ->
-                    profile.add(Pair(Type.Descriptor, descriptor))
+                    profile.add(Pair(ViewType.Descriptor, descriptor))
                 }
             }
         }
@@ -112,7 +170,7 @@ class RvGattAdapter : RecyclerView.Adapter<RvGattAdapter.ProfileHolder>(){
     }
 
     /** Привязка к событию Click */
-    fun setOnItemClickListener(itemClick: RvItemClick<Pair<Type, Any>>) {
+    fun setOnItemClickListener(itemClick: RvItemClick<Pair<ViewType, Any>>) {
         this.itemClick = itemClick
     }
 }
