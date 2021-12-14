@@ -1,11 +1,14 @@
 package com.grandfatherpikhto.blescan.helper
 
 import android.bluetooth.BluetoothDevice
+import android.os.ParcelUuid
 import com.grandfatherpikhto.blescan.model.BtLeDevice
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 
 const val DEFAULT_NAME:String = "LED_STRIP"
+
+const val BASE_UUID:String = "00000000-0000-1000-8000-00805F9B34FB"
 
 /**
  * Network Byte Order
@@ -50,3 +53,19 @@ fun Int.toByteArray(order: ByteOrder = ByteOrder.BIG_ENDIAN):ByteArray {
 fun Int.toHex():String {
     return this.toUInt().toString(16)
 }
+
+/**
+ * Выделить 16-битный идентификатор из UUID
+ */
+fun ParcelUuid.to16():Int {
+    return this.uuid.mostSignificantBits.shr(32).and(0xFFFF).toInt()
+}
+
+/**
+ * Проверяет, является ли UUID-сервиса Основным (Generic)
+ */
+fun ParcelUuid.isGeneric():Boolean {
+    return this.uuid.mostSignificantBits and -0xffff00000001L == 0x1000L
+}
+
+
