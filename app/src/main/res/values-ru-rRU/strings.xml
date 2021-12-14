@@ -39,4 +39,11 @@
     <string name="service_attribute">Аттрибут Сервиса</string>
     <string name="service_primary">Основной Сервис</string>
     <string name="service_secondary">Вторичный Сервис</string>
+    <string name="default_service_type">Тип Сервиса</string>
+    <string name="service_type_title">Тип:</string>
+    <string name="primary_service">Основной Сервис</string>
+    <string name="secondary_service">Вторичный Сервис</string>
+    <string name="custom_service">Пользовательский Сервис</string>
+    <string name="custom_characteristic">Пользовательская Характеристика</string>
+    <string name="custom_descriptor">Пользовательский Дескриптор</string>
 </resources>
