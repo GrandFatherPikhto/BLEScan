@@ -5,6 +5,7 @@ import android.os.ParcelUuid
 import com.grandfatherpikhto.blescan.model.BtLeDevice
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
+import java.util.*
 
 const val DEFAULT_NAME:String = "LED_STRIP"
 
@@ -58,14 +59,23 @@ fun Int.toHex():String {
  * Выделить 16-битный идентификатор из UUID
  */
 fun ParcelUuid.to16():Int {
-    return this.uuid.mostSignificantBits.shr(32).and(0xFFFF).toInt()
+    return this.uuid.to16()
+}
+
+fun UUID.to16():Int {
+    return this.mostSignificantBits.shr(32).and(0xFFFF).toInt()
 }
 
 /**
  * Проверяет, является ли UUID-сервиса Основным (Generic)
  */
 fun ParcelUuid.isGeneric():Boolean {
-    return this.uuid.mostSignificantBits and -0xffff00000001L == 0x1000L
+    return this.uuid.isGeneric()
 }
 
-
+/**
+ *
+ */
+fun UUID.isGeneric():Boolean {
+    return this.mostSignificantBits and -0xffff00000001L == 0x1000L
+}
