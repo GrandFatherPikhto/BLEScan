@@ -1,12 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">BLEScan</string>
     <string name="action_settings">Settings</string>
     <!-- Strings used for fragments for navigation -->
-    <string name="next">Next</string>
-    <string name="previous">Previous</string>
-
-    <string name="hello_first_fragment">Hello first fragment</string>
-    <string name="hello_second_fragment">Hello second fragment. Arg: %1$s</string>
     <string name="default_bt_name">Unknown device</string>
     <string name="default_bt_address" translatable="false">00:00:00:00:00:00</string>
     <string name="start_scan">Start Scan</string>
@@ -42,7 +38,7 @@
     <string name="service_attribute">Service Attribute</string>
     <string name="service_primary">Primary Service</string>
     <string name="service_secondary">Secondary Service</string>
-    <string name="uuid_title" translatable="false">UUID:</string>
+    <string name="uuid_title" translatable="false">UUID: %1$s</string>
     <string name="default_uuid" translatable="false">00000000-0000-0000-0000-00000000000</string>
     <string name="default_service_type">Service Type</string>
     <string name="service_type_title">Service Type</string>
@@ -51,6 +47,13 @@
     <string name="custom_service">Custom Service</string>
     <string name="custom_characteristic">Custom Characteristic</string>
     <string name="custom_descriptor">Custom Descriptor</string>
+    <string name="service_read">Read</string>
+    <string name="service_write">Write</string>
+    <string name="service_notify">Notify</string>
+    <string name="characteristic_title">Characteristic %1$s</string>
+    <string name="service_title">Service: %1$s</string>
+    <string name="send_ok">Ok</string>
+    <string name="send_cancel">Cancel</string>
 
     <!-- Messages Preferences -->
 

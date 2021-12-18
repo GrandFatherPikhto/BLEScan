@@ -4,10 +4,6 @@
     <string name="action_settings">Настройки</string>
     <string name="scan_fragment_label">Сканировать</string>
     <string name="device_fragment_label">BLE Устройство</string>
-    <string name="next">Следующий</string>
-    <string name="previous">Предыдущий</string>
-    <string name="hello_first_fragment">Привет, первый фрагмент</string>
-    <string name="hello_second_fragment">Привет, второй фрагмент</string>
     <string name="default_bt_name">Неизвестное устройство</string>
     <string name="start_scan">Запустить сканирование</string>
     <string name="stop_scan">Остановить сканирование</string>
@@ -46,4 +42,11 @@
     <string name="custom_service">Пользовательский Сервис</string>
     <string name="custom_characteristic">Пользовательская Характеристика</string>
     <string name="custom_descriptor">Пользовательский Дескриптор</string>
+    <string name="service_read">Читать</string>
+    <string name="service_write">Запись</string>
+    <string name="service_notify">Уведомлять</string>
+    <string name="characteristic_title">Характеристика %1$s</string>
+    <string name="service_title">Сервис: %1$s</string>
+    <string name="send_ok">Да</string>
+    <string name="send_cancel">Нет</string>
 </resources>
