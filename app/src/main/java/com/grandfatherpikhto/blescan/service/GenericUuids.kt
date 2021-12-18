@@ -3,6 +3,7 @@ package com.grandfatherpikhto.blescan.service
 import android.os.ParcelUuid
 import com.grandfatherpikhto.blescan.helper.to16
 import com.grandfatherpikhto.blescan.helper.isGeneric
+import java.util.*
 
 /**
  * List from https://btprodspecificationrefs.blob.core.windows.net/assigned-values/16-bit%20UUID%20Numbers%20Document.pdf
@@ -33,17 +34,21 @@ object GenericUuids {
     const val TAG:String = "GenericUuids"
 
     fun genericName(uuidParcel: ParcelUuid, type: Type = Type.All):String? {
-        if(uuidParcel.isGeneric()) {
+        return genericName(uuidParcel.uuid, type)
+    }
+
+    fun genericName(uuid: UUID, type: Type = Type.All):String? {
+        if(uuid.isGeneric()) {
             return genericUuids.find {
                 if(type != Type.All) {
-                    it.uuid == uuidParcel.to16()
-                    && it.type == type
+                    it.uuid == uuid.to16()
+                            && it.type == type
                 } else {
-                    it.uuid == uuidParcel.to16()
+                    it.uuid == uuid.to16()
                 }
             }?.name
         }
-        return uuidParcel.toString()
+        return uuid.toString()
     }
 
     data class UUID16(val type:Type, val uuid:Int, val name:String)
