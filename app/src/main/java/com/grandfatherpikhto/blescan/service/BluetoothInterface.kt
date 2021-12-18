@@ -223,6 +223,28 @@ class BluetoothInterface {
         bluetoothAdapter?.disable()
     }
 
-    fun writeCharacteristic(uuid:String, value:ByteArray) = service?.writeCharacteristic(uuid, value)
+    fun writeCharacteristic(bluetoothGattCharacteristic: BluetoothGattCharacteristic?, value:ByteArray) {
+        bluetoothGattCharacteristic?.let { characteristic ->
+            characteristic.value = value
+            bluetoothGatt?.writeCharacteristic(characteristic)
+        }
+    }
+    fun writeDescriptor(bluetoothGattDescriptor: BluetoothGattDescriptor?, value: ByteArray) {
+        bluetoothGattDescriptor?.let { descriptor ->
+            descriptor.value = value
+            bluetoothGatt?.writeDescriptor(descriptor)
+        }
+    }
+    fun readCharacteristic(bluetoothGattCharacteristic: BluetoothGattCharacteristic?) {
+        bluetoothGattCharacteristic?.let { characteristic ->
+            bluetoothGatt?.readCharacteristic(characteristic)
+        }
+    }
+    fun readDescriptor(bluetoothGattDescriptor: BluetoothGattDescriptor?) {
+        bluetoothGattDescriptor?.let { descriptor ->
+            bluetoothGatt?.readDescriptor(descriptor)
+        }
+    }
+
     fun writeDescriptor(uuid: String, value: ByteArray) = service?.writeDescriptor(uuid, value)
 }
