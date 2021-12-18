@@ -132,21 +132,10 @@ class ScanFragment : Fragment() {
     private fun initRvAdapter() {
         rvBtAdapter.setOnItemClickListener(object : RvItemClick<BtLeDevice> {
             override fun onItemClick(model: BtLeDevice, view: View) {
-                Toast.makeText(
-                    requireContext(),
-                    "Сканируем адрес ${model.address}",
-                    Toast.LENGTH_LONG).show()
-                bluetoothInterface.stopScan()
-                btLeModel.clean()
-                bluetoothInterface.leScanDevices(addresses = model.address, mode = BtLeScanner.Mode.StopOnFind)
-            }
-
-            override fun onItemLongClick(model: BtLeDevice, view: View) {
-                Toast.makeText(
-                    requireContext(),
-                    "Подключаемся к ${model.address}",
-                    Toast.LENGTH_LONG).show()
                 connectToBluetoothDevice(model)
+            }
+            override fun onItemLongClick(model: BtLeDevice, view: View) {
+                rescanWithAddress(model)
             }
         })
 
@@ -173,9 +162,7 @@ class ScanFragment : Fragment() {
         binding.apply {
             rvBtList.adapter = rvBtAdapter
             rvBtList.layoutManager = LinearLayoutManager(requireContext())
-            if(btLeModel.devices != null) {
-                rvBtAdapter.setBtDevices(btLeModel.devices.value!!.toSet())
-            }
+            rvBtAdapter.setBtDevices(btLeModel.devices.value!!.toSet())
 
             btLeModel.devices.observe(viewLifecycleOwner, { devices ->
                 rvBtAdapter.setBtDevices(devices.toSet())
@@ -219,7 +206,21 @@ class ScanFragment : Fragment() {
     }
 
     private fun connectToBluetoothDevice(model: BtLeDevice) {
+        Toast.makeText(
+            requireContext(),
+            "Подключаемся к ${model.address}",
+            Toast.LENGTH_LONG).show()
         mainActivityModel.changeDevice(model)
         mainActivityModel.changeCurrent(MainActivity.Current.Device)
+    }
+
+    private fun rescanWithAddress(model:BtLeDevice) {
+        Toast.makeText(
+            requireContext(),
+            "Сканируем адрес ${model.address}",
+            Toast.LENGTH_LONG).show()
+        bluetoothInterface.stopScan()
+        btLeModel.clean()
+        bluetoothInterface.leScanDevices(addresses = model.address, mode = BtLeScanner.Mode.StopOnFind)
     }
 }
