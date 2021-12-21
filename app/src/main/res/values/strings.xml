@@ -54,6 +54,14 @@
     <string name="service_title">Service: %1$s</string>
     <string name="send_ok">Ok</string>
     <string name="send_cancel">Cancel</string>
+    <string name="dialog_char_val_title">Set value of characteristic (separator — space)</string>
+    <string name="value_string_array_check_box">String/Array</string>
+    <string name="value_title">Value</string>
+    <string name="tvValue">String/Array</string>
+    <string name="regime_string">String</string>
+    <string name="regime_array">Array</string>
+    <string name="regime_hex_array">Hex Array</string>
+    <string name="value_description">String or array</string>
 
     <!-- Messages Preferences -->
 

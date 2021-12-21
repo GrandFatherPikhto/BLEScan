@@ -13,9 +13,9 @@ import com.grandfatherpikhto.blescan.databinding.BtServiceBinding
 import com.grandfatherpikhto.blescan.helper.isGeneric
 import com.grandfatherpikhto.blescan.helper.to16
 import com.grandfatherpikhto.blescan.model.RvItemClick
-import com.grandfatherpikhto.blescan.service.BluetoothInterface
-import com.grandfatherpikhto.blescan.service.BluetoothInterfaceLazy
-import com.grandfatherpikhto.blescan.service.GenericUuids
+import com.grandfatherpikhto.blin.BluetoothInterface
+import com.grandfatherpikhto.blin.BluetoothInterfaceLazy
+import com.grandfatherpikhto.blin.GenericUuids
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.InternalCoroutinesApi
 import java.util.*
@@ -35,7 +35,7 @@ class RvGattAdapter : RecyclerView.Adapter<RvGattAdapter.ProfileHolder>() {
     /** Холдер для лэйаута устройства */
     class ProfileHolder(private val item: View): RecyclerView.ViewHolder(item) {
         val binding = BtServiceBinding.bind(item)
-        private val bluetoothInterface:BluetoothInterface by BluetoothInterfaceLazy()
+        private val bluetoothInterface: BluetoothInterface by BluetoothInterfaceLazy()
         private val rvCharAdapter: RvCharAdapter by lazy {
             RvCharAdapter()
         }

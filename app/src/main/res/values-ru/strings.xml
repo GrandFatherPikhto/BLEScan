@@ -49,4 +49,12 @@
     <string name="service_title">Сервис: %1$s</string>
     <string name="send_ok">Да</string>
     <string name="send_cancel">Нет</string>
+    <string name="dialog_char_val_title">Установить значение характеристики (разделитель — пробел)</string>
+    <string name="value_string_array_check_box">Строка/Массив</string>
+    <string name="value_title">Значение</string>
+    <string name="tvValue">Строка/Массив</string>
+    <string name="regime_string">Строка</string>
+    <string name="regime_array">Массив</string>
+    <string name="regime_hex_array">16-ричный массив</string>
+    <string name="value_description">Строка или массив</string>
 </resources>

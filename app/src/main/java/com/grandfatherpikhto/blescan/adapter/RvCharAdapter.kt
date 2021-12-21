@@ -1,28 +1,29 @@
 package com.grandfatherpikhto.blescan.adapter
 
-import android.bluetooth.BluetoothGatt
 import android.bluetooth.BluetoothGattCharacteristic
 import android.bluetooth.BluetoothGattService
 import android.os.Handler
 import android.os.Looper
-import android.os.ParcelUuid
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.core.view.isVisible
+import androidx.fragment.app.FragmentActivity
 import androidx.recyclerview.widget.RecyclerView
 import com.grandfatherpikhto.blescan.R
+import com.grandfatherpikhto.blescan.SendCharValueDialog
 import com.grandfatherpikhto.blescan.databinding.BtCharacteristicBinding
+import com.grandfatherpikhto.blescan.helper.NAME_UUID
 import com.grandfatherpikhto.blescan.helper.isGeneric
 import com.grandfatherpikhto.blescan.helper.to16
-import com.grandfatherpikhto.blescan.service.BluetoothInterface
-import com.grandfatherpikhto.blescan.service.BluetoothInterfaceLazy
-import com.grandfatherpikhto.blescan.service.BluetoothListener
-import com.grandfatherpikhto.blescan.service.GenericUuids
+import com.grandfatherpikhto.blescan.service.*
+import com.grandfatherpikhto.blin.BtIoInterface
+import com.grandfatherpikhto.blin.BtIoInterfaceLazy
+import com.grandfatherpikhto.blin.BtIoListener
+import com.grandfatherpikhto.blin.GenericUuids
 import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.collect
+import java.util.*
 
 @InternalCoroutinesApi
 @DelicateCoroutinesApi
@@ -31,31 +32,25 @@ class RvCharAdapter: RecyclerView.Adapter<RvCharAdapter.CharHolder>() {
         const val TAG:String = "RvCharAdapter"
     }
 
-    private val characteristics: MutableList<Pair<BluetoothGattCharacteristic, String>> = mutableListOf()
-    private val bluetoothInterface: BluetoothInterface by BluetoothInterfaceLazy()
-    private var bluetoothService: BluetoothGattService? = null
-    private val bluetoothListener = object : BluetoothListener {
-        override fun onCharacteristicReaded(
-            bluetoothGatt: BluetoothGatt?,
-            bluetoothGattCharacteristic: BluetoothGattCharacteristic?,
-            state: Int
-        ) {
-            super.onCharacteristicReaded(bluetoothGatt, bluetoothGattCharacteristic, state)
-            bluetoothGattCharacteristic?.let { char ->
-                characteristics.indexOfFirst { char.uuid == it.first.uuid }.let { idx ->
-                    if(idx >= 0) {
-                        Log.d(TAG, "onCharacteristicReaded $idx, ${bluetoothGattCharacteristic?.uuid}, ${char.uuid}, ${bluetoothGattCharacteristic?.value.toString()}")
-                        // Сервис имени. Получаем строку
-                        if(char.uuid == ParcelUuid.fromString("00002a00-0000-1000-8000-00805f9b34fb").uuid) {
-                            characteristics[idx] = characteristics[idx].copy(second = String(char.value, charset = Charsets.UTF_8))
-                        } else {
-                            characteristics[idx] = characteristics[idx].copy(second = char.value.joinToString { String.format("%02X", it) })
-                        }
-                        /**
-                         * Это ДРУГОЙ поток, поэтому, надо сместить обработку в Handler
-                         */
-                        Handler(Looper.getMainLooper()).post {
-                            notifyItemChanged(idx)
+    private val characteristics: MutableList<Triple<UUID, String, Int>> = mutableListOf()
+    private val btIoInterface: BtIoInterface by BtIoInterfaceLazy()
+    private val btIoListener = object: BtIoListener {
+        override fun onCharacteristicReaded(charUuid: UUID) {
+            super.onCharacteristicReaded(charUuid)
+            characteristics.indexOfFirst { it.first == charUuid }.let { idx ->
+                if(idx >= 0) {
+                    btIoInterface.readCharacteristic(charUuid)?.let { value ->
+                        if(value.isNotEmpty()) {
+                            if(charUuid == NAME_UUID.uuid) {
+                                characteristics[idx] = characteristics[idx].copy(second = String(value, charset = Charsets.UTF_8))
+                            } else {
+                                characteristics[idx] = characteristics[idx].copy(second = value.joinToString { String.format("%02X", it) })
+                            }
+                            // Log.d(TAG, "onCharacteristicReaded: $charUuid, ${characteristics[idx].second}")
+                            // Это ДРУГОЙ поток, поэтому, надо сместить обработку в Handler
+                            Handler(Looper.getMainLooper()).post {
+                                notifyItemChanged(idx)
+                            }
                         }
                     }
                 }
@@ -63,35 +58,42 @@ class RvCharAdapter: RecyclerView.Adapter<RvCharAdapter.CharHolder>() {
         }
     }
 
-
     class CharHolder(private val view: View): RecyclerView.ViewHolder(view) {
         private val binding = BtCharacteristicBinding.bind(view)
-        private val bluetoothInterface: BluetoothInterface by BluetoothInterfaceLazy()
+        private val btIoInterface: BtIoInterface by BtIoInterfaceLazy()
+        private val sendCharValueDialog:SendCharValueDialog by lazy {
+            SendCharValueDialog()
+        }
 
-        fun bind(char: Pair<BluetoothGattCharacteristic, String>) {
+        fun bind(uuid: UUID, value: String, properties: Int) {
             binding.apply {
                 buttonRead.isVisible =
-                    char.first.properties.and(BluetoothGattCharacteristic.PROPERTY_READ) == BluetoothGattCharacteristic.PROPERTY_READ
+                    properties.and(BluetoothGattCharacteristic.PROPERTY_READ) == BluetoothGattCharacteristic.PROPERTY_READ
                 buttonWrite.isVisible =
-                    char.first.properties.and(BluetoothGattCharacteristic.PROPERTY_WRITE) == BluetoothGattCharacteristic.PROPERTY_WRITE
+                    properties.and(BluetoothGattCharacteristic.PROPERTY_WRITE) == BluetoothGattCharacteristic.PROPERTY_WRITE
                 buttonNotify.isVisible =
-                    char.first.properties.and(BluetoothGattCharacteristic.PROPERTY_NOTIFY) == BluetoothGattCharacteristic.PROPERTY_NOTIFY
+                    properties.and(BluetoothGattCharacteristic.PROPERTY_NOTIFY) == BluetoothGattCharacteristic.PROPERTY_NOTIFY
                 buttonRead.setOnClickListener { _ ->
-                    bluetoothInterface.readCharacteristic(char.first)
+                    btIoInterface.requestCharacteristic(charUuid = uuid)
                 }
-                if (char.first.uuid.isGeneric()) {
+                if (uuid.isGeneric()) {
                     tvCharacteristicTitle.text = view.context.getString(R.string.characteristic_title,
-                        GenericUuids.genericName(char.first.uuid, GenericUuids.Type.Characteristic))
+                        GenericUuids.genericName(uuid, GenericUuids.Type.Characteristic))
                     tvCharactericticUuid.text  = view.context.getString(R.string.uuid_title,
-                        "0x${char.first.uuid.to16().toString(16)}")
+                        "0x${uuid.to16().toString(16)}")
                 } else {
                     tvCharacteristicTitle.text = view.context.getString(R.string.custom_characteristic)
                     tvCharactericticUuid.text  = view.context.getString(R.string.uuid_title,
-                        char.first.uuid.toString())
+                        uuid.toString())
                 }
 
-                tvCharacteristicValue.text = char.second
-                Log.d(TAG, "Value: ${char.second}")
+                buttonWrite.setOnClickListener { _ ->
+                    sendCharValueDialog.uuid = uuid
+                    sendCharValueDialog.show((view.context as FragmentActivity).supportFragmentManager, "SendCharValueDialog")
+                }
+
+                tvCharacteristicValue.text = value
+                Log.d(TAG, "Value: $value")
             }
         }
     }
@@ -107,24 +109,24 @@ class RvCharAdapter: RecyclerView.Adapter<RvCharAdapter.CharHolder>() {
 
     override fun onBindViewHolder(holder: CharHolder, position: Int) {
         Log.d(TAG, "BindViewHolder $position")
-        holder.bind(characteristics[position])
+        val char = characteristics[position]
+        holder.bind(char.first, char.second, char.third)
     }
 
     override fun onAttachedToRecyclerView(recyclerView: RecyclerView) {
         super.onAttachedToRecyclerView(recyclerView)
-        bluetoothInterface.addListener(bluetoothListener)
+        btIoInterface.addListener(btIoListener)
     }
 
     override fun onDetachedFromRecyclerView(recyclerView: RecyclerView) {
         super.onDetachedFromRecyclerView(recyclerView)
-        bluetoothInterface.removeListener(bluetoothListener)
+        btIoInterface.removeListener(btIoListener)
     }
 
     fun setService(service: BluetoothGattService) {
         characteristics.clear()
-        bluetoothService = service
         service.characteristics.forEach { characteristic ->
-            characteristics.add(Pair<BluetoothGattCharacteristic, String>(characteristic, "TEST"))
+            characteristics.add(Triple(characteristic.uuid, "", characteristic.properties))
             notifyItemInserted(characteristics.size - 1)
         }
     }

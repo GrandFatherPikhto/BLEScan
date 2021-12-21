@@ -7,21 +7,20 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.grandfatherpikhto.blescan.R
 import com.grandfatherpikhto.blescan.databinding.BtDeviceBinding
-import com.grandfatherpikhto.blescan.model.BtLeDevice
 import com.grandfatherpikhto.blescan.model.RvItemClick
 
 class RvBtAdapter : RecyclerView.Adapter<RvBtAdapter.RvBtDeviceHolder>(){
     /** Список устройств */
-    private val leDevices:MutableList<BtLeDevice> = mutableListOf()
+    private val leDevices:MutableList<BluetoothDevice> = mutableListOf()
 
     /** Коллбэк для обработки нажатия и долгого нажатия на элемент списка */
-    private var itemClick: RvItemClick<BtLeDevice>? = null
+    private var itemClick: RvItemClick<BluetoothDevice>? = null
     /** Холдер для лэйаута устройства */
     class RvBtDeviceHolder(item: View): RecyclerView.ViewHolder(item) {
         /** Привязка к элементам лэйаута устройства */
         private val binding = BtDeviceBinding.bind(item)
 
-        fun bind(btLeDevice: BtLeDevice) {
+        fun bind(btLeDevice: BluetoothDevice) {
             with(binding) {
                 btLeDevice.name.also {
                     if(it != null) {
@@ -69,9 +68,9 @@ class RvBtAdapter : RecyclerView.Adapter<RvBtAdapter.RvBtDeviceHolder>(){
     }
 
     /** Добавить устройство в список с обновлением списка */
-    fun addBtDevice(leDevice: BtLeDevice) {
+    fun addBtDevice(leDevice: BluetoothDevice) {
         if(!leDevices.contains(leDevice)) {
-            val exist: BtLeDevice? = leDevices.find { it.address.equals(leDevice.address) }
+            val exist: BluetoothDevice? = leDevices.find { it.address.equals(leDevice.address) }
             if (exist == null) {
                 leDevices.add(leDevice)
                 notifyDataSetChanged()
@@ -86,7 +85,7 @@ class RvBtAdapter : RecyclerView.Adapter<RvBtAdapter.RvBtDeviceHolder>(){
     }
 
     /** Залить устройства списком */
-    fun setBtDevicesList(leDevices: List<BtLeDevice>) {
+    fun setBtDevicesList(leDevices: List<BluetoothDevice>) {
         this.leDevices.clear()
         this.leDevices.addAll(leDevices)
         notifyDataSetChanged()
@@ -94,7 +93,7 @@ class RvBtAdapter : RecyclerView.Adapter<RvBtAdapter.RvBtDeviceHolder>(){
     }
 
     /** Это для работы со списком устройств, который возвращает  */
-    fun setBtDevices(leDevices: Set<BtLeDevice>) {
+    fun setBtDevices(leDevices: Set<BluetoothDevice>) {
         this.leDevices.clear()
         this.leDevices.addAll(leDevices)
         notifyDataSetChanged()
@@ -102,7 +101,7 @@ class RvBtAdapter : RecyclerView.Adapter<RvBtAdapter.RvBtDeviceHolder>(){
 
 
     /** Привязка к событию Click */
-    fun setOnItemClickListener(itemClick: RvItemClick<BtLeDevice>) {
+    fun setOnItemClickListener(itemClick: RvItemClick<BluetoothDevice>) {
         this.itemClick = itemClick
     }
 }
