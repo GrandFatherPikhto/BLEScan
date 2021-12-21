@@ -1,14 +1,14 @@
-package com.grandfatherpikhto.blescan.service
+package com.grandfatherpikhto.blin
 
 import android.bluetooth.*
 import android.util.Log
-import com.grandfatherpikhto.blescan.model.BtLeDevice
 import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Mutex
+import java.net.InterfaceAddress
 
 @InternalCoroutinesApi
 @DelicateCoroutinesApi
-class BtLeConnector(private val service: BtLeService) {
+class BtLeConnector(private val btLeInterface: BtLeInterface) {
     /** */
     companion object {
         const val TAG:String = "BtLeService"
@@ -38,7 +38,7 @@ class BtLeConnector(private val service: BtLeService) {
     /** */
     private val charWriteMutex = Mutex()
     /** */
-    private var leGattCallback:LeGattCallback? = null
+    private var leGattCallback: LeGattCallback? = null
     /** */
     private val bluetoothInterface: BluetoothInterface by BluetoothInterfaceLazy()
     /** Нужно для того, чтобы когда вызывается функция close(), не запускалось бы
@@ -68,7 +68,7 @@ class BtLeConnector(private val service: BtLeService) {
             }
         }
 
-        override fun onFindDevice(btLeDevice: BtLeDevice?) {
+        override fun onFindDevice(btLeDevice: BluetoothDevice?) {
             super.onFindDevice(btLeDevice)
             if (bluetoothInterface.scannerState == BtLeScanner.State.Stopped
                 && bluetoothInterface.connectorState == State.Rescan
@@ -82,7 +82,7 @@ class BtLeConnector(private val service: BtLeService) {
         /**
          * TODO: Не забудь подключить в BtLeService событие Paired!!!
          */
-        override fun onBluetoothPaired(btLeDevice: BtLeDevice?) {
+        override fun onBluetoothPaired(btLeDevice: BluetoothDevice?) {
             super.onBluetoothPaired(btLeDevice)
             doConnect()
         }
@@ -104,7 +104,7 @@ class BtLeConnector(private val service: BtLeService) {
      */
     private fun doRescan() {
         if(bluetoothInterface.bluetoothDevice != null) {
-            service.scanner.scanLeDevices(
+            btLeInterface.scanner.scanLeDevices(
                 addresses = bluetoothInterface.currentDevice!!.address,
                 mode = BtLeScanner.Mode.StopOnFind
             )
@@ -120,7 +120,7 @@ class BtLeConnector(private val service: BtLeService) {
         Log.d(TAG, "Пытаемся подключиться к ")
         bluetoothInterface.bluetoothDevice?.let { device ->
             device.connectGatt(
-                service.applicationContext,
+                btLeInterface.context,
                 device.type == BluetoothDevice.DEVICE_TYPE_UNKNOWN,
                 leGattCallback,
                 BluetoothDevice.TRANSPORT_LE
@@ -158,14 +158,30 @@ class BtLeConnector(private val service: BtLeService) {
         }
     }
 
-    fun connect(btLeDevice: BtLeDevice) {
+    /**
+     *
+     */
+    fun connect(address: String) {
+        bluetoothInterface.bluetoothAdapter?.getRemoteDevice(address).let { device ->
+            bluetoothInterface.bluetoothDevice = device
+            connect()
+        }
+    }
+
+    fun connect(bluetoothDevice: BluetoothDevice) {
+        bluetoothInterface.bluetoothDevice = bluetoothDevice
+        connect()
+    }
+
+    /**
+     * Если устройство не сопряжено, сопрягаем его и ждём оповещение сопряжения
+     * после получения, повторяем попытку подключения.
+     */
+    private fun connect() {
         reconnect = true
-        bluetoothInterface.currentDevice = btLeDevice
         if (bluetoothInterface.currentDevice != null) {
-            bluetoothInterface.bluetoothDevice =
-                bluetoothInterface.bluetoothAdapter?.getRemoteDevice(bluetoothInterface.currentDevice!!.address)
             if (bluetoothInterface.bluetoothDevice!!.bondState
-                    == BluetoothDevice.BOND_NONE) {
+                == BluetoothDevice.BOND_NONE) {
                 Log.d(TAG, "Пытаемся сопрячь устройство ${bluetoothInterface.currentDevice?.address}")
                 bluetoothInterface.bluetoothDevice!!.createBond()
             } else {
@@ -174,14 +190,6 @@ class BtLeConnector(private val service: BtLeService) {
         } else {
             doRescan()
         }
-    }
-
-    /**
-     * Если устройство не сопряжено, сопрягаем его и ждём оповещение сопряжения
-     * после получения, повторяем попытку подключения.
-     */
-    fun connect(address: String) {
-        connect(BtLeDevice(address = address))
     }
 
     fun destroy() {
