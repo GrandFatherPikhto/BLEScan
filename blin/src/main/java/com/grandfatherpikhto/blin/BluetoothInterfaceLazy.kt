@@ -1,4 +1,4 @@
-package com.grandfatherpikhto.blescan.service
+package com.grandfatherpikhto.blin
 
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.InternalCoroutinesApi
@@ -9,7 +9,7 @@ class BluetoothInterfaceLazy: Lazy<BluetoothInterface> {
     companion object Instance {
         private var instance: BluetoothInterface? = null
         const val TAG:String = "BluetoothInterface"
-        fun getInstance():BluetoothInterface  {
+        fun getInstance(): BluetoothInterface {
             instance?.let {
                 return instance!!
             }
