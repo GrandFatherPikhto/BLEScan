@@ -1,10 +1,14 @@
 package com.grandfatherpikhto.blescan.model
 
+import android.bluetooth.BluetoothDevice
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import com.grandfatherpikhto.blescan.MainActivity
 import com.grandfatherpikhto.blescan.service.*
+import com.grandfatherpikhto.blin.BluetoothInterface
+import com.grandfatherpikhto.blin.BluetoothInterfaceLazy
+import com.grandfatherpikhto.blin.BluetoothListener
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.InternalCoroutinesApi
 
@@ -23,26 +27,13 @@ class MainActivityModel: ViewModel() {
             super.onBluetoothEnabled(enabled)
             _enabled.postValue(enabled)
         }
-
-        override fun onServiceBound(oldValue: BtLeService?, newValue: BtLeService?) {
-            super.onServiceBound(oldValue, newValue)
-            _service.postValue(newValue)
-            if(newValue == null) {
-                _bond.postValue(false)
-            } else {
-                _bond.postValue(true)
-            }
-        }
     }
-
-    private val _service = MutableLiveData<BtLeService?>(null)
-    val service:LiveData<BtLeService?> = _service
 
     private val _bond = MutableLiveData<Boolean>(false)
     val bond:LiveData<Boolean> get() = _bond
 
-    private val _device = MutableLiveData<BtLeDevice?>(null)
-    val device:LiveData<BtLeDevice?> get() = _device
+    private val _device = MutableLiveData<BluetoothDevice?>(null)
+    val device:LiveData<BluetoothDevice?> get() = _device
 
     private val _ready = MutableLiveData<Boolean>(true)
     val ready:LiveData<Boolean> get() = _ready
@@ -53,7 +44,7 @@ class MainActivityModel: ViewModel() {
     private val _current = MutableLiveData<MainActivity.Current>(MainActivity.Current.Scanner)
     val current:LiveData<MainActivity.Current> get() = _current
 
-    fun changeDevice(value: BtLeDevice) {
+    fun changeDevice(value: BluetoothDevice) {
         bluetoothInterface.currentDevice = value
         _device.postValue(value)
     }
