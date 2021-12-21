@@ -1,21 +1,16 @@
-package com.grandfatherpikhto.blescan.service
+package com.grandfatherpikhto.blin
 
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.le.ScanCallback
 import android.bluetooth.le.ScanResult
 import android.util.Log
-import com.grandfatherpikhto.blescan.model.BtLeDevice
-import com.grandfatherpikhto.blescan.model.toBtLeDevice
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.InternalCoroutinesApi
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlin.properties.Delegates
 
 @DelicateCoroutinesApi
 @InternalCoroutinesApi
-class LeScanCallback(service: BtLeService): ScanCallback() {
+class LeScanCallback(btLeInterface: BtLeInterface): ScanCallback() {
     companion object {
         const val TAG: String = "LeScanCallback"
     }
@@ -25,7 +20,7 @@ class LeScanCallback(service: BtLeService): ScanCallback() {
     /** */
     private val names     = mutableListOf<String>()
     /** */
-    private val bluetoothInterface:BluetoothInterface by BluetoothInterfaceLazy()
+    private val bluetoothInterface: BluetoothInterface by BluetoothInterfaceLazy()
 
     private fun checkName(bluetoothDevice: BluetoothDevice): Boolean {
         // Log.d(TAG, "checkName: ${names.size}")
@@ -54,7 +49,7 @@ class LeScanCallback(service: BtLeService): ScanCallback() {
         if(bluetoothDevice != null) {
             if(checkName(bluetoothDevice)
                 &&  checkAddress(bluetoothDevice)) {
-                bluetoothInterface.deviceFound = bluetoothDevice.toBtLeDevice()
+                bluetoothInterface.deviceFound = bluetoothDevice
             }
         }
     }
