@@ -1,8 +1,6 @@
-package com.grandfatherpikhto.blescan.service
+package com.grandfatherpikhto.blin
 
 import android.os.ParcelUuid
-import com.grandfatherpikhto.blescan.helper.to16
-import com.grandfatherpikhto.blescan.helper.isGeneric
 import java.util.*
 
 /**
@@ -51,7 +49,7 @@ object GenericUuids {
         return uuid.toString()
     }
 
-    data class UUID16(val type:Type, val uuid:Int, val name:String)
+    data class UUID16(val type: Type, val uuid:Int, val name:String)
     enum class Type(val value:Int) {
         All(0x00),
         Member(0x01),
