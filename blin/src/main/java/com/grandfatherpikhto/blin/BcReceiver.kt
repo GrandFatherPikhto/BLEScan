@@ -1,27 +1,23 @@
-package com.grandfatherpikhto.blescan.service
+package com.grandfatherpikhto.blin
 
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import android.os.Build
 import android.util.Log
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
-import androidx.annotation.RequiresApi
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.InternalCoroutinesApi
 
 @InternalCoroutinesApi
 @DelicateCoroutinesApi
-class BcReceiver(private val service: BtLeService) : BroadcastReceiver() {
+class BcReceiver(private val btLeInterface: BtLeInterface) : BroadcastReceiver() {
     companion object {
         const val TAG: String = "BCReceiver"
     }
 
     /** */
-    private val bluetoothInterface:BluetoothInterface by BluetoothInterfaceLazy()
+    private val bluetoothInterface: BluetoothInterface by BluetoothInterfaceLazy()
 
     /**
      * Проблема в том, что ACTION_BOND_STATE_CHANGED вызывается не только
