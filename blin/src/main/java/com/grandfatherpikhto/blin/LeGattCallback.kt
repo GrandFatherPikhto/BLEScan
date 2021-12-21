@@ -1,10 +1,9 @@
-package com.grandfatherpikhto.blescan.service
+package com.grandfatherpikhto.blin
 
 import android.bluetooth.*
 import android.util.Log
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.InternalCoroutinesApi
-import kotlin.properties.Delegates
 
 /**
  * Обратные вызовы работы с GATT
@@ -17,7 +16,7 @@ class LeGattCallback  : BluetoothGattCallback() {
         const val MAX_TRY_CONNECT = 6
     }
 
-    private val bluetoothInterface:BluetoothInterface by BluetoothInterfaceLazy()
+    private val bluetoothInterface: BluetoothInterface by BluetoothInterfaceLazy()
 
     /** */
     private var tryConnectCounter = 0
@@ -118,7 +117,7 @@ class LeGattCallback  : BluetoothGattCallback() {
     ) {
         super.onDescriptorWrite(btgatt, descriptor, status)
         bluetoothInterface.connectorState = BtLeConnector.State.DescrWrited
-        bluetoothInterface.descriptoWrite(btgatt, descriptor, status)
+        bluetoothInterface.descriptorWrite(btgatt, descriptor, status)
     }
 
     override fun onServiceChanged(btgatt: BluetoothGatt) {
