@@ -1,15 +1,15 @@
-package com.grandfatherpikhto.blescan.service
+package com.grandfatherpikhto.blin
 
 import android.bluetooth.*
+import android.bluetooth.BluetoothDevice.BOND_BONDED
+import android.bluetooth.BluetoothDevice.BOND_BONDING
 import android.util.Log
-import com.grandfatherpikhto.blescan.model.BtLeDevice
-import com.grandfatherpikhto.blescan.model.toBtLeDevice
 import kotlin.properties.Delegates
 import kotlin.reflect.KProperty
-import java.lang.ref.WeakReference
 
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.InternalCoroutinesApi
+import java.util.*
 
 @InternalCoroutinesApi
 @DelicateCoroutinesApi
@@ -17,13 +17,20 @@ class BluetoothInterface {
     companion object Instance {
         private var instance: BluetoothInterface? = null
         const val TAG:String = "BluetoothInterface"
-        fun getInstance():BluetoothInterface {
+        fun getInstance(): BluetoothInterface {
             instance?.let {
                 return instance!!
             }
             instance = BluetoothInterface()
             return instance!!
         }
+    }
+
+    operator fun getValue(
+        owner: Any?,
+        property: KProperty<*>
+    ): BluetoothInterface {
+        return getInstance()
     }
 
     /** */
@@ -56,16 +63,16 @@ class BluetoothInterface {
     }
 
     /** */
-    var currentDevice: BtLeDevice? by Delegates.observable(null) { _, oldValue, newValue ->
+    var currentDevice: BluetoothDevice? by Delegates.observable(null) { _, oldValue, newValue ->
         bluetoothListener.forEach { listener ->
             listener.onSetCurrentDevice(oldValue, newValue)
         }
     }
 
     /** */
-    var service:BtLeService? by Delegates.observable(null) {property, oldValue, newValue ->
+    var btLeInterface:BtLeInterface? by Delegates.observable(null) { property, oldValue, newValue ->
         bluetoothListener.forEach { listener ->
-            listener.onServiceBound(oldValue, newValue)
+            listener.onBtLeInterfaceBound(oldValue, newValue)
         }
     }
 
@@ -84,21 +91,21 @@ class BluetoothInterface {
     }
 
     /** */
-    var scannerState:BtLeScanner.State by Delegates.observable(BtLeScanner.State.Unknown) { _, oldValue, newValue ->
+    var scannerState: BtLeScanner.State by Delegates.observable(BtLeScanner.State.Unknown) { _, oldValue, newValue ->
         bluetoothListener.forEach { listener ->
             listener.onChangeScannerState(oldValue, newValue)
         }
     }
 
     /** */
-    var connectorState:BtLeConnector.State by Delegates.observable(BtLeConnector.State.Unknown) { _, oldValue, newValue ->
+    var connectorState: BtLeConnector.State by Delegates.observable(BtLeConnector.State.Unknown) { _, oldValue, newValue ->
         bluetoothListener.forEach { listener ->
             listener.onChangeConnectorState(oldValue, newValue)
         }
     }
 
     /** */
-    var deviceFound:BtLeDevice? by Delegates.observable(null) { _, _, newValue ->
+    var deviceFound:BluetoothDevice? by Delegates.observable(null) { _, _, newValue ->
         bluetoothListener.forEach { listener ->
             listener.onFindDevice(newValue)
         }
@@ -140,7 +147,7 @@ class BluetoothInterface {
                 bluetoothPairing = pairing
             }
             bluetoothListener.forEach { listener ->
-                listener.onBluetoothPaired(pairing.toBtLeDevice())
+                listener.onBluetoothPaired(pairing)
             }
         }
 
@@ -159,7 +166,7 @@ class BluetoothInterface {
     /** */
     fun characteristicWrite(bluetoothGatt: BluetoothGatt?, bluetoothGattCharacteristic: BluetoothGattCharacteristic?, state: Int) {
         bluetoothListener.forEach { listener ->
-            listener.onCharacteristicWrited(bluetoothGatt, bluetoothGattCharacteristic, state)
+            listener.onCharacteristicWrite(bluetoothGatt, bluetoothGattCharacteristic, state)
         }
     }
 
@@ -178,19 +185,11 @@ class BluetoothInterface {
     }
 
     /** */
-    fun descriptoWrite(bluetoothGatt: BluetoothGatt?, bluetoothGattDescriptor: BluetoothGattDescriptor?, state: Int) {
+    fun descriptorWrite(bluetoothGatt: BluetoothGatt?, bluetoothGattDescriptor: BluetoothGattDescriptor?, state: Int) {
         bluetoothListener.forEach { listener ->
-            listener.onDescriptorWrited(bluetoothGatt, bluetoothGattDescriptor, state)
+            listener.onDescriptorWrite(bluetoothGatt, bluetoothGattDescriptor, state)
         }
     }
-
-    /** */
-    fun descriptorWrite(bluetoothGatt: BluetoothGatt?, bluetoothGattDescriptor: BluetoothGattDescriptor, state:Int) {
-        bluetoothListener.forEach { listener ->
-            listener.onDescriptorWrited(bluetoothGatt, bluetoothGattDescriptor, state)
-        }
-    }
-
 
     /** */
     fun addListener(listener: BluetoothListener) {
@@ -201,50 +200,64 @@ class BluetoothInterface {
         return bluetoothListener.remove(listener)
     }
 
-    operator fun getValue(
-        owner: Any?,
-        property: KProperty<*>
-    ): BluetoothInterface {
-        return getInstance()
+    fun leScanDevices(addresses: String? = null, names: String? = null, mode: BtLeScanner.Mode = BtLeScanner.Mode.FindAll) {
+        Log.d(TAG, "leScanDevices $addresses, names $names, mode: $mode")
+        btLeInterface?.scanLeDevices(addresses = addresses, names = names, mode = mode)
     }
-
-    fun leScanDevices(addresses: String? = null, names: String? = null, mode: BtLeScanner.Mode = BtLeScanner.Mode.FindAll)
-        = service?.scanLeDevices(addresses = addresses, names = names, mode = mode)
     fun leScanDevices(addresses: Array<String> = arrayOf(), names: Array<String> = arrayOf(), mode: BtLeScanner.Mode = BtLeScanner.Mode.FindAll)
-        = service?.scanLeDevices(addresses = addresses, names = names, mode = mode)
-    fun stopScan() = service?.stopScan()
-    fun pairedDevices() = service?.pairedDevices()
+        = btLeInterface?.scanLeDevices(addresses = addresses, names = names, mode = mode)
+    fun stopScan() = btLeInterface?.stopScan()
+    fun pairedDevices() = btLeInterface?.pairedDevices()
 
-    fun connect(address:String) = service?.connect(address = address)
-    fun connect(btLeDevice: BtLeDevice) = service?.connect(btLeDevice)
-    fun close() = service?.close()
+    fun connect(address:String) = btLeInterface?.connect(address = address)
+    fun connect(device: BluetoothDevice) = btLeInterface?.connect(device)
+    fun close() = btLeInterface?.close()
 
     fun bluetoothDisable() {
         bluetoothAdapter?.disable()
     }
 
-    fun writeCharacteristic(bluetoothGattCharacteristic: BluetoothGattCharacteristic?, value:ByteArray) {
-        bluetoothGattCharacteristic?.let { characteristic ->
-            characteristic.value = value
-            bluetoothGatt?.writeCharacteristic(characteristic)
+    /**
+     *
+     */
+    fun requestCharacteristic(uuid: UUID): Boolean {
+        bluetoothGatt?.let { gatt ->
+            gatt.services.forEach { service ->
+                service.characteristics.find { characteristic ->
+                    val res = characteristic.uuid == uuid
+                    if(res) {
+                        return gatt.readCharacteristic(characteristic)
+                    }
+                    res
+                }
+            }
         }
-    }
-    fun writeDescriptor(bluetoothGattDescriptor: BluetoothGattDescriptor?, value: ByteArray) {
-        bluetoothGattDescriptor?.let { descriptor ->
-            descriptor.value = value
-            bluetoothGatt?.writeDescriptor(descriptor)
-        }
-    }
-    fun readCharacteristic(bluetoothGattCharacteristic: BluetoothGattCharacteristic?) {
-        bluetoothGattCharacteristic?.let { characteristic ->
-            bluetoothGatt?.readCharacteristic(characteristic)
-        }
-    }
-    fun readDescriptor(bluetoothGattDescriptor: BluetoothGattDescriptor?) {
-        bluetoothGattDescriptor?.let { descriptor ->
-            bluetoothGatt?.readDescriptor(descriptor)
-        }
+
+        return false
     }
 
-    fun writeDescriptor(uuid: String, value: ByteArray) = service?.writeDescriptor(uuid, value)
+    /**
+     *
+     */
+    fun requestDescriptor(charUuid: UUID, descrUuid: UUID): Boolean {
+        bluetoothGatt?.let { gatt ->
+            gatt.services.forEach { service ->
+                service.characteristics.find { characteristic ->
+                    val charRes = characteristic.uuid == charUuid
+                    if(charRes) {
+                        characteristic.descriptors.find { descriptor ->
+                            val descrRes = descriptor.uuid == descrUuid
+                            if(descrRes) {
+                                return gatt.readDescriptor(descriptor)
+                            }
+                            descrRes
+                        }
+                    }
+                    charRes
+                }
+            }
+        }
+
+        return false
+    }
 }
