@@ -2,14 +2,18 @@ package com.grandfatherpikhto.blescan.helper
 
 import android.bluetooth.BluetoothDevice
 import android.os.ParcelUuid
-import com.grandfatherpikhto.blescan.model.BtLeDevice
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.util.*
 
 const val DEFAULT_NAME:String = "LED_STRIP"
 
-const val BASE_UUID:String = "00000000-0000-1000-8000-00805F9B34FB"
+val BASE_UUID:ParcelUuid by lazy {
+    ParcelUuid.fromString("00000000-0000-1000-8000-00805F9B34FB")
+}
+val NAME_UUID:ParcelUuid by lazy {
+    ParcelUuid.fromString("00002a00-0000-1000-8000-00805f9b34fb")
+}
 
 /**
  * Network Byte Order
@@ -56,26 +60,46 @@ fun Int.toHex():String {
 }
 
 /**
- * Выделить 16-битный идентификатор из UUID
+ * Выделить 16-битный идентификатор из generic UUID
  */
 fun ParcelUuid.to16():Int {
     return this.uuid.to16()
 }
 
+/**
+ * Возвращает 16-битное представление generic UUID
+ */
 fun UUID.to16():Int {
     return this.mostSignificantBits.shr(32).and(0xFFFF).toInt()
 }
 
 /**
- * Проверяет, является ли UUID-сервиса Основным (Generic)
+ * Проверяет, является ли ParcelUUID -- Основным (Generic)
  */
 fun ParcelUuid.isGeneric():Boolean {
     return this.uuid.isGeneric()
 }
 
 /**
- *
+ * Проверяет, является ли UUID -- Основным (generic)
  */
 fun UUID.isGeneric():Boolean {
     return this.mostSignificantBits and -0xffff00000001L == 0x1000L
 }
+
+/**
+ *
+ */
+@ExperimentalUnsignedTypes
+fun String.splitToByteArray(radix:Int = 10):ByteArray {
+    if(this.trim().isBlank()) return ByteArray(0)
+    return this.trim().split(regex = "\\s+".toRegex(), limit = 0)
+        .filter {
+            it.trim().isNotBlank()
+                && ( it.contains("^[\\dABCDEFabcdef]{1,2}$".toRegex())
+                    || it.contains("^\\d{1,3}$"))
+        }.map {
+            it.toInt(radix = radix).toByte()
+        }.toByteArray()
+}
+
