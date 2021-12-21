@@ -17,6 +17,9 @@ import com.grandfatherpikhto.blescan.databinding.FragmentDeviceBinding
 import com.grandfatherpikhto.blescan.model.BtLeModel
 import com.grandfatherpikhto.blescan.model.MainActivityModel
 import com.grandfatherpikhto.blescan.service.*
+import com.grandfatherpikhto.blin.BluetoothInterface
+import com.grandfatherpikhto.blin.BluetoothInterfaceLazy
+import com.grandfatherpikhto.blin.BtLeConnector
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.InternalCoroutinesApi
 
