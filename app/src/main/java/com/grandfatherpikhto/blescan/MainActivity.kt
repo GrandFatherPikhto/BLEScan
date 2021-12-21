@@ -6,7 +6,6 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
-import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import androidx.navigation.findNavController
 import androidx.navigation.ui.AppBarConfiguration
@@ -23,6 +22,8 @@ import androidx.navigation.fragment.findNavController
 import com.grandfatherpikhto.blescan.databinding.ActivityMainBinding
 import com.grandfatherpikhto.blescan.model.MainActivityModel
 import com.grandfatherpikhto.blescan.service.*
+import com.grandfatherpikhto.blin.BluetoothInterface
+import com.grandfatherpikhto.blin.BluetoothInterfaceLazy
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.InternalCoroutinesApi
 
@@ -42,9 +43,11 @@ class MainActivity : AppCompatActivity() {
     }
 
     /** */
-    private val bluetoothInterface:BluetoothInterface by BluetoothInterfaceLazy()
+    private val bluetoothInterface: BluetoothInterface by BluetoothInterfaceLazy()
     /** */
-    private var btLeServiceConnector:BtLeServiceConnector = BtLeServiceConnector()
+    private val btLeServiceConnector: BtLeServiceConnector by lazy {
+        BtLeServiceConnector()
+    }
 
     /** Главная модель. Видна везде */
     private val mainActivityModel:MainActivityModel by viewModels()
