@@ -1,5 +1,6 @@
 package com.grandfatherpikhto.blescan
 
+import android.bluetooth.BluetoothDevice
 import android.content.SharedPreferences
 import android.os.Bundle
 import android.util.Log
@@ -13,9 +14,9 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.grandfatherpikhto.blescan.adapter.RvBtAdapter
 import com.grandfatherpikhto.blescan.databinding.FragmentScanBinding
 import com.grandfatherpikhto.blescan.model.*
-import com.grandfatherpikhto.blescan.service.BluetoothInterface
-import com.grandfatherpikhto.blescan.service.BluetoothInterfaceLazy
-import com.grandfatherpikhto.blescan.service.BtLeScanner
+import com.grandfatherpikhto.blin.BluetoothInterface
+import com.grandfatherpikhto.blin.BluetoothInterfaceLazy
+import com.grandfatherpikhto.blin.BtLeScanner
 
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.InternalCoroutinesApi
@@ -79,11 +80,7 @@ class ScanFragment : Fragment() {
         mainActivityModel.enabled.observe(viewLifecycleOwner, { enabled ->
             requireActivity().invalidateOptionsMenu()
         })
-        btLeModel.bond.observe(viewLifecycleOwner, { bond ->
-            if(bond) {
-                bindAction(view)
-            }
-        })
+        bindAction(view)
     }
 
     override fun onCreateOptionsMenu(menu: Menu, menuInflater: MenuInflater) {
@@ -130,11 +127,11 @@ class ScanFragment : Fragment() {
     }
 
     private fun initRvAdapter() {
-        rvBtAdapter.setOnItemClickListener(object : RvItemClick<BtLeDevice> {
-            override fun onItemClick(model: BtLeDevice, view: View) {
+        rvBtAdapter.setOnItemClickListener(object : RvItemClick<BluetoothDevice> {
+            override fun onItemClick(model: BluetoothDevice, view: View) {
                 connectToBluetoothDevice(model)
             }
-            override fun onItemLongClick(model: BtLeDevice, view: View) {
+            override fun onItemLongClick(model: BluetoothDevice, view: View) {
                 rescanWithAddress(model)
             }
         })
@@ -193,7 +190,7 @@ class ScanFragment : Fragment() {
                     Log.d(TAG, "Action: $action")
                     btLeModel.clean()
                     bluetoothInterface.leScanDevices(names = settings.getString("names_filter", ""),
-                    addresses = settings.getString("addresses_filter", ""))
+                        addresses = settings.getString("addresses_filter", ""))
                 }
                 Action.Paired -> {
                     btLeModel.clean()
@@ -205,7 +202,7 @@ class ScanFragment : Fragment() {
         })
     }
 
-    private fun connectToBluetoothDevice(model: BtLeDevice) {
+    private fun connectToBluetoothDevice(model: BluetoothDevice) {
         Toast.makeText(
             requireContext(),
             "Подключаемся к ${model.address}",
@@ -214,7 +211,7 @@ class ScanFragment : Fragment() {
         mainActivityModel.changeCurrent(MainActivity.Current.Device)
     }
 
-    private fun rescanWithAddress(model:BtLeDevice) {
+    private fun rescanWithAddress(model:BluetoothDevice) {
         Toast.makeText(
             requireContext(),
             "Сканируем адрес ${model.address}",
