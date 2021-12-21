@@ -1,10 +1,9 @@
-package com.grandfatherpikhto.blescan.service
+package com.grandfatherpikhto.blin
 
 import android.bluetooth.*
-import com.grandfatherpikhto.blescan.model.BtLeDevice
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.InternalCoroutinesApi
-import kotlin.properties.Delegates
+import java.util.*
 
 @InternalCoroutinesApi
 @DelicateCoroutinesApi
@@ -14,19 +13,19 @@ interface BluetoothListener {
     fun onChangeBluetoothState(bluetoothDevice: BluetoothDevice?, oldState: Int, newState: Int) {}
     fun onChangeBluetoothBondState(bluetoothDevice: BluetoothDevice?, oldState: Int, newState: Int) {}
     fun onSetBluetoothDevice(oldValue: BluetoothDevice?, newValue: BluetoothDevice?) {}
-    fun onSetCurrentDevice(oldValue: BtLeDevice?, newValue: BtLeDevice?) {}
-    fun onServiceBound(oldValue: BtLeService?, newValue: BtLeService?) {}
+    fun onSetCurrentDevice(oldValue: BluetoothDevice?, newValue: BluetoothDevice?) {}
+    fun onBtLeInterfaceBound(oldValue: BtLeInterface?, newValue: BtLeInterface?) {}
     fun onBluetoothEnabled(enabled:Boolean) {}
-    fun onBluetoothPaired(btLeDevice: BtLeDevice?) {}
+    fun onBluetoothPaired(btLeDevice: BluetoothDevice?) {}
     fun onChangeScannerState(oldState: BtLeScanner.State, newState: BtLeScanner.State) {}
-    fun onFindDevice(btLeDevice: BtLeDevice?) {}
+    fun onFindDevice(btLeDevice: BluetoothDevice?) {}
     fun onScanError(oldError: Int, newError:Int) {}
     fun onChangeConnectorState(oldState: BtLeConnector.State, newState: BtLeConnector.State) {}
     fun onGattError(oldError:Int, newError:Int) {}
-    fun onCharacteristicWrited(bluetoothGatt: BluetoothGatt?, bluetoothGattCharacteristic: BluetoothGattCharacteristic?, state: Int) {}
+    fun onCharacteristicWrite(bluetoothGatt: BluetoothGatt?, bluetoothGattCharacteristic: BluetoothGattCharacteristic?, state: Int) {}
     fun onCharacteristicReaded(bluetoothGatt: BluetoothGatt?, bluetoothGattCharacteristic: BluetoothGattCharacteristic?, state: Int) {}
     fun onCharacteristicChanged(bluetoothGatt: BluetoothGatt?, bluetoothGattCharacteristic: BluetoothGattCharacteristic?) {}
-    fun onDescriptorWrited(bluetoothGatt: BluetoothGatt?, bluetoothGattDescriptor: BluetoothGattDescriptor?, state: Int) {}
+    fun onDescriptorWrite(bluetoothGatt: BluetoothGatt?, bluetoothGattDescriptor: BluetoothGattDescriptor?, state: Int) {}
     fun onDescriptorReaded(bluetoothGatt: BluetoothGatt?, bluetoothGattDescriptor: BluetoothGattDescriptor?, state: Int) {}
     fun onGattChanged(bluetoothGatt: BluetoothGatt?) {}
 }
