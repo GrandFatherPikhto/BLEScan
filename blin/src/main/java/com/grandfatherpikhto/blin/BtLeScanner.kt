@@ -1,19 +1,15 @@
-package com.grandfatherpikhto.blescan.service
+package com.grandfatherpikhto.blin
 
+import android.bluetooth.BluetoothDevice
 import android.bluetooth.le.BluetoothLeScanner
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.InternalCoroutinesApi
 import android.bluetooth.le.ScanFilter
 import android.bluetooth.le.ScanSettings
-import com.grandfatherpikhto.blescan.model.BtLeDevice
-import com.grandfatherpikhto.blescan.model.toBtLeDevice
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
-import kotlin.properties.Delegates
 
 @InternalCoroutinesApi
 @DelicateCoroutinesApi
-class BtLeScanner(private val service: BtLeService) {
+class BtLeScanner(private val btLeInterface: BtLeInterface) {
     companion object {
         const val TAG:String = "BtLeScanService"
     }
@@ -26,8 +22,8 @@ class BtLeScanner(private val service: BtLeService) {
     }
 
     interface ScannerCallback {
-        fun onChangeState(oldState:State, newState:State) {}
-        fun onFindDevice(btLeDevice: BtLeDevice?) {}
+        fun onChangeState(oldState: State, newState: State) {}
+        fun onFindDevice(btLeDevice: BluetoothDevice?) {}
         fun onScanError(error: Int) {}
     }
 
@@ -37,7 +33,7 @@ class BtLeScanner(private val service: BtLeService) {
     }
 
     /** */
-    private val bluetoothInterface:BluetoothInterface by BluetoothInterfaceLazy()
+    private val bluetoothInterface: BluetoothInterface by BluetoothInterfaceLazy()
     /** */
     private lateinit var bluetoothLeScanner:BluetoothLeScanner
 
@@ -48,8 +44,8 @@ class BtLeScanner(private val service: BtLeService) {
     /**
      * Если установлен режим Mode.StopOnFind, процесс сканирования останавливается
      */
-    private val bluetoothListener:BluetoothListener = object: BluetoothListener {
-        override fun onFindDevice(btLeDevice: BtLeDevice?) {
+    private val bluetoothListener: BluetoothListener = object: BluetoothListener {
+        override fun onFindDevice(btLeDevice: BluetoothDevice?) {
             super.onFindDevice(btLeDevice)
             if(mode == Mode.StopOnFind) {
                 stopScan()
@@ -59,7 +55,7 @@ class BtLeScanner(private val service: BtLeService) {
 
     init {
         bluetoothLeScanner = bluetoothInterface.bluetoothAdapter!!.bluetoothLeScanner
-        leScanCallback = LeScanCallback(service)
+        leScanCallback = LeScanCallback(btLeInterface)
         bluetoothInterface.addListener(bluetoothListener)
     }
 
@@ -77,7 +73,8 @@ class BtLeScanner(private val service: BtLeService) {
 
     fun scanLeDevices(addresses: String? = null,
                       names: String? = null,
-                      mode: Mode = Mode.FindAll) {
+                      mode: Mode = Mode.FindAll
+    ) {
         leScanCallback?.setAddresses(addresses)
         leScanCallback?.setNames(names)
 
@@ -107,7 +104,7 @@ class BtLeScanner(private val service: BtLeService) {
 
     fun pairedDevices() {
         bluetoothInterface.bluetoothAdapter?.bondedDevices?.forEach { device ->
-            bluetoothInterface.deviceFound = device.toBtLeDevice()
+            bluetoothInterface.deviceFound = device
         }
     }
 
