@@ -22,8 +22,8 @@ import androidx.navigation.fragment.findNavController
 import com.grandfatherpikhto.blescan.databinding.ActivityMainBinding
 import com.grandfatherpikhto.blescan.model.MainActivityModel
 import com.grandfatherpikhto.blescan.service.*
-import com.grandfatherpikhto.blin.BluetoothInterface
-import com.grandfatherpikhto.blin.BluetoothInterfaceLazy
+import com.grandfatherpikhto.blin.listeners.BluetoothInterface
+import com.grandfatherpikhto.blin.listeners.loaders.BluetoothInterfaceLazy
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.InternalCoroutinesApi
 

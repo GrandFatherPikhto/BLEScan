@@ -5,10 +5,9 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import com.grandfatherpikhto.blescan.MainActivity
-import com.grandfatherpikhto.blescan.service.*
-import com.grandfatherpikhto.blin.BluetoothInterface
-import com.grandfatherpikhto.blin.BluetoothInterfaceLazy
-import com.grandfatherpikhto.blin.BluetoothListener
+import com.grandfatherpikhto.blin.listeners.BluetoothInterface
+import com.grandfatherpikhto.blin.listeners.loaders.BluetoothInterfaceLazy
+import com.grandfatherpikhto.blin.listeners.BluetoothListener
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.InternalCoroutinesApi
 
@@ -45,7 +44,7 @@ class MainActivityModel: ViewModel() {
     val current:LiveData<MainActivity.Current> get() = _current
 
     fun changeDevice(value: BluetoothDevice) {
-        bluetoothInterface.currentDevice = value
+        bluetoothInterface.bluetoothDevice = value
         _device.postValue(value)
     }
 

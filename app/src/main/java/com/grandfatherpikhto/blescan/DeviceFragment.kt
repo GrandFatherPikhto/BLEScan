@@ -16,10 +16,9 @@ import com.grandfatherpikhto.blescan.databinding.BtDeviceBinding
 import com.grandfatherpikhto.blescan.databinding.FragmentDeviceBinding
 import com.grandfatherpikhto.blescan.model.BtLeModel
 import com.grandfatherpikhto.blescan.model.MainActivityModel
-import com.grandfatherpikhto.blescan.service.*
-import com.grandfatherpikhto.blin.BluetoothInterface
-import com.grandfatherpikhto.blin.BluetoothInterfaceLazy
-import com.grandfatherpikhto.blin.BtLeConnector
+import com.grandfatherpikhto.blin.listeners.BluetoothInterface
+import com.grandfatherpikhto.blin.listeners.loaders.BluetoothInterfaceLazy
+import com.grandfatherpikhto.blin.connectors.BtLeConnector
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.InternalCoroutinesApi
 
@@ -89,13 +88,13 @@ class DeviceFragment : Fragment() {
         btLeModel.gatt.observe(viewLifecycleOwner, { gatt ->
             gatt?.let { rvGattAdapter.setGatt(it) }
             gatt?.services?.forEach { service ->
-                Log.d(TAG, "Service: ${service.uuid} ${service.type}")
-                service?.characteristics?.forEach { characteristic ->
-                    Log.d(TAG, "Characteristic: ${characteristic.uuid} ${characteristic.properties}")
-                    characteristic?.descriptors?.forEach { descriptor ->
-                        Log.d(TAG, "Descriptor: ${descriptor.uuid}")
-                    }
-                }
+//                Log.d(TAG, "Service: ${service.uuid} ${service.type}")
+//                service?.characteristics?.forEach { characteristic ->
+//                    Log.d(TAG, "Characteristic: ${characteristic.uuid} ${characteristic.properties}")
+//                    characteristic?.descriptors?.forEach { descriptor ->
+//                        Log.d(TAG, "Descriptor: ${descriptor.uuid}")
+//                    }
+//                }
             }
         })
     }
@@ -119,8 +118,12 @@ class DeviceFragment : Fragment() {
         _binding = null
     }
 
+    override fun onDestroy() {
+        super.onDestroy()
+        Log.e(TAG, "onDestroy($this)")
+    }
+
     private fun setSnakeMessage(view: View, message: String) {
-        Log.d(TAG, "Snake message: $message")
         Snackbar.make(view, message, Snackbar.LENGTH_LONG).show()
     }
 

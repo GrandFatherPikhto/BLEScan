@@ -13,9 +13,9 @@ import com.grandfatherpikhto.blescan.databinding.BtServiceBinding
 import com.grandfatherpikhto.blescan.helper.isGeneric
 import com.grandfatherpikhto.blescan.helper.to16
 import com.grandfatherpikhto.blescan.model.RvItemClick
-import com.grandfatherpikhto.blin.BluetoothInterface
-import com.grandfatherpikhto.blin.BluetoothInterfaceLazy
-import com.grandfatherpikhto.blin.GenericUuids
+import com.grandfatherpikhto.blin.listeners.BluetoothInterface
+import com.grandfatherpikhto.blin.listeners.loaders.BluetoothInterfaceLazy
+import com.grandfatherpikhto.blin.helper.GenericUuids
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.InternalCoroutinesApi
 import java.util.*

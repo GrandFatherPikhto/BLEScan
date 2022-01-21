@@ -12,8 +12,8 @@ import androidx.fragment.app.DialogFragment
 import androidx.preference.PreferenceManager
 import com.grandfatherpikhto.blescan.databinding.SendCharDialogBinding
 import com.grandfatherpikhto.blescan.helper.splitToByteArray
-import com.grandfatherpikhto.blin.BtIoInterface
-import com.grandfatherpikhto.blin.BtIoInterfaceLazy
+import com.grandfatherpikhto.blin.listeners.BtIoInterface
+import com.grandfatherpikhto.blin.listeners.loaders.BtIoInterfaceLazy
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.InternalCoroutinesApi
 import java.util.*

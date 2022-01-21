@@ -17,11 +17,10 @@ import com.grandfatherpikhto.blescan.databinding.BtCharacteristicBinding
 import com.grandfatherpikhto.blescan.helper.NAME_UUID
 import com.grandfatherpikhto.blescan.helper.isGeneric
 import com.grandfatherpikhto.blescan.helper.to16
-import com.grandfatherpikhto.blescan.service.*
-import com.grandfatherpikhto.blin.BtIoInterface
-import com.grandfatherpikhto.blin.BtIoInterfaceLazy
-import com.grandfatherpikhto.blin.BtIoListener
-import com.grandfatherpikhto.blin.GenericUuids
+import com.grandfatherpikhto.blin.listeners.BtIoInterface
+import com.grandfatherpikhto.blin.listeners.loaders.BtIoInterfaceLazy
+import com.grandfatherpikhto.blin.listeners.BtIoListener
+import com.grandfatherpikhto.blin.helper.GenericUuids
 import kotlinx.coroutines.*
 import java.util.*
 
@@ -46,7 +45,6 @@ class RvCharAdapter: RecyclerView.Adapter<RvCharAdapter.CharHolder>() {
                             } else {
                                 characteristics[idx] = characteristics[idx].copy(second = value.joinToString { String.format("%02X", it) })
                             }
-                            // Log.d(TAG, "onCharacteristicReaded: $charUuid, ${characteristics[idx].second}")
                             // Это ДРУГОЙ поток, поэтому, надо сместить обработку в Handler
                             Handler(Looper.getMainLooper()).post {
                                 notifyItemChanged(idx)
@@ -93,7 +91,7 @@ class RvCharAdapter: RecyclerView.Adapter<RvCharAdapter.CharHolder>() {
                 }
 
                 tvCharacteristicValue.text = value
-                Log.d(TAG, "Value: $value")
+                // Log.d(TAG, "Value: $value")
             }
         }
     }
@@ -108,7 +106,7 @@ class RvCharAdapter: RecyclerView.Adapter<RvCharAdapter.CharHolder>() {
     }
 
     override fun onBindViewHolder(holder: CharHolder, position: Int) {
-        Log.d(TAG, "BindViewHolder $position")
+        // Log.d(TAG, "BindViewHolder $position")
         val char = characteristics[position]
         holder.bind(char.first, char.second, char.third)
     }

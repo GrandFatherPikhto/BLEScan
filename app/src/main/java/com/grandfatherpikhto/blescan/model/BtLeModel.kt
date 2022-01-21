@@ -7,8 +7,11 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import com.grandfatherpikhto.blescan.ScanFragment
-import com.grandfatherpikhto.blescan.service.*
-import com.grandfatherpikhto.blin.*
+import com.grandfatherpikhto.blin.connectors.BtLeConnector
+import com.grandfatherpikhto.blin.connectors.BtLeScanner
+import com.grandfatherpikhto.blin.listeners.BluetoothInterface
+import com.grandfatherpikhto.blin.listeners.loaders.BluetoothInterfaceLazy
+import com.grandfatherpikhto.blin.listeners.BluetoothListener
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.InternalCoroutinesApi
 

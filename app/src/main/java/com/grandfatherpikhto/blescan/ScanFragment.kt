@@ -14,9 +14,9 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.grandfatherpikhto.blescan.adapter.RvBtAdapter
 import com.grandfatherpikhto.blescan.databinding.FragmentScanBinding
 import com.grandfatherpikhto.blescan.model.*
-import com.grandfatherpikhto.blin.BluetoothInterface
-import com.grandfatherpikhto.blin.BluetoothInterfaceLazy
-import com.grandfatherpikhto.blin.BtLeScanner
+import com.grandfatherpikhto.blin.listeners.BluetoothInterface
+import com.grandfatherpikhto.blin.listeners.loaders.BluetoothInterfaceLazy
+import com.grandfatherpikhto.blin.connectors.BtLeScanner
 
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.InternalCoroutinesApi
@@ -189,7 +189,7 @@ class ScanFragment : Fragment() {
                 Action.Scan -> {
                     Log.d(TAG, "Action: $action")
                     btLeModel.clean()
-                    bluetoothInterface.leScanDevices(names = settings.getString("names_filter", ""),
+                    bluetoothInterface.scanLeDevices(names = settings.getString("names_filter", ""),
                         addresses = settings.getString("addresses_filter", ""))
                 }
                 Action.Paired -> {
@@ -200,6 +200,11 @@ class ScanFragment : Fragment() {
                 else -> {}
             }
         })
+    }
+
+    override fun onDestroy() {
+        Log.e(TAG, "onDestroy($this)")
+        super.onDestroy()
     }
 
     private fun connectToBluetoothDevice(model: BluetoothDevice) {
@@ -218,6 +223,6 @@ class ScanFragment : Fragment() {
             Toast.LENGTH_LONG).show()
         bluetoothInterface.stopScan()
         btLeModel.clean()
-        bluetoothInterface.leScanDevices(addresses = model.address, mode = BtLeScanner.Mode.StopOnFind)
+        bluetoothInterface.scanLeDevices(addresses = model.address, mode = BtLeScanner.Mode.StopOnFind)
     }
 }
