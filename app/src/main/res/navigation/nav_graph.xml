@@ -3,43 +3,23 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/nav_graph"
-    app:startDestination="@id/ScanFragment">
-
+    app:startDestination="@id/scanFragment">
     <fragment
-        android:id="@+id/ScanFragment"
-        android:name="com.grandfatherpikhto.blescan.ScanFragment"
+        android:id="@+id/scanFragment"
+        android:name="com.grandfatherpikhto.blescan.ui.fragments.ScanFragment"
         android:label="@string/scan_fragment_label"
         tools:layout="@layout/fragment_scan">
-
         <action
-            android:id="@+id/action_ScanFragment_to_DeviceFragment"
-            app:destination="@id/DeviceFragment" />
-        <action
-            android:id="@+id/action_ScanFragment_to_SettingsFragment"
-            app:destination="@id/SettingsFragment" />
+            android:id="@+id/action_scanFragment_to_deviceFragment"
+            app:destination="@id/deviceFragment" />
     </fragment>
     <fragment
-        android:id="@+id/DeviceFragment"
-        android:name="com.grandfatherpikhto.blescan.DeviceFragment"
+        android:id="@+id/deviceFragment"
+        android:name="com.grandfatherpikhto.blescan.ui.fragments.DeviceFragment"
         android:label="@string/device_fragment_label"
         tools:layout="@layout/fragment_device">
-
         <action
-            android:id="@+id/action_DeviceFragment_to_ScanFragment"
-            app:destination="@id/ScanFragment" />
-        <action
-            android:id="@+id/action_DeviceFragment_to_SettingsFragment"
-            app:destination="@id/SettingsFragment" />
-    </fragment>
-    <fragment
-        android:id="@+id/SettingsFragment"
-        android:name="com.grandfatherpikhto.blescan.SettingsFragment"
-        android:label="SettingsFragment" >
-        <action
-            android:id="@+id/action_SettingsFragment_to_ScanFragment"
-            app:destination="@id/ScanFragment" />
-        <action
-            android:id="@+id/action_SettingsFragment_to_DeviceFragment"
-            app:destination="@id/DeviceFragment" />
+            android:id="@+id/action_deviceFragment_to_scanFragment"
+            app:destination="@id/scanFragment" />
     </fragment>
 </navigation>

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="MultistateButton">
+        <attr name="showText" format="boolean" />
+        <attr name="srcCompat" format="reference"/>
+    </declare-styleable>
+</resources>

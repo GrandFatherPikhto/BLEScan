@@ -1,0 +1,193 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/cl_characteristic_layout"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@color/teal_700"
+    android:padding="8dp">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/cl_characteristic_read_write"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="8dp"
+        app:layout_constraintBottom_toTopOf="@+id/cl_characteristic_description"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <ImageButton
+            android:id="@+id/ib_read"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:background="@color/teal_700"
+            android:contentDescription="@string/ib_characteristic_read"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toStartOf="@+id/ib_write"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:srcCompat="@drawable/ic_read"
+            tools:srcCompat="@drawable/ic_read" />
+
+        <ImageButton
+            android:id="@+id/ib_write"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:background="@color/teal_700"
+            android:contentDescription="@string/ib_characteristic_write"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toStartOf="@+id/ib_notify"
+            app:layout_constraintStart_toEndOf="@+id/ib_read"
+            app:layout_constraintTop_toTopOf="parent"
+            app:srcCompat="@drawable/ic_write" />
+
+        <ImageButton
+            android:id="@+id/ib_notify"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:background="@color/teal_700"
+            android:contentDescription="@string/characteristic_property_notify"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toStartOf="@+id/msb_format"
+            app:layout_constraintStart_toEndOf="@+id/ib_write"
+            app:layout_constraintTop_toTopOf="parent"
+            app:srcCompat="@drawable/ic_notify_off" />
+
+        <com.grandfatherpikhto.multistatebutton.MultiStateButton
+            android:id="@+id/msb_format"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:background="@color/teal_700"
+            android:contentDescription="@string/ib_value_format"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@+id/ib_notify"
+            app:layout_constraintTop_toTopOf="parent"
+            app:srcCompat="@drawable/ic_bytes" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/cl_characteristic_description"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/cl_characteristic_read_write">
+
+        <TextView
+            android:id="@+id/tv_characteristic_name_title"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="@string/characteristic_name"
+            android:textColor="@color/white"
+            android:textStyle="bold"
+            app:layout_constraintBottom_toTopOf="@+id/tv_characteristic_name"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.5"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <TextView
+            android:id="@+id/tv_characteristic_name"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:text="@string/characteristic_name"
+            android:textColor="@color/white"
+            app:layout_constraintBottom_toTopOf="@+id/tv_characteristic_uuid_title"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.5"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/tv_characteristic_name_title"
+            tools:ignore="TextContrastCheck" />
+
+        <TextView
+            android:id="@+id/tv_characteristic_uuid_title"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="@string/characteristic_uuid"
+            android:textColor="@color/white"
+            android:textStyle="bold"
+            app:layout_constraintBottom_toTopOf="@+id/tv_characteristic_uuid"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.5"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/tv_characteristic_name" />
+
+        <TextView
+            android:id="@+id/tv_characteristic_uuid"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:text="@string/uuid_title"
+            android:textColor="@color/white"
+            app:layout_constraintBottom_toTopOf="@+id/tv_characteristic_properties_title"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.5"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/tv_characteristic_uuid_title"
+            tools:ignore="TextContrastCheck" />
+
+        <TextView
+            android:id="@+id/tv_characteristic_properties_title"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="@string/characteristic_properties"
+            android:textColor="@color/white"
+            android:textStyle="bold"
+            app:layout_constraintBottom_toTopOf="@+id/tv_characteristic_properties"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.5"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/tv_characteristic_uuid" />
+
+        <TextView
+            android:id="@+id/tv_characteristic_properties"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:text="@string/characteristic_property"
+            android:textColor="@color/white"
+            app:layout_constraintBottom_toTopOf="@+id/tv_characteristic_value_title"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.5"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/tv_characteristic_properties_title"
+            tools:ignore="TextContrastCheck" />
+
+        <TextView
+            android:id="@+id/tv_characteristic_value_title"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="@string/characteristic_value"
+            android:textColor="@color/white"
+            android:textStyle="bold"
+            app:layout_constraintBottom_toTopOf="@+id/tv_characteristic_value"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.5"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/tv_characteristic_properties" />
+
+        <TextView
+            android:id="@+id/tv_characteristic_value"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:text="@string/characteristic_value"
+            android:textColor="@color/white"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.5"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/tv_characteristic_value_title"
+            tools:ignore="TextContrastCheck" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>
