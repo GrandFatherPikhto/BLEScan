@@ -1,15 +1,18 @@
 # Простейший сканнер BLE
-<img src="images/blescan.svg" title="Логотип программы BLEScan" width="150px">
+<img src="images/blescan.svg" title="Логотип программы BLEScan"  style="width:150px">
 
 
 ## Внешний вид программы
-<img src="images/blescan01.png" title="BLEScan, скрин №1" width="150px">
-<img src="images/blescan02.png" title="BLEScan, скрин №2" width="150px">
-<img src="images/blescan03.png" title="BLEScan, скрин №3" width="150px">
-<img src="images/blescan04.png" title="BLEScan, скрин №4" width="150px">
-<img src="images/blescan05.png" title="BLEScan, скрин №5" width="150px">
-<img src="images/blescan06.png" title="BLEScan, скрин №6" width="150px">
-<img src="images/blescan07.png" title="BLEScan, скрин №7" width="150px">
+
+<img src="images/blescan01.png" title="BLEScan, скрин №1" style="float:left;width:150px">
+<img src="images/blescan02.png" title="BLEScan, скрин №2"  style="float:left;width:150px">
+<img src="images/blescan03.png" title="BLEScan, скрин №3"  style="float:left;width:150px">
+<img src="images/blescan04.png" title="BLEScan, скрин №4"  style="float:left;width:150px">
+<img src="images/blescan05.png" title="BLEScan, скрин №5"  style="float:left;width:150px">
+<img src="images/blescan06.png" title="BLEScan, скрин №6"  style="float:left;width:150px">
+<img src="images/blescan07.png" title="BLEScan, скрин №7"  style="float:left;width:150px">
+
+<div style="clear:both;"></div>
 
 ## Зачем?
 
