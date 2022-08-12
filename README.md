@@ -3,16 +3,7 @@
 
 
 ## Внешний вид программы
-
-<img src="images/blescan01.png" title="BLEScan, скрин №1" style="float:left;width:150px">
-<img src="images/blescan02.png" title="BLEScan, скрин №2"  style="float:left;width:150px">
-<img src="images/blescan03.png" title="BLEScan, скрин №3"  style="float:left;width:150px">
-<img src="images/blescan04.png" title="BLEScan, скрин №4"  style="float:left;width:150px">
-<img src="images/blescan05.png" title="BLEScan, скрин №5"  style="float:left;width:150px">
-<img src="images/blescan06.png" title="BLEScan, скрин №6"  style="float:left;width:150px">
-<img src="images/blescan07.png" title="BLEScan, скрин №7"  style="float:left;width:150px">
-
-<div style="clear:both;"></div>
+!["BLEScan, скрин №1"](images/blescan01.png){: style="float:left;width:150px"}
 
 ## Зачем?
 
