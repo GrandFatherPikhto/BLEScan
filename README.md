@@ -3,14 +3,13 @@
 
 
 ## Внешний вид программы
-<div style="float:left;"><img src="images/blescan01.png" alt="BLEScan, скрин №1" style="width:150px;"/></div>
-<div style="float:left;"><img src="images/blescan02.png" alt="BLEScan, скрин №1" style="width:150px;"/></div>
-<div style="float:left;"><img src="images/blescan03.png" alt="BLEScan, скрин №1" style="width:150px;"/></div>
-<div style="float:left;"><img src="images/blescan04.png" alt="BLEScan, скрин №1" style="width:150px;"/></div>
-<div style="float:left;"><img src="images/blescan05.png" alt="BLEScan, скрин №1" style="width:150px;"/></div>
-<div style="float:left;"><img src="images/blescan06.png" alt="BLEScan, скрин №1" style="width:150px;"/></div>
-<div style="float:left;"><img src="images/blescan07.png" alt="BLEScan, скрин №1" style="width:150px;"/></div>
-<div style="clear:both;">&nbsp;</div>
+![BLEScan, скрин №1](images/blescan01.png)
+![BLEScan, скрин №1](images/blescan02.png)
+![BLEScan, скрин №1](images/blescan03.png)
+![BLEScan, скрин №1](images/blescan04.png)
+![BLEScan, скрин №1](images/blescan05.png)
+![BLEScan, скрин №1](images/blescan06.png)
+![BLEScan, скрин №1](images/blescan07.png)
 
 ## Зачем?
 
