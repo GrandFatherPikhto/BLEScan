@@ -3,13 +3,13 @@
 
 
 ## Внешний вид программы
-![BLEScan, скрин №1](images/blescan01.png)
-![BLEScan, скрин №1](images/blescan02.png)
-![BLEScan, скрин №1](images/blescan03.png)
-![BLEScan, скрин №1](images/blescan04.png)
-![BLEScan, скрин №1](images/blescan05.png)
-![BLEScan, скрин №1](images/blescan06.png)
-![BLEScan, скрин №1](images/blescan07.png)
+![BLEScan, скрин №1](images/blescan01_min.png)
+![BLEScan, скрин №2](images/blescan02_min.png)
+![BLEScan, скрин №3](images/blescan03_min.png)
+![BLEScan, скрин №4](images/blescan04_min.png)
+![BLEScan, скрин №5](images/blescan05_min.png)
+![BLEScan, скрин №6](images/blescan06_min.png)
+![BLEScan, скрин №7](images/blescan07_min.png)
 
 ## Зачем?
 
