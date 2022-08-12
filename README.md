@@ -1,10 +1,15 @@
 # Простейший сканнер BLE
-![Логотип программы BLEScan](images/blescan.svg "Логотип программы BLEScan")
+<img src="images/blescan.svg" title="Логотип программы BLEScan" width="150px">
+
 
 ## Внешний вид программы
-![Программа BLEScan, скрин 01](images/blescan01.png "Программа BLEScan, скрин 1")
-![Программа BLEScan, скрин 02](images/blescan02.png "Программа BLEScan, скрин 2")
-![Программа BLEScan, скрин 03](images/blescan03.png "Программа BLEScan, скрин 3")
+<img src="images/blescan01.png" title="BLEScan, скрин №1" width="150px">
+<img src="images/blescan02.png" title="BLEScan, скрин №2" width="150px">
+<img src="images/blescan03.png" title="BLEScan, скрин №3" width="150px">
+<img src="images/blescan04.png" title="BLEScan, скрин №4" width="150px">
+<img src="images/blescan05.png" title="BLEScan, скрин №5" width="150px">
+<img src="images/blescan06.png" title="BLEScan, скрин №6" width="150px">
+<img src="images/blescan07.png" title="BLEScan, скрин №7" width="150px">
 
 ## Зачем?
 
