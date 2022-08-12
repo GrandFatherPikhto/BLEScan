@@ -6,17 +6,15 @@ import android.view.View
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.view.setMargins
 import androidx.recyclerview.widget.RecyclerView
-import com.grandfatherpikhto.blescan.BleScanApp
 import com.grandfatherpikhto.blin.GenericUUIDs
 import com.grandfatherpikhto.blin.GenericUUIDs.genericStringUUID
 import com.grandfatherpikhto.blin.helper.hasFlag
 import com.grandfatherpikhto.blescan.R
-import com.grandfatherpikhto.blescan.data.CharacteristicData
+import com.grandfatherpikhto.blescan.data.BleItem
 import com.grandfatherpikhto.blescan.databinding.LayoutCharacteristicBinding
 import com.grandfatherpikhto.blescan.helper.dpToPx
-import com.grandfatherpikhto.blin.BleManager
-import com.grandfatherpikhto.blin.BleManagerInterface
 import com.grandfatherpikhto.blin.GenericUUIDs.findGeneric
+import com.grandfatherpikhto.blin.helper.toHexString
 import com.grandfatherpikhto.multistatebutton.MultiStateData
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
@@ -29,12 +27,13 @@ class CharacteristicHolder(private val view: View) : RecyclerView.ViewHolder(vie
 
     private fun getString(resId: Int, vararg formatArgs: String) = view.context.getString(resId, formatArgs)
 
-    private var characteristicData: CharacteristicData? = null
+    private var _bleItem: BleItem? = null
+    private val bleItem get() = _bleItem!!
 
-    private var characteristicReadClickListener: ((CharacteristicData, View) -> Unit)? = null
-    private var characteristicNotifyClickListener: ((CharacteristicData, View) -> Unit)? = null
-    private var characteristicWriteClickListener: ((CharacteristicData, View) -> Unit)? = null
-    private var characteristicFormatClickListener: ((CharacteristicData, RvBleDeviceAdapter.Format, View) -> Unit)? = null
+    private var characteristicReadClickListener: ((BleItem, View) -> Unit)? = null
+    private var characteristicNotifyClickListener: ((BleItem, View) -> Unit)? = null
+    private var characteristicWriteClickListener: ((BleItem, View) -> Unit)? = null
+    private var characteristicFormatClickListener: ((BleItem, RvBleDeviceAdapter.Format, View) -> Unit)? = null
 
     private val characteristicProperties = listOf(
         CharacteristicProperty(
@@ -63,41 +62,19 @@ class CharacteristicHolder(private val view: View) : RecyclerView.ViewHolder(vie
             R.string.characteristic_property_extended_props)
     )
 
-    private fun writeType() {
-        characteristicData?.let { data ->
-            data.bluetoothGattCharacteristic.writeType.let { writeType ->
-                if (writeType.hasFlag(BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT)) {
-                    Log.d("Write Type", "Default")
-                }
-
-                if (writeType.hasFlag(BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE)) {
-                    Log.d("Write Type", "No Response")
-                }
-
-                if (writeType.hasFlag(BluetoothGattCharacteristic.WRITE_TYPE_SIGNED)) {
-                    Log.d("Write Type", "Signed")
-                }
-            }
-        }
-    }
-
     private fun textCharacteristicProperties() : String {
         val propertiesList = mutableListOf<String>()
-        characteristicData?.let { data ->
             characteristicProperties.forEach { characteristicProperty ->
-                if (data.bluetoothGattCharacteristic
-                        .properties.hasFlag(characteristicProperty.property)) {
+                if (bleItem.charProperties.hasFlag(characteristicProperty.property)) {
                     propertiesList.add(getString(characteristicProperty.resId))
                 }
             }
-        }
 
         return propertiesList.joinToString(", ")
     }
 
     private fun showPropertyIcons() {
-        characteristicData?.let { data ->
-            data.bluetoothGattCharacteristic.properties.let { properties ->
+            bleItem.charProperties.let { properties ->
                 binding.apply {
                     if (properties.hasFlag(BluetoothGattCharacteristic.PROPERTY_READ)
                     ) {
@@ -116,7 +93,7 @@ class CharacteristicHolder(private val view: View) : RecyclerView.ViewHolder(vie
                     if (properties.hasFlag(BluetoothGattCharacteristic.PROPERTY_NOTIFY)
                     ) {
                         ibWrite.visibility = View.VISIBLE
-                        if (data.notify) {
+                        if (bleItem.charNotify) {
                             ibNotify.setImageResource(R.drawable.ic_notify_on)
                         } else {
                             ibNotify.setImageResource(R.drawable.ic_notify_off)
@@ -127,174 +104,172 @@ class CharacteristicHolder(private val view: View) : RecyclerView.ViewHolder(vie
                 }
             }
         }
-    }
 
     private fun bindCharacteristicFormatIcon() {
-        characteristicData?.let { data ->
             binding.apply {
                 msbFormat.setStates(RvBleDeviceAdapter.Format.values().map { MultiStateData(it.value) })
                 showCharacteristicValue()
                 msbFormat.setOnChangeStatusListener { _, resId, _, msbView ->
-                    RvBleDeviceAdapter.Format.byResId(resId)?.let { format ->
+                    RvBleDeviceAdapter.Format.byResId(resId).let { format ->
                         showCharacteristicValue()
                         characteristicFormatClickListener?.let { listener ->
-                            listener(data, format, msbView)
+                            listener(bleItem, format, msbView)
                         }
                     }
                 }
             }
         }
-    }
 
-    private fun bindNotifyCharacteristicIcon() = characteristicData?.let { data ->
-        characteristicData?.let { data ->
-            binding.apply {
-                ibNotify.setOnClickListener { _ ->
-                    characteristicNotifyClickListener?.let { listener ->
-                        listener(data, view)
-                    }
+    private fun bindNotifyCharacteristicIcon() =
+        binding.apply {
+            ibNotify.setOnClickListener { _ ->
+                characteristicNotifyClickListener?.let { listener ->
+                    logBluetoothGattCharacteristic()
+                    listener(bleItem, view)
                 }
             }
         }
-    }
-
 
     private fun bindClickCharacteristicIcons() {
-        characteristicData?.let { data ->
-            binding.apply {
-                ibRead.setOnClickListener { ivView ->
-                    characteristicReadClickListener?.let { listener ->
-                        listener(data, ivView)
-                    }
+        binding.apply {
+            ibRead.setOnClickListener { ivView ->
+                characteristicReadClickListener?.let { listener ->
+                    listener(bleItem, ivView)
                 }
+            }
 
-                ibWrite.setOnClickListener { ivView ->
-                    characteristicWriteClickListener?.let { listener ->
-                        listener(data, ivView)
-                    }
+            ibWrite.setOnClickListener { ivView ->
+                characteristicWriteClickListener?.let { listener ->
+                    listener(bleItem, ivView)
                 }
+            }
 
-                ibNotify.setOnClickListener { ivView ->
-                    characteristicNotifyClickListener?.let { listener ->
-                        listener(data, ivView)
-                    }
+            ibNotify.setOnClickListener { ivView ->
+                characteristicNotifyClickListener?.let { listener ->
+                    listener(bleItem, ivView)
                 }
             }
         }
     }
 
     private fun showCharacteristicValue() {
-        characteristicData?.let { data ->
-            binding.apply {
-                data.bluetoothGattCharacteristic.value?.let { value ->
-                    RvBleDeviceAdapter.Format.byResId(binding.msbFormat.state)?.let { state ->
-                        msbFormat.enableState(RvBleDeviceAdapter.Format.Integer.value,
-                            value.size == Int.SIZE_BYTES)
-                        msbFormat.enableState(RvBleDeviceAdapter.Format.Float.value,
-                            value.size == Float.SIZE_BYTES)
-                        tvCharacteristicValue.text =
-                            when(state) {
-                                RvBleDeviceAdapter.Format.Integer -> {
-                                    if (value.size == Int.SIZE_BYTES) {
-                                        String.format(
-                                            "%04d",
-                                            ByteBuffer.wrap(value)
-                                                .order(ByteOrder.BIG_ENDIAN).int
-                                        )
-                                    } else {
-                                        ""
-                                    }
-                                }
-                                RvBleDeviceAdapter.Format.Bytes -> {
-                                    value.joinToString (", "){ String.format("%02X", it) }
-                                }
-                                RvBleDeviceAdapter.Format.Text -> {
-                                    String(value)
-                                }
-                                RvBleDeviceAdapter.Format.Float -> {
-                                    if (value.size == Float.SIZE_BYTES) {
-                                        ByteBuffer.wrap(value).order(ByteOrder.BIG_ENDIAN).float.toString()
-                                    } else ""
+        binding.apply {
+            bleItem.value?.let { value ->
+                RvBleDeviceAdapter.Format.byResId(binding.msbFormat.state).let { state ->
+                    msbFormat.enableState(RvBleDeviceAdapter.Format.Integer.value,
+                        value.size == Int.SIZE_BYTES)
+                    msbFormat.enableState(RvBleDeviceAdapter.Format.Float.value,
+                        value.size == Float.SIZE_BYTES)
+                    tvCharacteristicValue.text =
+                        when(state) {
+                            RvBleDeviceAdapter.Format.Bytes -> {
+                                if (value.isNotEmpty()) {
+                                    val strValue = value.joinToString(", ") { String.format("%02X", it) }
+                                    Log.d(tagLog, "showCharacteristicValue(${bleItem.uuidService}, $strValue)")
+                                    strValue
+                                } else ""
+                            }
+                            RvBleDeviceAdapter.Format.Integer -> {
+                                if (value.size == Int.SIZE_BYTES) {
+                                    String.format(
+                                        "%04d",
+                                        ByteBuffer.wrap(value)
+                                            .order(ByteOrder.BIG_ENDIAN).int
+                                    )
+                                } else {
+                                    ""
                                 }
                             }
-                    }
+                            RvBleDeviceAdapter.Format.Text -> {
+                                String(value)
+                            }
+                            RvBleDeviceAdapter.Format.Float -> {
+                                if (value.size == Float.SIZE_BYTES) {
+                                    ByteBuffer.wrap(value).order(ByteOrder.BIG_ENDIAN).float.toString()
+                                } else ""
+                            }
+                        }
                 }
             }
         }
     }
 
     private fun showCharacteristic() {
-        characteristicData?.let { charData ->
-            binding.apply {
-                if (charData.visible) {
-                    val layoutParams = ConstraintLayout.LayoutParams(
-                        ConstraintLayout.LayoutParams.MATCH_PARENT,
-                        ConstraintLayout.LayoutParams.WRAP_CONTENT
-                    )
-                    layoutParams.height = ConstraintLayout.LayoutParams.WRAP_CONTENT
-                    layoutParams.setMargins(dpToPx(8), dpToPx(8),0, 0)
-                    clCharacteristicLayout.layoutParams = layoutParams
-                    clCharacteristicLayout.visibility = View.VISIBLE
-                } else {
-                    val layoutParams = ConstraintLayout.LayoutParams(0, 0)
-                    layoutParams.height = 0
-                    layoutParams.setMargins(0)
-                    clCharacteristicLayout.layoutParams = layoutParams
-                    clCharacteristicLayout.visibility = View.GONE
-                }
+        binding.apply {
+            if (bleItem.opened) {
+                val layoutParams = ConstraintLayout.LayoutParams(
+                    ConstraintLayout.LayoutParams.MATCH_PARENT,
+                    ConstraintLayout.LayoutParams.WRAP_CONTENT
+                )
+                layoutParams.height = ConstraintLayout.LayoutParams.WRAP_CONTENT
+                layoutParams.setMargins(dpToPx(8), dpToPx(8),0, 0)
+                clCharacteristicLayout.layoutParams = layoutParams
+                clCharacteristicLayout.visibility = View.VISIBLE
+            } else {
+                val layoutParams = ConstraintLayout.LayoutParams(0, 0)
+                layoutParams.height = 0
+                layoutParams.setMargins(0)
+                clCharacteristicLayout.layoutParams = layoutParams
+                clCharacteristicLayout.visibility = View.GONE
             }
         }
     }
 
     private fun genericValueFormat() {
-        characteristicData?.let { data ->
-            binding.apply {
-                data.bluetoothGattCharacteristic.uuid.findGeneric()?.let { uuiD16 ->
+        binding.apply {
+            bleItem.uuidCharacteristic?.let { uuid ->
+                uuid.findGeneric()?.let { uuiD16 ->
                     if (uuiD16.uuid == 0x2A00) {
                         msbFormat.enableState(RvBleDeviceAdapter.Format.Integer.value, false)
                         msbFormat.enableState(RvBleDeviceAdapter.Format.Float.value, false)
                         msbFormat.enableState(RvBleDeviceAdapter.Format.Bytes.value, false)
                         msbFormat.setCurrentResId(RvBleDeviceAdapter.Format.Text.value)
-                        Log.d(tagLog, "Generic Name")
                     }
                 }
             }
         }
     }
 
-    fun bind(data: CharacteristicData) {
-        this.characteristicData = data
+    private fun logBluetoothGattCharacteristic() =
+        bleItem.value?.let { value ->
+            Log.d(tagLog, "Characteristic: ${value.toHexString()}")
+        }
+
+
+    fun bind(item: BleItem) {
+        _bleItem = item
+        logBluetoothGattCharacteristic()
         binding.apply {
-            tvCharacteristicName.text = data.bluetoothGattCharacteristic.uuid
-                .findGeneric()?.name ?: getString(R.string.custom_characteristic)
-            tvCharacteristicUuid.text = data.bluetoothGattCharacteristic.uuid
-                .genericStringUUID(type = GenericUUIDs.Type.Characteristic)
+            tvCharacteristicName.text = bleItem.uuidCharacteristic
+                ?.findGeneric()?.name ?: getString(R.string.custom_characteristic)
+            tvCharacteristicUuid.text = bleItem.uuidCharacteristic
+                ?.genericStringUUID(type = GenericUUIDs.Type.Characteristic)
             tvCharacteristicProperties.text =
                 textCharacteristicProperties()
         }
-        writeType()
+
         bindClickCharacteristicIcons()
         bindCharacteristicFormatIcon()
         bindNotifyCharacteristicIcon()
-        showCharacteristicValue()
         genericValueFormat()
         showPropertyIcons()
+        showCharacteristicValue()
         showCharacteristic()
     }
 
-    fun setOnCharacteristicReadClickListener(listener: (CharacteristicData, View) -> Unit) {
+    fun setOnCharacteristicReadClickListener(listener: (BleItem, View) -> Unit) {
         characteristicReadClickListener = listener
     }
 
-    fun setOnCharacteristicWriteClickListener(listener: (CharacteristicData, View) -> Unit) {
+    fun setOnCharacteristicWriteClickListener(listener: (BleItem, View) -> Unit) {
         characteristicWriteClickListener = listener
     }
 
-    fun setOnCharacteristicNotifyClickListener(listener: (CharacteristicData, View) -> Unit) {
+    fun setOnCharacteristicNotifyClickListener(listener: (BleItem, View) -> Unit) {
         characteristicNotifyClickListener = listener
     }
 
-    fun setOnCharacteristicFormatClickListener(listener: (CharacteristicData, RvBleDeviceAdapter.Format, View) -> Unit) {
+    fun setOnCharacteristicFormatClickListener(listener: (BleItem, RvBleDeviceAdapter.Format, View) -> Unit) {
         characteristicFormatClickListener = listener
     }
 }

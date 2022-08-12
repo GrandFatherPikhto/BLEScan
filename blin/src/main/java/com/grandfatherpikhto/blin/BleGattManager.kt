@@ -238,6 +238,8 @@ class BleGattManager constructor(private val bleManager: BleManager,
         if (status == BluetoothGatt.GATT_SUCCESS
             && gatt != null
             && characteristic != null) {
+            // val value = characteristic.value.joinToString (", "){ String.format("%02X", it) }
+            // Log.d(tagLog, "onCharacteristicRead(${characteristic.uuid}, $value)")
             mutableSharedFlowCharacteristic.tryEmit(characteristic)
         }
     }
@@ -269,16 +271,24 @@ class BleGattManager constructor(private val bleManager: BleManager,
                         bluetoothGattDescriptor.value =
                             BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE
                         writeGattData(GattData(bluetoothGattDescriptor))
-                        mutableSharedFlowCharacteristicNotify.tryEmit(BleCharacteristicNotify(bluetoothGattCharacteristic, false))
                     } else {
                         gatt.setCharacteristicNotification(bluetoothGattCharacteristic, true)
                         // Log.d(tagLog, "notifyCharacteristic(${bluetoothGattCharacteristic.uuid}, enable)")
                         bluetoothGattDescriptor.value =
                             BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
                         writeGattData(GattData(bluetoothGattDescriptor))
-                        mutableSharedFlowCharacteristicNotify.tryEmit(BleCharacteristicNotify(bluetoothGattCharacteristic, true))
                     }
                 }
+        }
+    }
+
+    fun notifyCharacteristic(gattData: GattData) {
+        bluetoothGatt?.let { gatt ->
+            gatt.getService(gattData.uuidService)?.let { service ->
+                service.getCharacteristic(gattData.uuidCharacteristic).let { char ->
+                    notifyCharacteristic(char)
+                }
+            }
         }
     }
 
@@ -290,6 +300,24 @@ class BleGattManager constructor(private val bleManager: BleManager,
 
         return false
     }
+
+    @SuppressLint("MissingPermission")
+    fun readGattData(gattData: GattData) : Boolean {
+        bluetoothGatt?.let { gatt ->
+            gatt.getService(gattData.uuidService)?.let { service ->
+                service.getCharacteristic(gattData.uuidCharacteristic)?.let { char ->
+                    if (gattData.uuidDescriptor == null) return readCharacteristic(char)
+                    else char.getDescriptor(gattData.uuidDescriptor)?.let { descr ->
+                            return readDescriptor(descr)
+                    }
+                }
+            }
+        }
+
+        return false
+    }
+
+
 
     @SuppressLint("MissingPermission")
     fun readDescriptor(bluetoothGattDescriptor: BluetoothGattDescriptor) : Boolean {
@@ -305,6 +333,8 @@ class BleGattManager constructor(private val bleManager: BleManager,
                               characteristic: BluetoothGattCharacteristic?,
                               status: Int) {
         if (gatt != null && characteristic != null && status == BluetoothGatt.GATT_SUCCESS) {
+            val value = characteristic.value.joinToString (", "){ String.format("%02X", it) }
+            Log.d(tagLog, "onCharacteristicWrite(${characteristic.uuid}, $value)")
             mutableSharedFlowCharacteristic.tryEmit(characteristic)
         }
     }
@@ -317,14 +347,18 @@ class BleGattManager constructor(private val bleManager: BleManager,
             when(notify) {
                 0 -> {
                     if (isCharacteristicNotified(bluetoothGattDescriptor.characteristic)) {
-                        mutableListNotifiedCharacteristic.remove(bluetoothGattDescriptor.characteristic)
                         Log.d(tagLog, "onCharacteristicChanged(${bluetoothGattDescriptor.characteristic.uuid}, notifyDisable)")
+                        mutableListNotifiedCharacteristic.remove(bluetoothGattDescriptor.characteristic)
+                        mutableSharedFlowCharacteristicNotify
+                            .tryEmit(BleCharacteristicNotify(bluetoothGattDescriptor.characteristic.uuid, false))
                     }
                 }
                 1 -> {
                     if (!isCharacteristicNotified(bluetoothGattDescriptor.characteristic)) {
-                        mutableListNotifiedCharacteristic.add(bluetoothGattDescriptor.characteristic)
                         Log.d(tagLog, "onCharacteristicChanged(${bluetoothGattDescriptor.characteristic.uuid}, notifyEnable)")
+                        mutableListNotifiedCharacteristic.add(bluetoothGattDescriptor.characteristic)
+                        mutableSharedFlowCharacteristicNotify
+                            .tryEmit(BleCharacteristicNotify(bluetoothGattDescriptor.characteristic.uuid, true))
                     }
                 }
                 2 -> {
@@ -351,10 +385,5 @@ class BleGattManager constructor(private val bleManager: BleManager,
     @SuppressLint("MissingPermission")
     fun onCharacteristicChanged(gatt: BluetoothGatt?,
                           characteristic: BluetoothGattCharacteristic?) {
-        if (gatt != null && characteristic != null) {
-            if (!isCharacteristicNotified(characteristic)) {
-                Log.d(tagLog, "onCharacteristicChanged(${characteristic.uuid}, notifyEnable)")
-            }
-        }
     }
 }

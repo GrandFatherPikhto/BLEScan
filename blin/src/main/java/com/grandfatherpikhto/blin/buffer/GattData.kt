@@ -4,20 +4,22 @@ import android.bluetooth.BluetoothGattCharacteristic
 import android.bluetooth.BluetoothGattDescriptor
 import java.util.*
 
-data class GattData (val value: ByteArray,
-                     val uuidService: UUID,
-                     val uuidCharacteristic: UUID,
-                     val uuidDescriptor: UUID? = null) {
+data class GattData (val uuidService: UUID,
+                     val uuidCharacteristic: UUID? = null,
+                     val uuidDescriptor: UUID? = null,
+                     val value: ByteArray? = null) {
 
     constructor(bluetoothGattCharacteristic: BluetoothGattCharacteristic)
-        : this(bluetoothGattCharacteristic.value,
-            bluetoothGattCharacteristic.service.uuid,
-            bluetoothGattCharacteristic.uuid)
+        : this(bluetoothGattCharacteristic.service.uuid,
+            bluetoothGattCharacteristic.uuid,
+            null,
+            bluetoothGattCharacteristic.value)
 
     constructor(bluetoothGattDescriptor: BluetoothGattDescriptor)
-            : this(bluetoothGattDescriptor.value,
-        bluetoothGattDescriptor.characteristic.service.uuid,
-        bluetoothGattDescriptor.characteristic.uuid, bluetoothGattDescriptor.uuid)
+            : this(bluetoothGattDescriptor.characteristic.service.uuid,
+                   bluetoothGattDescriptor.characteristic.uuid,
+                   bluetoothGattDescriptor.uuid,
+                   bluetoothGattDescriptor.value)
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

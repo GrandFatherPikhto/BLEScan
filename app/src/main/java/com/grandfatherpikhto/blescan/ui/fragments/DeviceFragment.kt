@@ -190,25 +190,24 @@ class DeviceFragment : Fragment() {
             }
         }
 
-        rvBleDeviceAdapter.setOnCharacteristicReadClickListener { bluetoothGattCharacteristic, _ ->
-            bleManager.readCharacteristic(bluetoothGattCharacteristic)
-            Log.d(tagLog, "Read Characteristic: ${bluetoothGattCharacteristic.uuid}")
+        rvBleDeviceAdapter.setOnCharacteristicReadClickListener { bleItem, _ ->
+            bleManager.readGattData(bleItem.gattData)
         }
 
-        rvBleDeviceAdapter.setOnCharacteristicWriteClickListener { bluetoothGattCharacteristic, _ ->
+        rvBleDeviceAdapter.setOnCharacteristicWriteClickListener { bleItem, _ ->
             val sendDialogFragment = SendDialogFragment()
             sendDialogFragment.setOnSelectValueListener { value ->
                 value?.let { characteristicValue ->
                     Log.d(tagLog, characteristicValue.joinToString(",") { String.format("%02X", it)})
-                    bluetoothGattCharacteristic.value = characteristicValue
-                    bleManager.writeGattData(GattData(bluetoothGattCharacteristic))
+                    bleItem.value = characteristicValue
+                    bleManager.writeGattData(bleItem.gattData)
                 }
             }
             sendDialogFragment.show(requireActivity().supportFragmentManager, "Dialog")
         }
 
-        rvBleDeviceAdapter.setOnCharacteristicNotifyClickListener { bluetoothGattCharacteristic, _ ->
-            bleManager.notifyCharacteristic(bluetoothGattCharacteristic)
+        rvBleDeviceAdapter.setOnCharacteristicNotifyClickListener { bleItem, _ ->
+            bleManager.notifyCharacteristic(bleItem.gattData)
         }
 
         lifecycleScope.launch {
@@ -219,8 +218,6 @@ class DeviceFragment : Fragment() {
 
         lifecycleScope.launch {
             deviceViewModel.sharedFlowCharacteristic.collect {
-                Log.d(tagLog, "Characteristic readed: ${it.uuid} ${it.value}" +
-                    ", ${it.writeType.hasFlag(BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE)}")
                 rvBleDeviceAdapter.changeCharacteristicValue(it)
             }
         }

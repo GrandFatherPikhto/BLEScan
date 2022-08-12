@@ -103,12 +103,18 @@ class BleManager constructor(private val context: Context,
     override fun readCharacteristic(bluetoothGattCharacteristic: BluetoothGattCharacteristic)
         = bleGattManager.readCharacteristic(bluetoothGattCharacteristic)
 
+    override fun readGattData(gattData: GattData): Boolean =
+        bleGattManager.readGattData(gattData)
+
     override fun readDescriptor(bluetoothGattDescriptor: BluetoothGattDescriptor)
         = bleGattManager.readDescriptor(bluetoothGattDescriptor)
 
     override fun notifyCharacteristic(
         bluetoothGattCharacteristic: BluetoothGattCharacteristic)
         = bleGattManager.notifyCharacteristic(bluetoothGattCharacteristic)
+
+    override fun notifyCharacteristic(gattData: GattData) =
+        bleGattManager.notifyCharacteristic(gattData)
 
     override fun isCharacteristicNotified(
         bluetoothGattCharacteristic: BluetoothGattCharacteristic): Boolean

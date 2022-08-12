@@ -10,20 +10,19 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.grandfatherpikhto.blin.data.BleGatt
 import com.grandfatherpikhto.blescan.R
-import com.grandfatherpikhto.blescan.data.CharacteristicData
-import com.grandfatherpikhto.blescan.data.DescriptorData
-import com.grandfatherpikhto.blescan.data.ServiceData
 import com.grandfatherpikhto.blin.buffer.BleCharacteristicNotify
+import com.grandfatherpikhto.blescan.data.BleItem
+import java.util.*
 import kotlin.properties.Delegates
 
 class RvBleDeviceAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder> () {
-    private val mutableListItems = mutableListOf<Any>()
+    private val mutableListItems = mutableListOf<BleItem>()
     private val tagLog = this.javaClass.simpleName
 
-    private var characteristicReadClickListener: ((BluetoothGattCharacteristic, View) -> Unit)? = null
-    private var characteristicNotifyClickListener: ((BluetoothGattCharacteristic, View) -> Unit)? = null
-    private var characteristicWriteClickListener: ((BluetoothGattCharacteristic, View) -> Unit)? = null
-    private var characteristicFormatClickListener: ((BluetoothGattCharacteristic, Format, View) -> Unit)? = null
+    private var characteristicReadClickListener: ((BleItem, View) -> Unit)? = null
+    private var characteristicNotifyClickListener: ((BleItem, View) -> Unit)? = null
+    private var characteristicWriteClickListener: ((BleItem, View) -> Unit)? = null
+    private var characteristicFormatClickListener: ((BleItem, Format, View) -> Unit)? = null
 
     enum class Format(val value: Int) {
         Bytes(R.drawable.ic_bytes),
@@ -32,7 +31,7 @@ class RvBleDeviceAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder> () {
         Float(R.drawable.ic_float);
 
         companion object {
-            fun byResId(value: Int) = values().find { value == it.value }
+            fun byResId(value: Int) = values().first { value == it.value }
         }
     }
 
@@ -44,25 +43,18 @@ class RvBleDeviceAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder> () {
         }
     }
 
-    enum class Type (val value:Int) {
-        None(0x00),
-        Service(0x01),
-        Characteristic(0x02),
-        Descriptor(0x03)
-    }
-
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
-        return when(viewType) {
-            Type.Service.value -> {
+        return when(BleItem.Type.byValue(viewType)) {
+            BleItem.Type.Service -> {
                 ServiceHolder(
                 LayoutInflater.from(parent.context)
                     .inflate(R.layout.layout_service, parent, false))
             }
-            Type.Characteristic.value -> {
+            BleItem.Type.Characteristic -> {
                 CharacteristicHolder(LayoutInflater.from(parent.context)
                     .inflate(R.layout.layout_characteristic, parent, false))
             }
-            Type.Descriptor.value -> {
+            BleItem.Type.Descriptor -> {
                 DescriptorHolder(LayoutInflater.from(parent.context)
                     .inflate(R.layout.layout_descriptor, parent, false))
             }
@@ -70,89 +62,66 @@ class RvBleDeviceAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder> () {
         }
     }
 
-    private fun updateNestedItems(serviceData: ServiceData) {
-        mutableListItems.filterIndexed { index, any ->
-            when (any) {
-                is CharacteristicData -> {
-                    if (any.bluetoothGattCharacteristic.service.uuid
-                        == serviceData.bluetoothGattService.uuid) {
-                        (mutableListItems[index] as CharacteristicData).visible = serviceData.opened
-                        notifyItemChanged(index)
-                        true
-                    } else false
-                }
-                is DescriptorData -> {
-                    if (any.bluetoothGattDescriptor.characteristic.service.uuid
-                        == serviceData.bluetoothGattService.uuid) {
-                        (mutableListItems[index] as DescriptorData).visible = serviceData.opened
-                        notifyItemChanged(index)
-                        true
-                    } else false
-                }
-                is ServiceData -> {
-                    false
-                }
-                else -> {
-                    Log.d(tagLog, "Неизвестный тип")
-                    false }
+    private fun updateNestedItems(bleItemService: BleItem) =
+        mutableListItems.forEachIndexed { position, bleItem ->
+            if ((bleItem.type == BleItem.Type.Characteristic
+                        || bleItem.type == BleItem.Type.Descriptor)
+                && bleItem.uuidService == bleItemService.uuidService) {
+                mutableListItems[position].opened = bleItemService.opened
+                notifyItemChanged(position)
             }
         }
-    }
 
     private fun bindCharacteristicHolderListeners(holder: CharacteristicHolder) {
-        holder.setOnCharacteristicReadClickListener { characteristicData, view ->
+        holder.setOnCharacteristicReadClickListener { bleItem, view ->
             characteristicReadClickListener?.let { listener ->
-                listener(characteristicData.bluetoothGattCharacteristic, view)
+                listener(bleItem, view)
             }
         }
-        holder.setOnCharacteristicNotifyClickListener { characteristicData, view ->
+        holder.setOnCharacteristicNotifyClickListener { bleItem, view ->
             characteristicNotifyClickListener?.let { listener ->
-                listener(characteristicData.bluetoothGattCharacteristic, view)
+                listener(bleItem, view)
             }
         }
-        holder.setOnCharacteristicWriteClickListener { characteristicData, view ->
+        holder.setOnCharacteristicWriteClickListener { bleItem, view ->
             characteristicWriteClickListener?.let { listener ->
-                listener(characteristicData.bluetoothGattCharacteristic, view)
+                listener(bleItem, view)
             }
         }
     }
 
     private fun bindCharacteristicHolder(holder: CharacteristicHolder, position: Int) {
-        holder.bind(mutableListItems[position] as CharacteristicData)
+        holder.bind(mutableListItems[position])
         bindCharacteristicHolderListeners(holder)
-        holder.setOnCharacteristicFormatClickListener { characteristicData, format, view ->
-            val index = mutableListItems.indexOf(characteristicData)
+        holder.setOnCharacteristicFormatClickListener { bleItem, format, view ->
             characteristicFormatClickListener?.let { listener ->
-                listener(characteristicData.bluetoothGattCharacteristic, format, view)
+                listener(bleItem, format, view)
             }
         }
     }
 
     private fun bindServiceHolder(holder: ServiceHolder, position: Int) {
-        holder.bind(mutableListItems[position] as ServiceData)
+        holder.bind(mutableListItems[position])
         holder.itemView.setOnClickListener { _ ->
-            val serviceData = mutableListItems[position] as ServiceData
-            (mutableListItems[position] as ServiceData).opened = !serviceData.opened
-            notifyItemChanged(mutableListItems.indexOf(serviceData))
-            updateNestedItems(mutableListItems[position] as ServiceData)
+            (mutableListItems[position]).inverseOpened()
+            updateNestedItems(mutableListItems[position])
+            notifyItemChanged(mutableListItems.indexOf(mutableListItems[position]))
         }
     }
 
     private fun bindDescriptorHolder(holder: DescriptorHolder, position: Int) {
-        holder.bind(mutableListItems[position] as DescriptorData)
+        holder.bind(mutableListItems[position])
     }
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
-        // Чтобы определять тип, надо работать сразу с полученным значением
-        // Без переприсваивания bleItem!!
-        when (holder.itemViewType) {
-            Type.Service.value -> {
+        when (mutableListItems[position].type) {
+            BleItem.Type.Service -> {
                 bindServiceHolder(holder as ServiceHolder, position)
             }
-            Type.Characteristic.value -> {
+            BleItem.Type.Characteristic -> {
                 bindCharacteristicHolder(holder as CharacteristicHolder, position)
             }
-            Type.Descriptor.value -> {
+            BleItem.Type.Descriptor -> {
                 bindDescriptorHolder(holder as DescriptorHolder, position)
             }
             else -> {
@@ -161,89 +130,73 @@ class RvBleDeviceAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder> () {
         }
     }
 
-    override fun getItemViewType(position: Int): Int {
-        // return super.getItemViewType(position)
-        return when (mutableListItems[position]) {
-            is ServiceData -> Type.Service.value
-            is CharacteristicData -> Type.Characteristic.value
-            is DescriptorData -> Type.Descriptor.value
-            else -> Type.None.value
-        }
-    }
+    override fun getItemViewType(position: Int): Int =
+        mutableListItems[position].type.value
 
     override fun getItemCount(): Int = mutableListItems.size
 
-    fun addService(bluetoothGattService: BluetoothGattService) {
-        var size = 1
-        mutableListItems.add(ServiceData(bluetoothGattService))
+    private fun addService(bluetoothGattService: BluetoothGattService) {
+        val bleItemService = BleItem(bluetoothGattService)
+        mutableListItems.add(bleItemService)
+        notifyItemInserted(mutableListItems.indexOf(bleItemService))
         bluetoothGattService.characteristics.forEach { bluetoothGattCharacteristic ->
-            mutableListItems.add(CharacteristicData(bluetoothGattCharacteristic))
-            size ++
+            val bleItemCharacteristic = BleItem(bluetoothGattCharacteristic)
+            mutableListItems.add(bleItemCharacteristic)
+            notifyItemInserted(mutableListItems.indexOf(bleItemCharacteristic))
             bluetoothGattCharacteristic.descriptors.forEach { bluetoothGattDescriptor ->
-                mutableListItems.add(DescriptorData(bluetoothGattDescriptor))
-                size ++
+                val bleItemDescriptor = BleItem(bluetoothGattDescriptor)
+                mutableListItems.add(bleItemDescriptor)
+                notifyItemInserted(mutableListItems.indexOf(bleItemDescriptor))
             }
         }
-        notifyItemRangeInserted(mutableListItems.indexOf(bluetoothGattService), size)
     }
 
-    fun clear() {
+    private fun clear() {
         val size = mutableListItems.size
         mutableListItems.clear()
         notifyItemRangeRemoved(0, size)
     }
 
-    fun setServices(bluetoothGattServices: List<BluetoothGattService>) {
+    private fun setServices(bluetoothGattServices: List<BluetoothGattService>) {
         clear()
         bluetoothGattServices.forEach { bluetoothGattService ->
             addService(bluetoothGattService)
         }
     }
 
-    fun changeCharacteristicValue(bluetoothGattCharacteristic: BluetoothGattCharacteristic) {
-        val index =
-            mutableListItems.indexOfFirst { it is CharacteristicData
-                    && it.bluetoothGattCharacteristic.uuid == bluetoothGattCharacteristic.uuid }
-        if (index >= 0) {
-            mutableListItems[index] = CharacteristicData(bluetoothGattCharacteristic,
-                visible = (mutableListItems[index] as CharacteristicData).visible)
-            notifyItemChanged(index)
+    fun changeCharacteristicValue(bluetoothGattCharacteristic: BluetoothGattCharacteristic) =
+        mutableListItems.indexOfFirst { bleItem ->
+            bleItem.type == BleItem.Type.Characteristic
+                    && bluetoothGattCharacteristic.uuid ==
+                    bleItem.uuidCharacteristic }.let { position ->
+            mutableListItems[position].value = bluetoothGattCharacteristic.value
+            notifyItemChanged(position)
         }
-    }
-
-    fun changeDescriptor(bluetoothGattDescriptor: BluetoothGattDescriptor) {
-        val idx =
-            mutableListItems.indexOfFirst { it is DescriptorData
-                    && it.bluetoothGattDescriptor.uuid == bluetoothGattDescriptor.uuid }
-        if (idx >= 0) {
-            mutableListItems[idx] = bluetoothGattDescriptor
-        }
-    }
 
     fun changeCharacteristicNotify(bleCharacteristicNotify: BleCharacteristicNotify) {
-        mutableListItems.forEachIndexed { index, any ->
-            if (any is CharacteristicData
-                && any.bluetoothGattCharacteristic.uuid
-                == bleCharacteristicNotify.bluetoothGattCharacteristic.uuid) {
-                (mutableListItems[index] as CharacteristicData).notify = bleCharacteristicNotify.notify
-                notifyItemChanged(index)
-            }
+        mutableListItems.indexOfFirst { bleItem ->
+            (bleItem.type == BleItem.Type.Characteristic)
+                    && (bleItem.uuidCharacteristic == bleCharacteristicNotify.uuid)
+        }.let { position ->
+            Log.d(tagLog, "changeCharacteristicNotify(${bleCharacteristicNotify.uuid}, ${bleCharacteristicNotify.notify})")
+            mutableListItems[position].charNotify = bleCharacteristicNotify.notify
+            notifyItemChanged(position)
         }
     }
 
-    fun setOnCharacteristicReadClickListener(listener: (BluetoothGattCharacteristic, View) -> Unit) {
+    fun setOnCharacteristicReadClickListener(listener: (BleItem, View) -> Unit) {
         characteristicReadClickListener = listener
     }
 
-    fun setOnCharacteristicWriteClickListener(listener: (BluetoothGattCharacteristic, View) -> Unit) {
+    fun setOnCharacteristicWriteClickListener(listener: (BleItem, View) -> Unit) {
         characteristicWriteClickListener = listener
     }
 
-    fun setOnCharacteristicNotifyClickListener(listener: (BluetoothGattCharacteristic, View) -> Unit) {
+    fun setOnCharacteristicNotifyClickListener(listener: (BleItem, View) -> Unit) {
         characteristicNotifyClickListener = listener
     }
 
-    fun setOnCharacteristicFormatClickListener(listener: (BluetoothGattCharacteristic, Format, View) -> Unit) {
+    fun setOnCharacteristicFormatClickListener(listener: (BleItem, Format, View) -> Unit) {
         characteristicFormatClickListener = listener
     }
 }

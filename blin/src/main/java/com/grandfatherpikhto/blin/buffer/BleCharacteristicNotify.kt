@@ -1,5 +1,6 @@
 package com.grandfatherpikhto.blin.buffer
 
 import android.bluetooth.BluetoothGattCharacteristic
+import java.util.*
 
-data class BleCharacteristicNotify(val bluetoothGattCharacteristic: BluetoothGattCharacteristic, val notify: Boolean)
+data class BleCharacteristicNotify(val uuid: UUID, val notify: Boolean)

@@ -58,6 +58,8 @@ interface BleManagerInterface : DefaultLifecycleObserver {
 
     fun readCharacteristic(bluetoothGattCharacteristic: BluetoothGattCharacteristic) : Boolean
     fun readDescriptor(bluetoothGattDescriptor: BluetoothGattDescriptor) : Boolean
+    fun readGattData(gattData: GattData): Boolean
     fun notifyCharacteristic(bluetoothGattCharacteristic: BluetoothGattCharacteristic)
+    fun notifyCharacteristic(gattData: GattData)
     fun isCharacteristicNotified(bluetoothGattCharacteristic: BluetoothGattCharacteristic) : Boolean
 }

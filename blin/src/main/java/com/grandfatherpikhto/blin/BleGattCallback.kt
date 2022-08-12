@@ -78,7 +78,6 @@ class BleGattCallback constructor(private val bleGattManager: BleGattManager,
     ) {
         super.onCharacteristicChanged(gatt, characteristic)
         characteristic?.let { char ->
-            Log.d(tagLog, "onCharacteristicChanged(${char.uuid.toString().uppercase()})")
             gatt?.let { gt ->
                 bleGattManager.onCharacteristicChanged(gt, char)
             }

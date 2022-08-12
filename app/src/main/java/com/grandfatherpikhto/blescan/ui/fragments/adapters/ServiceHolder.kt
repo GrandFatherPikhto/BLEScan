@@ -6,8 +6,9 @@ import androidx.recyclerview.widget.RecyclerView
 import com.grandfatherpikhto.blin.GenericUUIDs.genericStringUUID
 import com.grandfatherpikhto.blin.helper.hasFlag
 import com.grandfatherpikhto.blescan.R
-import com.grandfatherpikhto.blescan.data.ServiceData
+import com.grandfatherpikhto.blescan.data.BleItem
 import com.grandfatherpikhto.blescan.databinding.LayoutServiceBinding
+import com.grandfatherpikhto.blin.GenericUUIDs
 import com.grandfatherpikhto.blin.GenericUUIDs.findGeneric
 
 class ServiceHolder (private val view: View) : RecyclerView.ViewHolder(view) {
@@ -16,27 +17,31 @@ class ServiceHolder (private val view: View) : RecyclerView.ViewHolder(view) {
 
     private val tagLog = this.javaClass.simpleName
 
+    private var _bleItem:BleItem? = null
+    private val bleItem get() = _bleItem!!
+
     private fun getString(resId: Int, vararg formatArgs: String) = view.context.getString(resId, formatArgs)
 
-    private fun getTextServiceType(bluetoothGattService: BluetoothGattService) : String? =
-        if (bluetoothGattService.type.hasFlag(BluetoothGattService.SERVICE_TYPE_PRIMARY))
+    private fun getTextServiceType() : String? =
+        if (bleItem.serviceType.hasFlag(BluetoothGattService.SERVICE_TYPE_PRIMARY))
             getString(R.string.service_primary)
-        else if (bluetoothGattService.type.hasFlag(BluetoothGattService.SERVICE_TYPE_SECONDARY))
+        else if (bleItem.serviceType.hasFlag(BluetoothGattService.SERVICE_TYPE_SECONDARY))
             getString(R.string.service_secondary)
         else null
 
 
-    fun bind(serviceData: ServiceData) {
+    fun bind(item: BleItem) {
+        _bleItem = item
         binding.apply {
-            tvServiceName.text = serviceData.bluetoothGattService
-                .uuid.findGeneric()?.name ?: getString(R.string.custom_service)
-            tvServiceUuid.text = serviceData.bluetoothGattService
-                .uuid.genericStringUUID()
+            tvServiceName.text = bleItem.uuidService
+                .findGeneric(type = GenericUUIDs.Type.Service)?.name
+                    ?: getString(R.string.custom_service)
+            tvServiceUuid.text = bleItem.uuidService
+                .genericStringUUID()
 
-            tvServiceType.text = getTextServiceType(serviceData.bluetoothGattService) ?: ""
+            tvServiceType.text = getTextServiceType() ?: ""
 
-                serviceData.bluetoothGattService.uuid.toString().uppercase()
-            if (serviceData.opened) {
+            if (bleItem.opened) {
                 ivUpDown.setImageResource(R.drawable.ic_up)
             } else {
                 ivUpDown.setImageResource(R.drawable.ic_down)

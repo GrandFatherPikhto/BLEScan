@@ -15,3 +15,8 @@ fun Int.removeFlag(flag: Int) = this.and(flag.inv())
 fun Byte.hasFlag(flag: Byte) = this.and(flag) == flag
 fun Byte.addFlag(flag: Byte) = this.or(flag)
 fun Byte.removeFlag(flag: Byte) = this.and(flag.inv())
+
+fun ByteArray.toHexString(separator:String = ",") : String =
+    joinToString (separator) { String.format("%02X", it) }
+
+

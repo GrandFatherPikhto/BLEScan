@@ -182,6 +182,12 @@ class FakeBleManager : BleManagerInterface {
 
     }
 
+    override fun readGattData(gattData: GattData): Boolean {
+        return false
+    }
+
+    override fun notifyCharacteristic(gattData: GattData) { }
+
     override fun readDescriptor(bluetoothGattDescriptor: BluetoothGattDescriptor) : Boolean {
         return false
     }

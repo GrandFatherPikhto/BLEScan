@@ -62,7 +62,7 @@ class BcScanReceiver constructor(private val bleScanManager: BleScanManager, dis
             intent.getParcelableArrayListExtra<ScanResult>(BluetoothLeScanner.EXTRA_LIST_SCAN_RESULT)
                 ?.let { results ->
                     results.forEach { result ->
-                        result.device?.let { device ->
+                        result.device?.let { _ ->
                             // Log.d(tagLog, "Device: $device")
                             bleScanManager.onReceiveScanResult(result)
                             return result
