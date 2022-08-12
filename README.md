@@ -3,7 +3,14 @@
 
 
 ## Внешний вид программы
-!["BLEScan, скрин №1"](images/blescan01.png){: style="float:left;width:150px"}
+<div style="float:left;"><img src="images/blescan01.png" alt="BLEScan, скрин №1" style="width:150px;"/></div>
+<div style="float:left;"><img src="images/blescan02.png" alt="BLEScan, скрин №1" style="width:150px;"/></div>
+<div style="float:left;"><img src="images/blescan03.png" alt="BLEScan, скрин №1" style="width:150px;"/></div>
+<div style="float:left;"><img src="images/blescan04.png" alt="BLEScan, скрин №1" style="width:150px;"/></div>
+<div style="float:left;"><img src="images/blescan05.png" alt="BLEScan, скрин №1" style="width:150px;"/></div>
+<div style="float:left;"><img src="images/blescan06.png" alt="BLEScan, скрин №1" style="width:150px;"/></div>
+<div style="float:left;"><img src="images/blescan07.png" alt="BLEScan, скрин №1" style="width:150px;"/></div>
+<div style="clear:both;">&nbsp;</div>
 
 ## Зачем?
 
