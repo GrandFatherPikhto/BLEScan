@@ -1,4 +1,4 @@
-package com.grandfatherpikhto.blescan.ui.adapters
+package com.grandfatherpikhto.blescan.ui.fragments.adapters
 
 import android.view.View
 import androidx.constraintlayout.widget.ConstraintLayout

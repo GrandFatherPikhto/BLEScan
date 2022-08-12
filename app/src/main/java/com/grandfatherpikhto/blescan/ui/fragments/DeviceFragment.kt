@@ -1,6 +1,7 @@
 package com.grandfatherpikhto.blescan.ui.fragments
 
 import android.bluetooth.BluetoothDevice
+import android.bluetooth.BluetoothGattCharacteristic
 import android.os.Bundle
 import android.util.Log
 import android.view.*
@@ -17,7 +18,8 @@ import com.grandfatherpikhto.blescan.R
 import com.grandfatherpikhto.blescan.databinding.FragmentDeviceBinding
 import com.grandfatherpikhto.blescan.helper.linkMenu
 import com.grandfatherpikhto.blescan.models.*
-import com.grandfatherpikhto.blescan.ui.adapters.RvBleDeviceAdapter
+import com.grandfatherpikhto.blescan.ui.fragments.adapters.RvBleDeviceAdapter
+import com.grandfatherpikhto.blin.helper.hasFlag
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.launch
 
@@ -205,9 +207,20 @@ class DeviceFragment : Fragment() {
             sendDialogFragment.show(requireActivity().supportFragmentManager, "Dialog")
         }
 
+        rvBleDeviceAdapter.setOnCharacteristicNotifyClickListener { bluetoothGattCharacteristic, _ ->
+            bleManager.notifyCharacteristic(bluetoothGattCharacteristic)
+        }
+
+        lifecycleScope.launch {
+            deviceViewModel.sharedFlowCharacteristicNotify.collect {
+                rvBleDeviceAdapter.changeCharacteristicNotify(it)
+            }
+        }
+
         lifecycleScope.launch {
             deviceViewModel.sharedFlowCharacteristic.collect {
-                Log.d(tagLog, "Characteristic readed: ${it.uuid} ${it.value}")
+                Log.d(tagLog, "Characteristic readed: ${it.uuid} ${it.value}" +
+                    ", ${it.writeType.hasFlag(BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE)}")
                 rvBleDeviceAdapter.changeCharacteristicValue(it)
             }
         }

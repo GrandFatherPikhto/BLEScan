@@ -5,8 +5,8 @@ import android.bluetooth.*
 import android.util.Log
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
+import com.grandfatherpikhto.blin.buffer.BleCharacteristicNotify
 import com.grandfatherpikhto.blin.buffer.GattData
-import com.grandfatherpikhto.blin.buffer.OutputBuffer
 import com.grandfatherpikhto.blin.data.BleGatt
 import com.grandfatherpikhto.blin.idling.ScanIdling
 import kotlinx.coroutines.*
@@ -14,6 +14,9 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
+import java.util.*
 
 class BleGattManager constructor(private val bleManager: BleManager,
                                  dispatcher: CoroutineDispatcher = Dispatchers.IO)
@@ -21,6 +24,7 @@ class BleGattManager constructor(private val bleManager: BleManager,
 
     companion object {
         const val MAX_ATTEMPTS = 6
+        val NOTIFY_DESCRIPTOR_UUID = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb".uppercase())
     }
     
     enum class State(val value:Int) {
@@ -36,7 +40,7 @@ class BleGattManager constructor(private val bleManager: BleManager,
         GattFailure(BluetoothGatt.GATT_FAILURE)
     }
 
-    private val logTag = this.javaClass.simpleName
+    private val tagLog = this.javaClass.simpleName
     private val bleGattCallback  = BleGattCallback(this, dispatcher)
     private var bluetoothDevice: BluetoothDevice? = null
     val device get() = bluetoothDevice
@@ -70,6 +74,12 @@ class BleGattManager constructor(private val bleManager: BleManager,
     val bleGatt get() = mutableStateFlowBleGatt.value
 
     val bleScanManager = bleManager.bleScanManager
+
+    private val mutableListNotifiedCharacteristic = mutableListOf<BluetoothGattCharacteristic>()
+    val notifiedCharacteristic get() = mutableListNotifiedCharacteristic.toList()
+
+    private val mutableSharedFlowCharacteristicNotify = MutableSharedFlow<BleCharacteristicNotify>(replay = 100)
+    val sharedFlowCharacteristicNotify get() = mutableSharedFlowCharacteristicNotify.asSharedFlow()
 
     private var connectIdling: ScanIdling? = null
 
@@ -111,7 +121,7 @@ class BleGattManager constructor(private val bleManager: BleManager,
     }
 
     fun connect(address:String) : BluetoothGatt? {
-        Log.d(logTag, "connect($address)")
+        Log.d(tagLog, "connect($address)")
         if (connectState == State.Disconnected) {
             connectIdling?.idling = false
             bleManager.bluetoothAdapter.getRemoteDevice(address)?.let { device ->
@@ -151,7 +161,7 @@ class BleGattManager constructor(private val bleManager: BleManager,
      * Если он переполнится, нужно будет очищать кэш Bluetooth
      */
     fun disconnect() {
-        Log.d(logTag, "disconnect()")
+        Log.d(tagLog, "disconnect()")
         attemptReconnect = false
         reconnectAttempts = 0
         mutableStateFlowConnectState.tryEmit(State.Disconnecting)
@@ -161,7 +171,7 @@ class BleGattManager constructor(private val bleManager: BleManager,
     @SuppressLint("MissingPermission")
     private fun doDisconnect() = runBlocking {
         bluetoothGatt?.let { gatt ->
-            Log.d(logTag, "doDisconnect($bluetoothDevice)")
+            Log.d(tagLog, "doDisconnect($bluetoothDevice)")
             gatt.disconnect()
             while (connectState != State.Disconnected) {
                 delay(100)
@@ -175,7 +185,7 @@ class BleGattManager constructor(private val bleManager: BleManager,
      * генерируем событие о полном подключении. Можно принимать и передавать данные
      */
     fun onGattDiscovered(discoveredGatt: BluetoothGatt?, status: Int) {
-        Log.d(logTag, "onGattDiscovered(status = )")
+        Log.d(tagLog, "onGattDiscovered(status = )")
         if (status == BluetoothGatt.GATT_SUCCESS) {
             discoveredGatt?.let {
                 mutableStateFlowGatt.tryEmit(it)
@@ -222,8 +232,6 @@ class BleGattManager constructor(private val bleManager: BleManager,
         }
     }
 
-    fun writeGattData(gattData: GattData) = bleGattCallback.writeGattData(gattData)
-
     fun onCharacteristicRead(gatt: BluetoothGatt?,
                              characteristic: BluetoothGattCharacteristic?,
                              status: Int) {
@@ -244,18 +252,52 @@ class BleGattManager constructor(private val bleManager: BleManager,
         }
     }
 
+    fun writeGattData(gattData: GattData) = bleGattCallback.writeGattData(gattData)
+
+    fun isCharacteristicNotified(bluetoothGattCharacteristic: BluetoothGattCharacteristic) : Boolean =
+        mutableListNotifiedCharacteristic.isNotEmpty()
+                && mutableListNotifiedCharacteristic.contains(bluetoothGattCharacteristic)
+
     @SuppressLint("MissingPermission")
-    fun readCharacteristic(bluetoothGattCharacteristic: BluetoothGattCharacteristic) {
+    fun notifyCharacteristic(bluetoothGattCharacteristic: BluetoothGattCharacteristic) {
         bluetoothGatt?.let { gatt ->
-            gatt.readCharacteristic(bluetoothGattCharacteristic)
+            bluetoothGattCharacteristic.getDescriptor(NOTIFY_DESCRIPTOR_UUID)
+                ?.let { bluetoothGattDescriptor ->
+                    if (isCharacteristicNotified(bluetoothGattCharacteristic)) {
+                        gatt.setCharacteristicNotification(bluetoothGattCharacteristic, false)
+                        // Log.d(tagLog, "notifyCharacteristic(${bluetoothGattCharacteristic.uuid}, disable)")
+                        bluetoothGattDescriptor.value =
+                            BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE
+                        writeGattData(GattData(bluetoothGattDescriptor))
+                        mutableSharedFlowCharacteristicNotify.tryEmit(BleCharacteristicNotify(bluetoothGattCharacteristic, false))
+                    } else {
+                        gatt.setCharacteristicNotification(bluetoothGattCharacteristic, true)
+                        // Log.d(tagLog, "notifyCharacteristic(${bluetoothGattCharacteristic.uuid}, enable)")
+                        bluetoothGattDescriptor.value =
+                            BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
+                        writeGattData(GattData(bluetoothGattDescriptor))
+                        mutableSharedFlowCharacteristicNotify.tryEmit(BleCharacteristicNotify(bluetoothGattCharacteristic, true))
+                    }
+                }
         }
     }
 
     @SuppressLint("MissingPermission")
-    fun readDescriptor(bluetoothGattDescriptor: BluetoothGattDescriptor) {
+    fun readCharacteristic(bluetoothGattCharacteristic: BluetoothGattCharacteristic) : Boolean {
         bluetoothGatt?.let { gatt ->
-            gatt.readDescriptor(bluetoothGattDescriptor)
+            return gatt.readCharacteristic(bluetoothGattCharacteristic)
         }
+
+        return false
+    }
+
+    @SuppressLint("MissingPermission")
+    fun readDescriptor(bluetoothGattDescriptor: BluetoothGattDescriptor) : Boolean {
+        bluetoothGatt?.let { gatt ->
+            return gatt.readDescriptor(bluetoothGattDescriptor)
+        }
+
+        return false
     }
 
     @SuppressLint("MissingPermission")
@@ -267,12 +309,52 @@ class BleGattManager constructor(private val bleManager: BleManager,
         }
     }
 
+    private fun descriptorNotify(bluetoothGattDescriptor: BluetoothGattDescriptor) {
+        if (bluetoothGattDescriptor.uuid == NOTIFY_DESCRIPTOR_UUID) {
+            val notify = ByteBuffer
+                .wrap(bluetoothGattDescriptor.value)
+                .order(ByteOrder.LITTLE_ENDIAN).short.toInt()
+            when(notify) {
+                0 -> {
+                    if (isCharacteristicNotified(bluetoothGattDescriptor.characteristic)) {
+                        mutableListNotifiedCharacteristic.remove(bluetoothGattDescriptor.characteristic)
+                        Log.d(tagLog, "onCharacteristicChanged(${bluetoothGattDescriptor.characteristic.uuid}, notifyDisable)")
+                    }
+                }
+                1 -> {
+                    if (!isCharacteristicNotified(bluetoothGattDescriptor.characteristic)) {
+                        mutableListNotifiedCharacteristic.add(bluetoothGattDescriptor.characteristic)
+                        Log.d(tagLog, "onCharacteristicChanged(${bluetoothGattDescriptor.characteristic.uuid}, notifyEnable)")
+                    }
+                }
+                2 -> {
+
+                }
+                else -> {
+
+                }
+            }
+        }
+
+    }
+
     @SuppressLint("MissingPermission")
     fun onDescriptorWrite(gatt: BluetoothGatt?,
                           descriptor: BluetoothGattDescriptor?,
                           status: Int) {
         if (gatt != null && descriptor != null && status == BluetoothGatt.GATT_SUCCESS) {
             mutableSharedFlowDescriptor.tryEmit(descriptor)
+            descriptorNotify(descriptor)
+        }
+    }
+
+    @SuppressLint("MissingPermission")
+    fun onCharacteristicChanged(gatt: BluetoothGatt?,
+                          characteristic: BluetoothGattCharacteristic?) {
+        if (gatt != null && characteristic != null) {
+            if (!isCharacteristicNotified(characteristic)) {
+                Log.d(tagLog, "onCharacteristicChanged(${characteristic.uuid}, notifyEnable)")
+            }
         }
     }
 }

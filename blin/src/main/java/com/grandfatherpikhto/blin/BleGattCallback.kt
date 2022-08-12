@@ -7,15 +7,17 @@ import android.bluetooth.BluetoothGattDescriptor
 import android.util.Log
 import com.grandfatherpikhto.blin.buffer.GattData
 import com.grandfatherpikhto.blin.buffer.OutputBuffer
+import com.grandfatherpikhto.blin.helper.hasFlag
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import java.nio.ByteBuffer
 
 class BleGattCallback constructor(private val bleGattManager: BleGattManager,
                                   dispatcher: CoroutineDispatcher = Dispatchers.IO)
     : BluetoothGattCallback() {
 
-    private val logTag = this.javaClass.simpleName
+    private val tagLog = this.javaClass.simpleName
     private val scope = CoroutineScope(dispatcher)
     private val outputBuffer = OutputBuffer(this, dispatcher)
 
@@ -68,6 +70,23 @@ class BleGattCallback constructor(private val bleGattManager: BleGattManager,
     ) {
         super.onDescriptorRead(gatt, descriptor, status)
         bleGattManager.onDescriptorRead(gatt, descriptor, status)
+    }
+
+    override fun onCharacteristicChanged(
+        gatt: BluetoothGatt?,
+        characteristic: BluetoothGattCharacteristic?
+    ) {
+        super.onCharacteristicChanged(gatt, characteristic)
+        characteristic?.let { char ->
+            Log.d(tagLog, "onCharacteristicChanged(${char.uuid.toString().uppercase()})")
+            gatt?.let { gt ->
+                bleGattManager.onCharacteristicChanged(gt, char)
+            }
+        }
+    }
+
+    override fun onServiceChanged(gatt: BluetoothGatt) {
+        super.onServiceChanged(gatt)
     }
 
     fun writeGattData(gattData: GattData) = outputBuffer.writeGattData(gattData)

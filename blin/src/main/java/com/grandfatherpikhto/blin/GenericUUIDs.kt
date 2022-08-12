@@ -42,7 +42,8 @@ object GenericUUIDs {
         }
     }
 
-    fun UUID.genericName(value: String) : String = findGeneric()?.name ?: value
+    fun UUID.genericName(type: Type = Type.All) : String? = findGeneric(type)?.name
+
     fun UUID.genericStringUUID(type:Type = Type.All) : String {
         val generic = findGeneric(type)
         if (generic != null) {

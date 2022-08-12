@@ -62,6 +62,21 @@ class MultiStateButton (context: Context, private val attrs: AttributeSet) : Vie
         }
     }
 
+    fun setCurrentResId(resId: Int) : Boolean {
+        states.forEachIndexed { index, multiStateData ->
+            if (multiStateData.resId == resId) {
+                states[index].enabled = true
+                currentState = index
+                invalidate()
+                changeStatusListener?.let { listener ->
+                    listener(currentState, states[index].resId, false, this)
+                }
+                return true
+            }
+        }
+        return false
+    }
+
     private fun nextState() {
         do {
             currentState = currentState.inc().rem(states.size)
@@ -77,7 +92,6 @@ class MultiStateButton (context: Context, private val attrs: AttributeSet) : Vie
             R.styleable.MultistateButton,0, 0).apply {
             try {
                 srcCompat = getResourceId(R.styleable.MultistateButton_srcCompat, 0)
-                Log.d(tagLog, "readAttributes(src = $srcCompat)")
             } finally {
                 recycle()
             }
@@ -87,7 +101,6 @@ class MultiStateButton (context: Context, private val attrs: AttributeSet) : Vie
     private fun measureDimension(desiredSize: Int, measureSpec: Int) : Int {
         val specMode = MeasureSpec.getMode(measureSpec)
         val specSize = MeasureSpec.getSize(measureSpec)
-        Log.d(tagLog, "measureDimension($specMode)")
         return when (specMode) {
             MeasureSpec.EXACTLY -> {
                 //Must be this size
@@ -136,13 +149,6 @@ class MultiStateButton (context: Context, private val attrs: AttributeSet) : Vie
         }
     }
 
-    private fun getCurrentBitmapResId() : Int =
-        if (states.isEmpty()) {
-            srcCompat
-        } else {
-            states[currentState].resId
-        }
-
     private fun getCurrentBitmap() : Bitmap? =
         if (states.isNotEmpty() && states[currentState].enabled) {
             getBitmap(context, states[currentState].resId)
@@ -185,10 +191,6 @@ class MultiStateButton (context: Context, private val attrs: AttributeSet) : Vie
                 val translateY = (measuredHeight.toFloat() - bitmap.height.toFloat()) / 2F
                 newMatrix.setTranslate(translateX, translateY)
                 piece.drawBitmap(bitmap, newMatrix, slicePaint)
-            } ?: {
-                slicePaint.color = Color.BLACK
-                slicePaint.strokeWidth = 10F
-                piece.drawRect(Rect(0, 0, 200, 200), slicePaint)
             }
         }
 

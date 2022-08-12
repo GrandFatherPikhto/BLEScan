@@ -33,12 +33,7 @@ class OutputBuffer (private val bleGattCallback: BleGattCallback,
                 gatt.getService(gattData.uuidService)?.let { service ->
                     service.getCharacteristic(gattData.uuidCharacteristic)?.let { characteristic ->
                         characteristic.value = gattData.value
-                        val res = gatt.writeCharacteristic(characteristic)
-                        if (res && !bufferMutex.isLocked) {
-                            bufferMutex.tryLock()
-                        }
-
-                        return res
+                        return gatt.writeCharacteristic(characteristic)
                     }
                 }
             }
@@ -51,15 +46,10 @@ class OutputBuffer (private val bleGattCallback: BleGattCallback,
     private fun writeNextDescriptor(gattData: GattData) : Boolean {
         bluetoothGatt?.let { gatt ->
             gatt.getService(gattData.uuidService)?.let { service ->
-                service.getCharacteristic(gattData.uuidDescriptor)?.let { characteristic ->
+                service.getCharacteristic(gattData.uuidCharacteristic)?.let { characteristic ->
                     characteristic.getDescriptor(gattData.uuidDescriptor)?.let { descriptor ->
                         descriptor.value = gattData.value
-                        val res = gatt.writeDescriptor(descriptor)
-                        if (res && !bufferMutex.isLocked) {
-                            bufferMutex.tryLock()
-                        }
-
-                        return res
+                        return gatt.writeDescriptor(descriptor)
                     }
                 }
             }

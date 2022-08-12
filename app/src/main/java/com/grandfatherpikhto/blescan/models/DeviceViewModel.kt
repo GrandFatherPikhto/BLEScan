@@ -7,6 +7,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.grandfatherpikhto.blin.BleGattManager
 import com.grandfatherpikhto.blin.BleManagerInterface
+import com.grandfatherpikhto.blin.buffer.BleCharacteristicNotify
 import com.grandfatherpikhto.blin.data.BleBondState
 import com.grandfatherpikhto.blin.data.BleGatt
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -44,6 +45,9 @@ class DeviceViewModel: ViewModel () {
         = MutableSharedFlow<BluetoothGattDescriptor>(replay = 100)
     val sharedFlowDescriptor get() = mutableSharedFlowDescriptor.asSharedFlow()
 
+    private val mutableSharedFlowCharacteristicNotify = MutableSharedFlow<BleCharacteristicNotify>(replay = 100)
+    val sharedFlowCharacteristicNotify get() = mutableSharedFlowCharacteristicNotify.asSharedFlow()
+
     var connected = false
 
     fun changeBleManager(bleManager: BleManagerInterface) {
@@ -80,6 +84,12 @@ class DeviceViewModel: ViewModel () {
         viewModelScope.launch {
             bleManager.sharedFlowDescriptor.collect {
                 mutableSharedFlowDescriptor.tryEmit(it)
+            }
+        }
+
+        viewModelScope.launch {
+            bleManager.sharedFlowCharacteristicNotify.collect {
+                mutableSharedFlowCharacteristicNotify.tryEmit(it)
             }
         }
     }

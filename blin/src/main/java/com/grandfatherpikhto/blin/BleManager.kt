@@ -5,6 +5,7 @@ import android.bluetooth.le.BluetoothLeScanner
 import android.content.Context
 import android.util.Log
 import androidx.lifecycle.LifecycleOwner
+import com.grandfatherpikhto.blin.buffer.BleCharacteristicNotify
 import com.grandfatherpikhto.blin.buffer.GattData
 import com.grandfatherpikhto.blin.data.BleBondState
 import com.grandfatherpikhto.blin.data.BleGatt
@@ -60,6 +61,11 @@ class BleManager constructor(private val context: Context,
     override val stateFlowBondState get() = bleBondManager.stateFlowBondState
     override val bondState: BleBondState? get() = bleBondManager.bondState
 
+    override val sharedFlowCharacteristicNotify: SharedFlow<BleCharacteristicNotify>
+        get() = bleGattManager.sharedFlowCharacteristicNotify
+    override val notifiedCharacteristic: List<BluetoothGattCharacteristic>
+        get() = bleGattManager.notifiedCharacteristic
+
     override fun bondRequest(address: String)
             = bleBondManager.bondRequest(address)
 
@@ -99,4 +105,12 @@ class BleManager constructor(private val context: Context,
 
     override fun readDescriptor(bluetoothGattDescriptor: BluetoothGattDescriptor)
         = bleGattManager.readDescriptor(bluetoothGattDescriptor)
+
+    override fun notifyCharacteristic(
+        bluetoothGattCharacteristic: BluetoothGattCharacteristic)
+        = bleGattManager.notifyCharacteristic(bluetoothGattCharacteristic)
+
+    override fun isCharacteristicNotified(
+        bluetoothGattCharacteristic: BluetoothGattCharacteristic): Boolean
+        = bleGattManager.isCharacteristicNotified(bluetoothGattCharacteristic)
 }

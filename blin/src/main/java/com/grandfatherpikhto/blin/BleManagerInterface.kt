@@ -4,6 +4,7 @@ import android.bluetooth.BluetoothGatt
 import android.bluetooth.BluetoothGattCharacteristic
 import android.bluetooth.BluetoothGattDescriptor
 import androidx.lifecycle.DefaultLifecycleObserver
+import com.grandfatherpikhto.blin.buffer.BleCharacteristicNotify
 import com.grandfatherpikhto.blin.buffer.GattData
 import com.grandfatherpikhto.blin.data.BleBondState
 import com.grandfatherpikhto.blin.data.BleGatt
@@ -35,6 +36,9 @@ interface BleManagerInterface : DefaultLifecycleObserver {
     val stateFlowBondState: StateFlow<BleBondState?>
     val bondState: BleBondState?
 
+    val sharedFlowCharacteristicNotify: SharedFlow<BleCharacteristicNotify>
+    val notifiedCharacteristic:List<BluetoothGattCharacteristic>
+
     fun bondRequest(address: String): Boolean
 
     fun startScan(addresses: List<String> = listOf(),
@@ -52,6 +56,8 @@ interface BleManagerInterface : DefaultLifecycleObserver {
 
     fun writeGattData(gattData: GattData)
 
-    fun readCharacteristic(bluetoothGattCharacteristic: BluetoothGattCharacteristic)
-    fun readDescriptor(bluetoothGattDescriptor: BluetoothGattDescriptor)
+    fun readCharacteristic(bluetoothGattCharacteristic: BluetoothGattCharacteristic) : Boolean
+    fun readDescriptor(bluetoothGattDescriptor: BluetoothGattDescriptor) : Boolean
+    fun notifyCharacteristic(bluetoothGattCharacteristic: BluetoothGattCharacteristic)
+    fun isCharacteristicNotified(bluetoothGattCharacteristic: BluetoothGattCharacteristic) : Boolean
 }

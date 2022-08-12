@@ -1,4 +1,4 @@
-package com.grandfatherpikhto.blescan.ui.adapters
+package com.grandfatherpikhto.blescan.ui.fragments.adapters
 
 import android.bluetooth.BluetoothGattCharacteristic
 import android.bluetooth.BluetoothGattDescriptor
@@ -13,6 +13,7 @@ import com.grandfatherpikhto.blescan.R
 import com.grandfatherpikhto.blescan.data.CharacteristicData
 import com.grandfatherpikhto.blescan.data.DescriptorData
 import com.grandfatherpikhto.blescan.data.ServiceData
+import com.grandfatherpikhto.blin.buffer.BleCharacteristicNotify
 import kotlin.properties.Delegates
 
 class RvBleDeviceAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder> () {
@@ -22,7 +23,7 @@ class RvBleDeviceAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder> () {
     private var characteristicReadClickListener: ((BluetoothGattCharacteristic, View) -> Unit)? = null
     private var characteristicNotifyClickListener: ((BluetoothGattCharacteristic, View) -> Unit)? = null
     private var characteristicWriteClickListener: ((BluetoothGattCharacteristic, View) -> Unit)? = null
-    private var characteristicFormatClickListener: ((BluetoothGattCharacteristic, View) -> Unit)? = null
+    private var characteristicFormatClickListener: ((BluetoothGattCharacteristic, Format, View) -> Unit)? = null
 
     enum class Format(val value: Int) {
         Bytes(R.drawable.ic_bytes),
@@ -119,12 +120,10 @@ class RvBleDeviceAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder> () {
     private fun bindCharacteristicHolder(holder: CharacteristicHolder, position: Int) {
         holder.bind(mutableListItems[position] as CharacteristicData)
         bindCharacteristicHolderListeners(holder)
-        holder.setOnCharacteristicFormatClickListener { characteristicData, view ->
+        holder.setOnCharacteristicFormatClickListener { characteristicData, format, view ->
             val index = mutableListItems.indexOf(characteristicData)
             characteristicFormatClickListener?.let { listener ->
-                listener(characteristicData.bluetoothGattCharacteristic, view)
-                (mutableListItems[index] as CharacteristicData).format =
-                    characteristicData.format
+                listener(characteristicData.bluetoothGattCharacteristic, format, view)
             }
         }
     }
@@ -221,6 +220,17 @@ class RvBleDeviceAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder> () {
         }
     }
 
+    fun changeCharacteristicNotify(bleCharacteristicNotify: BleCharacteristicNotify) {
+        mutableListItems.forEachIndexed { index, any ->
+            if (any is CharacteristicData
+                && any.bluetoothGattCharacteristic.uuid
+                == bleCharacteristicNotify.bluetoothGattCharacteristic.uuid) {
+                (mutableListItems[index] as CharacteristicData).notify = bleCharacteristicNotify.notify
+                notifyItemChanged(index)
+            }
+        }
+    }
+
     fun setOnCharacteristicReadClickListener(listener: (BluetoothGattCharacteristic, View) -> Unit) {
         characteristicReadClickListener = listener
     }
@@ -233,7 +243,7 @@ class RvBleDeviceAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder> () {
         characteristicNotifyClickListener = listener
     }
 
-    fun setOnCharacteristicFormatClickListener(listener: (BluetoothGattCharacteristic, View) -> Unit) {
+    fun setOnCharacteristicFormatClickListener(listener: (BluetoothGattCharacteristic, Format, View) -> Unit) {
         characteristicFormatClickListener = listener
     }
 }

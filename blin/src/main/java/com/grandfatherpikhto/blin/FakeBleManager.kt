@@ -2,6 +2,7 @@ package com.grandfatherpikhto.blin
 
 import android.bluetooth.*
 import android.util.Log
+import com.grandfatherpikhto.blin.buffer.BleCharacteristicNotify
 import com.grandfatherpikhto.blin.buffer.GattData
 import com.grandfatherpikhto.blin.data.*
 import com.grandfatherpikhto.blin.idling.ConnectingIdling
@@ -65,6 +66,12 @@ class FakeBleManager : BleManagerInterface {
         get() = mutableStateFlowBond.asStateFlow()
     override val bondState: BleBondState?
         get() = mutableStateFlowBond.value
+
+    private val mutableSharedFlowNotifyCharacteristic = MutableSharedFlow<BleCharacteristicNotify>(replay = 100)
+    override val notifiedCharacteristic: List<BluetoothGattCharacteristic>
+        get() = TODO("Not yet implemented")
+    override val sharedFlowCharacteristicNotify: SharedFlow<BleCharacteristicNotify>
+        get() = mutableSharedFlowNotifyCharacteristic.asSharedFlow()
 
     override fun bondRequest(address: String): Boolean {
         TODO("Not yet implemented")
@@ -167,14 +174,23 @@ class FakeBleManager : BleManagerInterface {
     }
 
     override fun writeGattData(gattData: GattData) {
-        TODO("Not yet implemented")
+
     }
 
-    override fun readCharacteristic(bluetoothGattCharacteristic: BluetoothGattCharacteristic) {
-        TODO("Not yet implemented")
+    override fun readCharacteristic(bluetoothGattCharacteristic: BluetoothGattCharacteristic) : Boolean {
+        return  false
+
     }
 
-    override fun readDescriptor(bluetoothGattDescriptor: BluetoothGattDescriptor) {
-        TODO("Not yet implemented")
+    override fun readDescriptor(bluetoothGattDescriptor: BluetoothGattDescriptor) : Boolean {
+        return false
+    }
+
+    override fun notifyCharacteristic(
+        bluetoothGattCharacteristic: BluetoothGattCharacteristic) {
+    }
+
+    override fun isCharacteristicNotified(bluetoothGattCharacteristic: BluetoothGattCharacteristic): Boolean {
+        return true
     }
 }

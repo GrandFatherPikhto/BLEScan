@@ -19,7 +19,7 @@ import com.grandfatherpikhto.blescan.helper.linkMenuProvider
 import com.grandfatherpikhto.blescan.helper.unlinkMenuProvider
 import com.grandfatherpikhto.blescan.models.MainActivityViewModel
 import com.grandfatherpikhto.blescan.models.ScanViewModel
-import com.grandfatherpikhto.blescan.ui.adapters.RvBleDevicesAdapter
+import com.grandfatherpikhto.blescan.ui.fragments.adapters.RvBleDevicesAdapter
 import kotlinx.coroutines.launch
 
 /**

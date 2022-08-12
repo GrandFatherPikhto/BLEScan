@@ -1,15 +1,14 @@
-package com.grandfatherpikhto.blescan.ui.adapters
+package com.grandfatherpikhto.blescan.ui.fragments.adapters
 
 import android.bluetooth.BluetoothGattService
 import android.view.View
 import androidx.recyclerview.widget.RecyclerView
-import com.grandfatherpikhto.blin.GenericUUIDs.genericName
 import com.grandfatherpikhto.blin.GenericUUIDs.genericStringUUID
 import com.grandfatherpikhto.blin.helper.hasFlag
 import com.grandfatherpikhto.blescan.R
-import com.grandfatherpikhto.blescan.data.DescriptorData
 import com.grandfatherpikhto.blescan.data.ServiceData
 import com.grandfatherpikhto.blescan.databinding.LayoutServiceBinding
+import com.grandfatherpikhto.blin.GenericUUIDs.findGeneric
 
 class ServiceHolder (private val view: View) : RecyclerView.ViewHolder(view) {
 
@@ -30,7 +29,7 @@ class ServiceHolder (private val view: View) : RecyclerView.ViewHolder(view) {
     fun bind(serviceData: ServiceData) {
         binding.apply {
             tvServiceName.text = serviceData.bluetoothGattService
-                .uuid.genericName(getString(R.string.custom_service))
+                .uuid.findGeneric()?.name ?: getString(R.string.custom_service)
             tvServiceUuid.text = serviceData.bluetoothGattService
                 .uuid.genericStringUUID()
 

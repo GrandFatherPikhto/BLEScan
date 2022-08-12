@@ -1,4 +1,4 @@
-package com.grandfatherpikhto.blescan.ui.adapters
+package com.grandfatherpikhto.blescan.ui.fragments.adapters
 
 import android.bluetooth.BluetoothDevice
 import android.view.View
