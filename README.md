@@ -1,8 +1,8 @@
 # Простейший сканнер BLE
 
-![Программа BLEScan, скрин 01](./blescan01.png "Программа BLEScan, скрин 1")
-![Программа BLEScan, скрин 02](./blescan02.png "Программа BLEScan, скрин 2")
-![Программа BLEScan, скрин 03](./blescan03.png "Программа BLEScan, скрин 3")
+![Программа BLEScan, скрин 01](images/blescan01.png "Программа BLEScan, скрин 1")
+![Программа BLEScan, скрин 02](images/blescan02.png "Программа BLEScan, скрин 2")
+![Программа BLEScan, скрин 03](images/blescan03.png "Программа BLEScan, скрин 3")
 
 ## Зачем?
 
