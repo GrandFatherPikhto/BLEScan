@@ -9,13 +9,13 @@
   <path
       android:pathData="M134.63,89.69m-39.69,0a39.69,39.69 0,1 1,79.38 0a39.69,39.69 0,1 1,-79.38 0"
       android:strokeWidth="14"
-      android:fillColor="#006837"
+      android:fillColor="#075EA6"
       android:strokeColor="#fff"
       android:strokeLineCap="square"/>
   <path
       android:pathData="M138.15,89.7l4.15,4.15l-10.93,10.93l-4.15,-4.15z"
-      android:fillColor="#00ff00"/>
+      android:fillColor="#2294F2"/>
   <path
       android:pathData="M145.69,97.24l4.15,4.15l-10.93,10.93l-4.15,-4.15z"
-      android:fillColor="#00ff00"/>
+      android:fillColor="#2294F2"/>
 </vector>

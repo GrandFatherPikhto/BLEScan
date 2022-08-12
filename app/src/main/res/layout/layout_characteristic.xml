@@ -5,7 +5,7 @@
     android:id="@+id/cl_characteristic_layout"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="@color/teal_700"
+    android:background="@color/white"
     android:padding="8dp">
 
     <androidx.constraintlayout.widget.ConstraintLayout
@@ -19,11 +19,11 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
-        <ImageButton
+        <ImageView
             android:id="@+id/ib_read"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:background="@color/teal_700"
+            android:background="@color/white"
             android:contentDescription="@string/ib_characteristic_read"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toStartOf="@+id/ib_write"
@@ -32,11 +32,11 @@
             app:srcCompat="@drawable/ic_read"
             tools:srcCompat="@drawable/ic_read" />
 
-        <ImageButton
+        <ImageView
             android:id="@+id/ib_write"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:background="@color/teal_700"
+            android:background="@color/white"
             android:contentDescription="@string/ib_characteristic_write"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toStartOf="@+id/ib_notify"
@@ -44,11 +44,11 @@
             app:layout_constraintTop_toTopOf="parent"
             app:srcCompat="@drawable/ic_write" />
 
-        <ImageButton
+        <ImageView
             android:id="@+id/ib_notify"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:background="@color/teal_700"
+            android:background="@color/white"
             android:contentDescription="@string/characteristic_property_notify"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toStartOf="@+id/msb_format"
@@ -60,7 +60,7 @@
             android:id="@+id/msb_format"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:background="@color/teal_700"
+            android:background="@color/white"
             android:contentDescription="@string/ib_value_format"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
@@ -85,7 +85,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:text="@string/characteristic_name"
-            android:textColor="@color/white"
+            android:textColor="@color/blue_triangle_blue"
             android:textStyle="bold"
             app:layout_constraintBottom_toTopOf="@+id/tv_characteristic_name"
             app:layout_constraintEnd_toEndOf="parent"
@@ -99,7 +99,7 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
             android:text="@string/characteristic_name"
-            android:textColor="@color/white"
+            android:textColor="@color/blue_triangle_blue"
             app:layout_constraintBottom_toTopOf="@+id/tv_characteristic_uuid_title"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintHorizontal_bias="0.5"
@@ -112,7 +112,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:text="@string/characteristic_uuid"
-            android:textColor="@color/white"
+            android:textColor="@color/blue_triangle_blue"
             android:textStyle="bold"
             app:layout_constraintBottom_toTopOf="@+id/tv_characteristic_uuid"
             app:layout_constraintEnd_toEndOf="parent"
@@ -126,7 +126,7 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
             android:text="@string/uuid_title"
-            android:textColor="@color/white"
+            android:textColor="@color/blue_triangle_blue"
             app:layout_constraintBottom_toTopOf="@+id/tv_characteristic_properties_title"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintHorizontal_bias="0.5"
@@ -139,7 +139,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:text="@string/characteristic_properties"
-            android:textColor="@color/white"
+            android:textColor="@color/blue_triangle_blue"
             android:textStyle="bold"
             app:layout_constraintBottom_toTopOf="@+id/tv_characteristic_properties"
             app:layout_constraintEnd_toEndOf="parent"
@@ -153,7 +153,7 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
             android:text="@string/characteristic_property"
-            android:textColor="@color/white"
+            android:textColor="@color/blue_triangle_blue"
             app:layout_constraintBottom_toTopOf="@+id/tv_characteristic_value_title"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintHorizontal_bias="0.5"
@@ -166,7 +166,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:text="@string/characteristic_value"
-            android:textColor="@color/white"
+            android:textColor="@color/blue_triangle_blue"
             android:textStyle="bold"
             app:layout_constraintBottom_toTopOf="@+id/tv_characteristic_value"
             app:layout_constraintEnd_toEndOf="parent"
@@ -180,7 +180,7 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
             android:text="@string/characteristic_value"
-            android:textColor="@color/white"
+            android:textColor="@color/blue_triangle_blue"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintHorizontal_bias="0.5"

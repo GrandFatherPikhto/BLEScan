@@ -6,7 +6,7 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_marginTop="4dp"
-    android:background="@color/teal_700">
+    android:background="@color/blue_500">
 
     <ImageView
         android:id="@+id/iv_up_down"

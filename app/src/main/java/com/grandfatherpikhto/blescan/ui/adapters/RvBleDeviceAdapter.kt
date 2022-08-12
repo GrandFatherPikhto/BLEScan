@@ -27,7 +27,7 @@ class RvBleDeviceAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder> () {
     enum class Format(val value: Int) {
         Bytes(R.drawable.ic_bytes),
         Text(R.drawable.ic_text),
-        Integer(R.drawable.ic_number),
+        Integer(R.drawable.ic_integer),
         Float(R.drawable.ic_float);
 
         companion object {

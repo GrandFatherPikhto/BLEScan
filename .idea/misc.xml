@@ -3,7 +3,20 @@
   <component name="DesignSurface">
     <option name="filePathToZoomLevelMap">
       <map>
+        <entry key="app/src/main/res/drawable/ic_bytes.xml" value="0.1565" />
+        <entry key="app/src/main/res/drawable/ic_connect.xml" value="0.205" />
+        <entry key="app/src/main/res/drawable/ic_connect_big.xml" value="0.1565" />
+        <entry key="app/src/main/res/drawable/ic_connectable.xml" value="0.205" />
+        <entry key="app/src/main/res/drawable/ic_disconnect.xml" value="0.1565" />
+        <entry key="app/src/main/res/drawable/ic_disconnect_big.xml" value="0.1565" />
+        <entry key="app/src/main/res/drawable/ic_float.xml" value="0.1565" />
+        <entry key="app/src/main/res/drawable/ic_integer.xml" value="0.1565" />
+        <entry key="app/src/main/res/drawable/ic_no_connectable.xml" value="0.1565" />
+        <entry key="app/src/main/res/drawable/ic_notify_off.xml" value="0.1565" />
         <entry key="app/src/main/res/drawable/ic_notify_on.xml" value="0.1565" />
+        <entry key="app/src/main/res/drawable/ic_read.xml" value="0.1565" />
+        <entry key="app/src/main/res/drawable/ic_text.xml" value="0.1565" />
+        <entry key="app/src/main/res/drawable/ic_write.xml" value="0.1565" />
         <entry key="app/src/main/res/layout/activity_main.xml" value="0.24728260869565216" />
         <entry key="app/src/main/res/layout/bt_device.xml" value="0.19791666666666666" />
         <entry key="app/src/main/res/layout/bt_gatt.xml" value="0.22" />
@@ -14,10 +27,15 @@
         <entry key="app/src/main/res/layout/fragment_first.xml" value="0.20742753623188406" />
         <entry key="app/src/main/res/layout/fragment_scan.xml" value="0.19791666666666666" />
         <entry key="app/src/main/res/layout/gatt.xml" value="0.33" />
+        <entry key="app/src/main/res/layout/layout_ble_device.xml" value="0.17760416666666667" />
         <entry key="app/src/main/res/layout/layout_characteristic.xml" value="0.17760416666666667" />
+        <entry key="app/src/main/res/layout/layout_descriptor.xml" value="0.17760416666666667" />
+        <entry key="app/src/main/res/layout/layout_service.xml" value="0.17760416666666667" />
         <entry key="app/src/main/res/menu/menu_device.xml" value="0.35" />
         <entry key="app/src/main/res/menu/menu_main.xml" value="0.19791666666666666" />
         <entry key="app/src/main/res/menu/menu_scan.xml" value="0.19791666666666666" />
+        <entry key="app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml" value="0.1565" />
+        <entry key="app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml" value="0.1565" />
         <entry key="app/src/main/res/xml/root_preferences.xml" value="0.23333333333333334" />
       </map>
     </option>

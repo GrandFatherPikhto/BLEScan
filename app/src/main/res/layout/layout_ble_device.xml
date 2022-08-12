@@ -7,7 +7,7 @@
     android:layout_marginLeft="4dp"
     android:layout_marginTop="4dp"
     android:layout_marginRight="4dp"
-    android:background="@color/teal_700">
+    android:background="@color/blue_500">
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/cl_device_description"
