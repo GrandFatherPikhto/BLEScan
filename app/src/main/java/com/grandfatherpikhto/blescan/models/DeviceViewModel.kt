@@ -18,7 +18,7 @@ import kotlinx.coroutines.launch
 
 class DeviceViewModel: ViewModel () {
 
-    private val logTag = this.javaClass.simpleName
+    private val tagLog = this.javaClass.simpleName
 
     private val mutableStateFlowConnectState = MutableStateFlow(BleGattManager.State.Disconnected)
     val stateFlowConnectState get() = mutableStateFlowConnectState.asStateFlow()
@@ -41,8 +41,8 @@ class DeviceViewModel: ViewModel () {
     val sharedFlowCharacteristic get()
         = mutableSharedFlowCharacteristic.asSharedFlow()
 
-    private val mutableSharedFlowDescriptor get()
-        = MutableSharedFlow<BluetoothGattDescriptor>(replay = 100)
+    private val mutableSharedFlowDescriptor =
+        MutableSharedFlow<BluetoothGattDescriptor>(replay = 100)
     val sharedFlowDescriptor get() = mutableSharedFlowDescriptor.asSharedFlow()
 
     private val mutableSharedFlowCharacteristicNotify = MutableSharedFlow<BleCharacteristicNotify>(replay = 100)
@@ -95,7 +95,7 @@ class DeviceViewModel: ViewModel () {
     }
 
     override fun onCleared() {
-        Log.d(logTag, "onCleared()")
+        Log.d(tagLog, "onCleared()")
         super.onCleared()
     }
 }

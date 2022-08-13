@@ -22,7 +22,8 @@ class RvBleDeviceAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder> () {
     private var characteristicReadClickListener: ((BleItem, View) -> Unit)? = null
     private var characteristicNotifyClickListener: ((BleItem, View) -> Unit)? = null
     private var characteristicWriteClickListener: ((BleItem, View) -> Unit)? = null
-    private var characteristicFormatClickListener: ((BleItem, Format, View) -> Unit)? = null
+
+    private var descriptorReadClickListener: ((BleItem, View) -> Unit)? = null
 
     enum class Format(val value: Int) {
         Bytes(R.drawable.ic_bytes),
@@ -93,11 +94,6 @@ class RvBleDeviceAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder> () {
     private fun bindCharacteristicHolder(holder: CharacteristicHolder, position: Int) {
         holder.bind(mutableListItems[position])
         bindCharacteristicHolderListeners(holder)
-        holder.setOnCharacteristicFormatClickListener { bleItem, format, view ->
-            characteristicFormatClickListener?.let { listener ->
-                listener(bleItem, format, view)
-            }
-        }
     }
 
     private fun bindServiceHolder(holder: ServiceHolder, position: Int) {
@@ -111,6 +107,11 @@ class RvBleDeviceAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder> () {
 
     private fun bindDescriptorHolder(holder: DescriptorHolder, position: Int) {
         holder.bind(mutableListItems[position])
+        holder.setOnDescriptorReadClickListener { bleItem, view ->
+            descriptorReadClickListener?.let { listener ->
+                listener(bleItem, view)
+            }
+        }
     }
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
@@ -167,7 +168,8 @@ class RvBleDeviceAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder> () {
     fun changeCharacteristicValue(bluetoothGattCharacteristic: BluetoothGattCharacteristic) =
         mutableListItems.indexOfFirst { bleItem ->
             bleItem.type == BleItem.Type.Characteristic
-                    && bluetoothGattCharacteristic.uuid ==
+                && bluetoothGattCharacteristic.service.uuid == bleItem.uuidService
+                && bluetoothGattCharacteristic.uuid ==
                     bleItem.uuidCharacteristic }.let { position ->
             mutableListItems[position].value = bluetoothGattCharacteristic.value
             notifyItemChanged(position)
@@ -178,9 +180,22 @@ class RvBleDeviceAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder> () {
             (bleItem.type == BleItem.Type.Characteristic)
                     && (bleItem.uuidCharacteristic == bleCharacteristicNotify.uuid)
         }.let { position ->
-            Log.d(tagLog, "changeCharacteristicNotify(${bleCharacteristicNotify.uuid}, ${bleCharacteristicNotify.notify})")
             mutableListItems[position].charNotify = bleCharacteristicNotify.notify
             notifyItemChanged(position)
+        }
+    }
+
+    fun changeDescriptorValue(bluetoothGattDescriptor: BluetoothGattDescriptor) {
+        mutableListItems.indexOfFirst { bleItem ->
+            bleItem.type == BleItem.Type.Descriptor
+                    && bleItem.uuidService    == bluetoothGattDescriptor.characteristic.service.uuid
+                    && bleItem.uuidCharacteristic == bluetoothGattDescriptor.characteristic.uuid
+                    && bleItem.uuidDescriptor == bluetoothGattDescriptor.uuid
+        }.let { position ->
+            if (position >= 0) {
+                mutableListItems[position].value = bluetoothGattDescriptor.value
+                notifyItemChanged(position)
+            }
         }
     }
 
@@ -196,7 +211,7 @@ class RvBleDeviceAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder> () {
         characteristicNotifyClickListener = listener
     }
 
-    fun setOnCharacteristicFormatClickListener(listener: (BleItem, Format, View) -> Unit) {
-        characteristicFormatClickListener = listener
+    fun setOnDescriptorReadClickListener(listener: ((BleItem, View) -> Unit)) {
+        descriptorReadClickListener = listener
     }
 }

@@ -72,9 +72,9 @@ class BleItem ( val uuidService: UUID,
 
     val type: Type
         get() =
-        if (uuidCharacteristic != null && uuidDescriptor != null) Type.Descriptor
-        else if (uuidCharacteristic != null) Type.Characteristic
-        else Type.Service
+            if (uuidCharacteristic != null && uuidDescriptor != null) Type.Descriptor
+            else if (uuidCharacteristic != null && uuidDescriptor == null) Type.Characteristic
+            else Type.Service
 
     val bluetoothGattService:BluetoothGattService?
         get() =

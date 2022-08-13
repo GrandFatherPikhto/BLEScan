@@ -171,10 +171,18 @@ class BleGattManager constructor(private val bleManager: BleManager,
     @SuppressLint("MissingPermission")
     private fun doDisconnect() = runBlocking {
         bluetoothGatt?.let { gatt ->
+            mutableListNotifiedCharacteristic.forEach { characteristic ->
+                disableNotifyCharacteristic(characteristic)
+            }
+
+            while (mutableListNotifiedCharacteristic.isNotEmpty()) {
+                delay(20)
+            }
+
             Log.d(tagLog, "doDisconnect($bluetoothDevice)")
             gatt.disconnect()
             while (connectState != State.Disconnected) {
-                delay(100)
+                delay(20)
             }
             gatt.close()
         }
@@ -261,24 +269,37 @@ class BleGattManager constructor(private val bleManager: BleManager,
                 && mutableListNotifiedCharacteristic.contains(bluetoothGattCharacteristic)
 
     @SuppressLint("MissingPermission")
-    fun notifyCharacteristic(bluetoothGattCharacteristic: BluetoothGattCharacteristic) {
+    private fun disableNotifyCharacteristic(bluetoothGattCharacteristic: BluetoothGattCharacteristic) {
         bluetoothGatt?.let { gatt ->
             bluetoothGattCharacteristic.getDescriptor(NOTIFY_DESCRIPTOR_UUID)
                 ?.let { bluetoothGattDescriptor ->
-                    if (isCharacteristicNotified(bluetoothGattCharacteristic)) {
-                        gatt.setCharacteristicNotification(bluetoothGattCharacteristic, false)
-                        // Log.d(tagLog, "notifyCharacteristic(${bluetoothGattCharacteristic.uuid}, disable)")
-                        bluetoothGattDescriptor.value =
-                            BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE
-                        writeGattData(GattData(bluetoothGattDescriptor))
-                    } else {
-                        gatt.setCharacteristicNotification(bluetoothGattCharacteristic, true)
-                        // Log.d(tagLog, "notifyCharacteristic(${bluetoothGattCharacteristic.uuid}, enable)")
-                        bluetoothGattDescriptor.value =
-                            BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
-                        writeGattData(GattData(bluetoothGattDescriptor))
-                    }
+                    gatt.setCharacteristicNotification(bluetoothGattCharacteristic, false)
+                    bluetoothGattDescriptor.value =
+                        BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE
+                    writeGattData(GattData(bluetoothGattDescriptor))
                 }
+        }
+    }
+
+    @SuppressLint("MissingPermission")
+    private fun enableNotifyCharacteristic(bluetoothGattCharacteristic: BluetoothGattCharacteristic) {
+        bluetoothGatt?.let { gatt ->
+            bluetoothGattCharacteristic.getDescriptor(NOTIFY_DESCRIPTOR_UUID)
+                ?.let { bluetoothGattDescriptor ->
+                    gatt.setCharacteristicNotification(bluetoothGattCharacteristic, true)
+                    bluetoothGattDescriptor.value =
+                        BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
+                    writeGattData(GattData(bluetoothGattDescriptor))
+                }
+        }
+    }
+
+    @SuppressLint("MissingPermission")
+    fun notifyCharacteristic(bluetoothGattCharacteristic: BluetoothGattCharacteristic) {
+        if (isCharacteristicNotified(bluetoothGattCharacteristic)) {
+            disableNotifyCharacteristic(bluetoothGattCharacteristic)
+        } else {
+            enableNotifyCharacteristic(bluetoothGattCharacteristic)
         }
     }
 
@@ -305,10 +326,10 @@ class BleGattManager constructor(private val bleManager: BleManager,
     fun readGattData(gattData: GattData) : Boolean {
         bluetoothGatt?.let { gatt ->
             gatt.getService(gattData.uuidService)?.let { service ->
-                service.getCharacteristic(gattData.uuidCharacteristic)?.let { char ->
-                    if (gattData.uuidDescriptor == null) return readCharacteristic(char)
-                    else char.getDescriptor(gattData.uuidDescriptor)?.let { descr ->
-                            return readDescriptor(descr)
+                service.getCharacteristic(gattData.uuidCharacteristic)?.let { characteristic ->
+                    if (gattData.uuidDescriptor == null) return readCharacteristic(characteristic)
+                    else characteristic.getDescriptor(gattData.uuidDescriptor)?.let { descriptor ->
+                        return readDescriptor(descriptor)
                     }
                 }
             }

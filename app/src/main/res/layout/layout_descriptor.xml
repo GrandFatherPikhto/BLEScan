@@ -17,30 +17,31 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
-        <ImageButton
-            android:id="@+id/ib_descriptor_read"
+        <ImageView
+            android:id="@+id/iv_descriptor_read"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:background="@color/white"
             android:contentDescription="@string/ib_read_descriptor"
             app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toStartOf="@+id/ib_descriptor_value_format"
+            app:layout_constraintEnd_toStartOf="@+id/msb_descriptor_value_format"
             app:layout_constraintHorizontal_bias="0.5"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
             app:srcCompat="@drawable/ic_read" />
 
-        <ImageButton
-            android:id="@+id/ib_descriptor_value_format"
+        <com.grandfatherpikhto.multistatebutton.MultiStateButton
+            android:id="@+id/msb_descriptor_value_format"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:background="@color/white"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintHorizontal_bias="0.5"
-            app:layout_constraintStart_toEndOf="@+id/ib_descriptor_read"
+            app:layout_constraintStart_toEndOf="@+id/iv_descriptor_read"
             app:layout_constraintTop_toTopOf="parent"
             app:srcCompat="@drawable/ic_bytes" />
+
     </androidx.constraintlayout.widget.ConstraintLayout>
 
     <androidx.constraintlayout.widget.ConstraintLayout

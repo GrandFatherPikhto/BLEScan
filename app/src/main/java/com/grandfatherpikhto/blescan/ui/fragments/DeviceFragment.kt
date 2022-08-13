@@ -210,6 +210,10 @@ class DeviceFragment : Fragment() {
             bleManager.notifyCharacteristic(bleItem.gattData)
         }
 
+        rvBleDeviceAdapter.setOnDescriptorReadClickListener { bleItem, _ ->
+            bleManager.readGattData(bleItem.gattData)
+        }
+
         lifecycleScope.launch {
             deviceViewModel.sharedFlowCharacteristicNotify.collect {
                 rvBleDeviceAdapter.changeCharacteristicNotify(it)
@@ -219,6 +223,12 @@ class DeviceFragment : Fragment() {
         lifecycleScope.launch {
             deviceViewModel.sharedFlowCharacteristic.collect {
                 rvBleDeviceAdapter.changeCharacteristicValue(it)
+            }
+        }
+
+        lifecycleScope.launch {
+            deviceViewModel.sharedFlowDescriptor.collect {
+                rvBleDeviceAdapter.changeDescriptorValue(it)
             }
         }
     }

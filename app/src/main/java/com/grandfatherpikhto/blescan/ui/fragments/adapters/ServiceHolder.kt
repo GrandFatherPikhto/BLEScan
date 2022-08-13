@@ -20,7 +20,8 @@ class ServiceHolder (private val view: View) : RecyclerView.ViewHolder(view) {
     private var _bleItem:BleItem? = null
     private val bleItem get() = _bleItem!!
 
-    private fun getString(resId: Int, vararg formatArgs: String) = view.context.getString(resId, formatArgs)
+    private fun getString(resId: Int, vararg formatArgs: String) =
+        view.context.getString(resId, formatArgs)
 
     private fun getTextServiceType() : String? =
         if (bleItem.serviceType.hasFlag(BluetoothGattService.SERVICE_TYPE_PRIMARY))

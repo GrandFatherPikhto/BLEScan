@@ -72,6 +72,7 @@
     <string name="names_filter">Filter Device Names</string>
     <string name="addresses_filter">Filter Addresses of Device</string>
     <string name="filter_header">Filters</string>
+    <string name="custom_descriptor">Custom Descriptor</string>
     <!-- TODO: Remove or change this placeholder text -->
 
 </resources>
