@@ -390,7 +390,6 @@ class BleGattManager constructor(private val bleManager: BleManager,
                 }
             }
         }
-
     }
 
     @SuppressLint("MissingPermission")

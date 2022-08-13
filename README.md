@@ -13,22 +13,160 @@
 
 ## Зачем?
 
-Библиотека
-[NordicSemiconductor Android BLE Library](https://github.com/NordicSemiconductor/Android-BLE-Library/) полностью устраивает решает большую часть проблем, работы со стеком BLE на платформе Android. C 'нативным' стеком BLE, мало кто хочет связываться, учитвая просто огромный список порой, довольно странных сложностей (Issues), которые неизбежно возникают при создании собственного стека работы с BLE Android. К сожалению, официальном руководстве [Android BLE](https://developer.android.com/guide/topics/connectivity/bluetooth/ble-overview) об этом почти ничего не говорится.
+### Что уже есть?
 
-К примеру,
-[проблема работы фильтров при сканировании BLE устройств](https://stackoverflow.com/questions/34065210/android-ble-device-scan-with-filter-is-not-working/34092300), так до сих пор и не решена на многих устройствах.
+[NordicSemiconductor Android BLE Library](https://github.com/NordicSemiconductor/Android-BLE-Library/) полностью устраивает большую часть разработчиков интерфейсов c BLE. Эта библиотека достаточно просто позволяет решить большую часть проблем, работы со стеком BLE на платформе Android. 
+
 
 Также, есть прекрасная облегчённая библиотека Мартина Велле [BLESSED](https://github.com/weliem/blessed-android) написанная на Java
 и аналогичная версия на Kotlin [Coroutines BLESSED](https://github.com/weliem/blessed-android-coroutines)
 
-Однако, иногда бывает нужно сделать что-то совершенно своё, особенное. Для этого надо хорошее понимание основных проблемм работы со стеком BLE.
 
-То есть, создание собственной библиотеки BLE имеет, скорее учебное значение, нежели практическое применение. Хотя, этой библиотекой интерсивно пользуюсь для работы, например, с [ESP32](https://www.espressif.com)
+Живая и вполне поддерживаемая небольшая библиотека [https://github.com/niedev/BluetoothCommunicator](BluetoothCommunicator)
+
+Одним словом, есть вполне работоспособные и действующие проекты, которые в значительной степени избавляют от необходимости изобретения очередного велосипеда и серии самоподрывов в собственном приложении из-за багов библиотеки BLE, накладывающихся на баги интерфейса.
+
+Просмотр кода библиотеки [NordicSemiconductor Android BLE Library](https://github.com/NordicSemiconductor/Android-BLE-Library/) быстро отрезвляет и приводит к выводу, что лучше пользоваться громоздким, сложным, но уже готовым, чем изобретать велосипед. Создание собственной библиотеки BLE имеет, скорее учебное значение, нежели практическое применение. Однако, своей библиотекой [BLIN](https://github.com/GrandFatherPikhto/BLEScan/tree/master/blin) интерсивно пользуюсь в собственных разработках. Например, для создания интерфейсов управления микропроцессорными устройствами на базе [ESP32](https://www.espressif.com), [STM32](https://st.com) [PIC, AVE](https://www.microchip.com//) и т.д.
+
+
+### Траблы (Issues)
+
+Что касается 'нативого' стека BLE, с ним, по ряду вполне понятных причин, среди разработчиков мало кто хочет связываться. За десять лет 'нарисовался' изрядный список, порой, довольно странных сложностей (Issues), которые неизбежно возникают при создании собственного стека работы с BLE Android и которые сама компания Google, похоже исправлять не собирается от слова "совсем". К сожалению, официальном руководстве [Android BLE](https://developer.android.com/guide/topics/connectivity/bluetooth/ble-overview) об этом списке проблем почти ничего не говорится.
+
+К примеру,
+[проблема работы фильтров при сканировании BLE устройств](https://stackoverflow.com/questions/34065210/android-ble-device-scan-with-filter-is-not-working/34092300), так до сих пор и не решена на многих устройствах.
+
+[В официальном руководстве](https://android-doc.github.io/guide/topics/connectivity/bluetooth-le.html) ничего не сказано о том, что не существует какого либо специального флага уведомлений о том, что характеристика работает в режиме ответа на запись (notification). Вам надо самим создать список характеристик, которые переведены в режим 'NOTIFICATION' и не забыть их вернуть в обычный режим по окончании работы приложения.
+То есть сам-то метод есть [setCharacteristicNotification(BluetoothGattCharacteristic characteristic, Boolean enable)](https://developer.android.com/reference/android/bluetooth/BluetoothGatt#setCharacteristicNotification(android.bluetooth.BluetoothGattCharacteristic,%20boolean)), конечно, есть. Но толку от него мало, если Вы вручную не поменяете значение соответствующей notification/indication характеристики.
+
+```Kotlin
+    @SuppressLint("MissingPermission")
+    private fun enableNotifyCharacteristic(bluetoothGattCharacteristic: BluetoothGattCharacteristic) {
+        bluetoothGatt?.let { gatt ->
+            bluetoothGattCharacteristic.getDescriptor(NOTIFY_DESCRIPTOR_UUID)
+                ?.let { bluetoothGattDescriptor ->
+                    gatt.setCharacteristicNotification(bluetoothGattCharacteristic, true)
+                    bluetoothGattDescriptor.value =
+                        BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
+                    writeGattData(GattData(bluetoothGattDescriptor))
+                }
+        }
+    }
+
+    @SuppressLint("MissingPermission")
+    fun notifyCharacteristic(bluetoothGattCharacteristic: BluetoothGattCharacteristic) {
+        if (isCharacteristicNotified(bluetoothGattCharacteristic)) {
+            disableNotifyCharacteristic(bluetoothGattCharacteristic)
+        } else {
+            enableNotifyCharacteristic(bluetoothGattCharacteristic)
+        }
+    }
+```
+
+И чтобы отследить изменения состояния Характеристики, нужно добавить слежение за изменением значений соответствующего дескриптора
+
+```val NOTIFY_DESCRIPTOR_UUID = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb".uppercase())```
+
+Потому что, штатный метод [public void onCharacteristicChanged (BluetoothGatt gatt, 
+                BluetoothGattCharacteristic characteristic, 
+                byte[] value)](https://developer.android.com/reference/android/bluetooth/BluetoothGattCallback#onCharacteristicChanged(android.bluetooth.BluetoothGatt,%20android.bluetooth.BluetoothGattCharacteristic,%20byte[])) срабатывает *только*, когда уведомления или индикация *включены*.
+
+Так, что придётся отлавливать изменения режима при помощи функции [public void onDescriptorRead (BluetoothGatt gatt, 
+                BluetoothGattDescriptor descriptor, 
+                int status, 
+                byte[] value)](https://developer.android.com/reference/android/bluetooth/BluetoothGattCallback#onDescriptorRead(android.bluetooth.BluetoothGatt,%20android.bluetooth.BluetoothGattDescriptor,%20int,%20byte[])) и соорудить что-то вроде
+
+```Kotlin
+private fun onDescriptorWrite(gatt : BluetoothGatt?, descriptor: BluetoothGattDescriptor?, ) {
+   if (gatt != null && descriptor != null && descriptor.uuid == NOTIFY_DESCRIPTOR_UUID) {
+       val notify = ByteBuffer
+           .wrap(bluetoothGattDescriptor.value)
+           .order(ByteOrder.LITTLE_ENDIAN).short.toInt()
+       when(notify) {
+           0 -> {
+               if (isCharacteristicNotified(bluetoothGattDescriptor.characteristic)) {
+                   Log.d(tagLog, "onCharacteristicChanged(${bluetoothGattDescriptor.characteristic.uuid}, notifyDisable)")
+                   mutableListNotifiedCharacteristic.remove(bluetoothGattDescriptor.characteristic)
+                   mutableSharedFlowCharacteristicNotify
+                       .tryEmit(BleCharacteristicNotify(bluetoothGattDescriptor.characteristic.uuid, false))
+               }
+           }
+           1 -> {
+               if (!isCharacteristicNotified(bluetoothGattDescriptor.characteristic)) {
+                   Log.d(tagLog, "onCharacteristicChanged(${bluetoothGattDescriptor.characteristic.uuid}, notifyEnable)")
+                   mutableListNotifiedCharacteristic.add(bluetoothGattDescriptor.characteristic)
+                   mutableSharedFlowCharacteristicNotify
+                       .tryEmit(BleCharacteristicNotify(bluetoothGattDescriptor.characteristic.uuid, true))
+               }
+           }
+           2 -> {
+
+
+           }
+           else -> {
+
+
+           }
+       }
+   }
+}
+```                
+Что до подключения к BLE-устройству, тот этот момент, вообще, окутан какой-то невероятно густой и совершенно невнятной мистикой. Цитирую дословно [Мартина Велле](https://medium.com/@martijn.van.welie/making-android-ble-work-part-2-47a3cdaade07): «Чтобы узнать, было ли кэшировано устройство, вы можете использовать небольшой трюк. После создания BluetoothDevice вы должны сделать это, getType()и если он вернется TYPE_UNKNOWN, устройство явно не кэшируется. Если это так, вы должны сначала просканировать устройство с этим mac-адресом (используя неагрессивный режим сканирования), а после этого вы можете снова использовать автоподключение»
+
+То есть, что-то такое:
+
+```Kotlin
+    @SuppressLint("MissingPermission")
+    private fun connect(address: String) : BluetoothGatt? {
+        bleManager.bluetoothAdapter.getRemoteDevice(address)?.let { bluetoothDevice ->
+            return device.connectGatt(
+                bleManager.applicationContext,
+                device.type == BluetoothDevice.DEVICE_TYPE_UNKNOWN,
+                bleGattCallback,
+                BluetoothDevice.TRANSPORT_LE
+            )
+        }
+
+        return null
+    }
+```
+
+То есть, строчка ```device.type == BluetoothDevice.DEVICE_TYPE_UNKNOWN```, как бы ни из чего, кроме некоторых частных руководств, вообще ни из чего не следует.
+
+Вообще, возврат ошибок 133/6 при переподключении в штатном описании 133-й ошибки, вообще отсутствует. Есть одинокая константа в файле [gatt_api.h](https://android.googlesource.com/platform/external/bluetooth/bluedroid/+/adc9f28ad418356cb81640059b59eee4d862e6b4/stack/include/gatt_api.h#54)
+
+```#define  GATT_ERROR                          0x85```
+
+[Мартин Веллие](https://medium.com/@martijn.van.welie/making-android-ble-work-part-2-47a3cdaade07) пишет, что при возврате такой ошибки надо пересканировать устройство и повторить попытку подключения.
+
+Буфферы обмена надо делать самому. И, в данной ситуации это даже хорошо. Можно реализовать фичи, вроде Back-pressure и т.д.
+
+Про [Knox-проблемы](https://docs.samsungknox.com/dev/knox-sdk/bluetooth-support.htm), которые получаются в жизни корейских устройств можно написать целую книгу.
+
+Известная умолчанка про нерабочие фильтры [BluetoothLeScanner](https://developer.android.com/reference/android/bluetooth/le/BluetoothLeScanner) висит в списке issues уже лет десять. Так же, официально не заявлено, что при шестикратном повторном запуске сканирования, сканирование вообще блокируется на минуту.
+
+Штатный [ScanCallback](https://developer.android.com/reference/android/bluetooth/le/ScanCallback) вообще не возвращает никаких ошибок, кроме сообщения в консоли отладчика, типа 
+
+```D/BluetoothLeScanner: onScannerRegistered() - status=6 scannerId=-1 mScannerId=0```
+
+Отловить эту ошибку фактически невозможно. Можете сами убедиться. Код предельно простой:
+```Kotlin
+repeat(6) {
+            runBlocking {
+                startScan()
+                delay(100)
+                stopScan()
+            }
+        }
+```
+
+*Однако*, несмотря на груз ошибок и недоработок, иногда бывает нужно сделать что-то совершенно своё, особенное. Для этого надо хорошее понимание основных проблемм работы со стеком BLE и умение с ним обращаться. Например, захотелось триангулировать своё положение при помощи стека BLE. Возможно? Вполне. Например, [Determining the Proximity to an iBeacon Device](https://developer.apple.com/documentation/corelocation/determining_the_proximity_to_an_ibeacon_device)
 
 ## Как?
 
 *Чисто писано в бумаге, да забыли про овраги, как по ним ходить © Лев Николаевич Толстой*
+
+Что есть в помощь из самого фундаментального (Where to Go From Here?):
 
 Официальная документация по стеку [Bluetooth LE](https://developer.android.com/guide/topics/connectivity/bluetooth/ble-overview) Android написана внятно и прозрачно. Однако, существует содержит длинный, список упорно не исправляемых разработчиками проблем (Issues). Если хотите, загляните в финал документа, там есть несколько ссылок, в т.ч. [Android BLE Issues от Google](https://support.google.com/android/answer/9769184?hl=en).
 
@@ -64,7 +202,7 @@
 2. [BluetoothDevice.connectGatt](https://developer.android.com/reference/android/bluetooth/BluetoothDevice#connectGatt(android.content.Context,%20boolean,%20android.bluetooth.BluetoothGattCallback)) при неправильном использовании параметра `autoConnect` так же может вернуть ошибку со статусом **6** или **131** (плохо объяснённые в официальном руководстве). Причём правильное значение параметра, `autoConnect`, зависит от версии Android и модели мобильного телефона. Недокументированная мистика!
    Штатное решение, придуманное программистами NordicSemiconductor: в качестве значения `autoConnect` использовать `bluetoothDevice!!.type == luetoothDevice.DEVICE_TYPE_UNKNOWN`. Подробнее, см. [Martin van Wellie // Making Android BLE work — part 2](https://medium.com/@martijn.van.welie/making-android-ble-work-part-2-47a3cdaade07?source=user_profile---------2-------------------------------)
 
-3. [BluetoothGattCallback.onConnectionStateChange](https://stackoverflow.com/questions/38666462/android-catching-ble-connection-fails-disconnects) не всегда срабатывает при отключении устройства, если скажем, оно не сопряжено с телефоном (некоторые устройства без сопряжения автоматически  разрывают связь через 30 секунд)
+3. [BluetoothGattCallback.onConnectionStateChange](https://stackoverflow.com/questions/38666462/android-catching-ble-connection-fails-disconnects) не всегда срабатывает при отключении устройства, если скажем, оно не сопряжено с телефоном (некоторые устройства без сопряжения автоматически  разрывают связь через 30 секунд) Поэтому, надо устанавливать ожидание сообщения об отключении, перед тем, как закрыть приложение. Иначе, стек переполнится и устройство будет всё-время возвращать 6/133. Придётся очищать стек подключения (Настройки/Приложения/Показать Системны/Bluetooth/Очистить память, перезагрузка устройства)
 
 4. Количество [разрешений](https://developer.android.com/reference/android/Manifest.permission), необходимых для [включения/выключения, сканирования, считывания рекламы](https://developer.android.com/guide/topics/connectivity/bluetooth/permissions) [`Bluetooth`](https://developer.android.com/guide/topics/connectivity/bluetooth), [BLE](https://developer.android.com/guide/topics/connectivity/bluetooth/ble-overview), постоянно растёт от одной версии к другой. И с каждой версией список только растёт.
 
@@ -75,7 +213,6 @@
 ### [MainActivity](./app/src/main/java/com/grandfatherpikhto/blescan/MainActivity.kt)
 
 Здесь происходит запрос на привязывание/отвязывание сервиса, запрос необходимых разрешений, запрос на включение/выключение адаптера Bluetooth. Здесь же происходит навигация по фрагментам: [ScanFragment]() и [DeviceFragment]().
-
 
 Начнём с запроса разрешений на доступ к сканированию, подключению, сопряжению и обмен данными с Bluetooth:
 
