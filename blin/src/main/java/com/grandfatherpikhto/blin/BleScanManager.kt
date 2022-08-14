@@ -2,7 +2,10 @@ package com.grandfatherpikhto.blin
 
 import android.annotation.SuppressLint
 import android.app.PendingIntent
+import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
+import android.bluetooth.BluetoothManager
+import android.bluetooth.le.BluetoothLeScanner
 import android.bluetooth.le.ScanFilter
 import android.bluetooth.le.ScanResult
 import android.bluetooth.le.ScanSettings
@@ -20,13 +23,20 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 
 @OptIn(ExperimentalCoroutinesApi::class)
-class BleScanManager constructor(private val bleManager: BleManager,
+class BleScanManager constructor(private val context: Context,
                                  ioDispatcher: CoroutineDispatcher = Dispatchers.IO)
     : DefaultLifecycleObserver {
 
     private val bcScanReceiver: BcScanReceiver = BcScanReceiver(this)
 
-    val applicationContext: Context get() = bleManager.applicationContext
+    private val bluetoothManager: BluetoothManager =
+        context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
+    private val bluetoothAdapter: BluetoothAdapter
+            = bluetoothManager.adapter
+    private val bluetoothLeScanner: BluetoothLeScanner
+            = bluetoothAdapter.bluetoothLeScanner
+
+    val applicationContext:Context get() = context.applicationContext
 
     enum class State (val value: Int) {
         Stopped(0x00),
@@ -117,7 +127,7 @@ class BleScanManager constructor(private val bleManager: BleManager,
                 }
             }
 
-            val result = bleManager.bluetoothLeScanner.startScan(
+            val result = bluetoothLeScanner.startScan(
                 scanFilters,
                 scanSettingsBuilder.build(),
                 bleScanPendingIntent
@@ -137,7 +147,7 @@ class BleScanManager constructor(private val bleManager: BleManager,
     fun stopScan() {
         if (scanState == State.Scanning) {
             Log.d(tagLog, "stopScan()")
-            bleManager.bluetoothLeScanner.stopScan(bleScanPendingIntent)
+            bluetoothLeScanner.stopScan(bleScanPendingIntent)
             mutableStateFlowScanState.tryEmit(State.Stopped)
         }
     }
@@ -146,11 +156,11 @@ class BleScanManager constructor(private val bleManager: BleManager,
     override fun onCreate(owner: LifecycleOwner) {
         super.onCreate(owner)
         Log.d(tagLog, "onCreate()")
-        bleManager.applicationContext.registerReceiver(bcScanReceiver, makeIntentFilters())
+        applicationContext.registerReceiver(bcScanReceiver, makeIntentFilters())
     }
 
     override fun onDestroy(owner: LifecycleOwner) {
-        bleManager.applicationContext.unregisterReceiver(bcScanReceiver)
+        applicationContext.unregisterReceiver(bcScanReceiver)
         stopScan()
         super.onDestroy(owner)
     }

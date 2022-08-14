@@ -18,11 +18,17 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
-class BleBondManager (private val bleManager: BleManager,
+class BleBondManager (private val context: Context,
                       private val dispatcher: CoroutineDispatcher = Dispatchers.IO)
     : DefaultLifecycleObserver {
 
     private val logTag = this.javaClass.simpleName
+
+    private val bluetoothManager: BluetoothManager =
+        context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
+    private val bluetoothAdapter: BluetoothAdapter
+            = bluetoothManager.adapter
+    private val applicationContext:Context get() = context.applicationContext
 
     private val scope = CoroutineScope(dispatcher)
 
@@ -47,12 +53,12 @@ class BleBondManager (private val bleManager: BleManager,
 
     override fun onCreate(owner: LifecycleOwner) {
         super.onCreate(owner)
-        bleManager.applicationContext.applicationContext.registerReceiver(bcBondReceiver,
+        applicationContext.applicationContext.registerReceiver(bcBondReceiver,
             makeIntentFilter())
     }
 
     override fun onDestroy(owner: LifecycleOwner) {
-        bleManager.applicationContext.unregisterReceiver(bcBondReceiver)
+        applicationContext.unregisterReceiver(bcBondReceiver)
         super.onDestroy(owner)
     }
 
@@ -60,11 +66,9 @@ class BleBondManager (private val bleManager: BleManager,
      * Uppercase -- важно! Потому, что иначе, устройство не будет найдено!
      */
     fun bondRequest(address: String) : Boolean {
-        (bleManager.applicationContext
-            .getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager)
-            .adapter.getRemoteDevice(address.uppercase())?.let { bluetoothDevice ->
-                return bondRequest(bluetoothDevice)
-            }
+        bluetoothAdapter.getRemoteDevice(address.uppercase())?.let { bluetoothDevice ->
+            return bondRequest(bluetoothDevice)
+        }
 
         return false
     }

@@ -22,18 +22,11 @@ class BleManager constructor(private val context: Context,
     private val logTag = this.javaClass.simpleName
     private val scope = CoroutineScope(dispatcher)
 
-    private val bluetoothManager: BluetoothManager =
-        context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
-    val bluetoothAdapter: BluetoothAdapter
-            = bluetoothManager.adapter
-    val bluetoothLeScanner: BluetoothLeScanner
-            = bluetoothAdapter.bluetoothLeScanner
-
     val applicationContext:Context get() = context.applicationContext
 
-    val bleScanManager: BleScanManager = BleScanManager(this, dispatcher)
-    val bleGattManager: BleGattManager = BleGattManager(this, dispatcher)
-    val bleBondManager: BleBondManager = BleBondManager(this, dispatcher)
+    val bleScanManager: BleScanManager = BleScanManager(context, dispatcher)
+    val bleGattManager: BleGattManager = BleGattManager(context, bleScanManager, dispatcher)
+    val bleBondManager: BleBondManager = BleBondManager(context, dispatcher)
 
     override val stateFlowScanState get() = bleScanManager.stateFlowScanState
     override val scanState get()     = bleScanManager.scanState

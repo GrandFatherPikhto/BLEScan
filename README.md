@@ -326,13 +326,15 @@
 
 Если параметр ```stopTimeout: Long = 0L``` не равен нулю, сканирование будет остановленно через указанное количество миллисекунд, вне зависимости от результатов. В противном случае, сканирование будет длиться вечно. Ну или, пока аппарат не разрядится или не сдохнет.
 
-Параметр ```filterRepeatable: Boolean = false``` применяется для фильтрации повторяющихся значений. Сканнер периодически обходит цепочку доступных устройств, и генерирует сообщение каждый раз, а это не всегда нужно.
+Параметр ```filterRepeatable: Boolean = false``` применяется для фильтрации повторяющихся значений. Сканнер периодически обходит цепочку доступных устройств, и генерирует сообщение каждый раз, а это не всегда нужно. В некоторых случаях бывает нужно эмитировать устройство с уникальными именем/адресом единожды. Для однократного оповещения надо включить ```filterRepeateble = true```
 
 В сканнере реализована функция обратного вызова, через [PendingIntent()] и, соответственно [BroadcastReceiver](). [BcScanReceiver.kt](https://github.com/GrandFatherPikhto/BLEScan/blob/master/blin/src/main/java/com/grandfatherpikhto/blin/receivers/BcScanReceiver.kt) получает уведомления о найденных устройствах в виде [ScanResult]() и уведомления об ошибках. И при помощи функции обработного вызова отдаёт результаты в [BleScanManager.kt](), где они и обрабатываются.
 
-В принципе, есть два способа подключения [PendingIntent()](): 
+В принципе, есть два способа подключения [PendingIntent()](https://developer.android.com/reference/android/app/PendingIntent):
+
 1. Статический.
-   В этом случае надо создать статические «получатели» [PendingIntent()](), в классе, наследованном от [BroadcastReceiver()]():
+   В этом случае надо создать статические «получатели» [PendingIntent()](https://developer.android.com/reference/android/app/PendingIntent), в классе, наследованном от [BroadcastReceiver()](https://developer.android.com/reference/android/content/BroadcastReceiver):
+
    ```
    ...
     companion object Receiver {
@@ -364,7 +366,7 @@
     ...
    ```
 
-   В этом случае, нам остаётся получить в [BleScanManager.kt]() экземпляр Намерения при помощи обращения к ленивому неизменяемому свойству bleScanPendingIntent
+   В этом случае, нам остаётся получить в [BleScanManager.kt](https://github.com/GrandFatherPikhto/BLEScan/blob/master/blin/src/main/java/com/grandfatherpikhto/blin/BleScanManager.kt) экземпляр Намерения при помощи обращения к ленивому неизменяемому свойству bleScanPendingIntent
 
    ```kotlin
     private val bleScanPendingIntent: PendingIntent by lazy {
@@ -409,183 +411,128 @@
 2. Динамический (программный)
    Этот подход существенно проще. Нам не надо искать значения переменных для ```AndroidManifest.xml```.
 
+   В рессивере пишем ленивую [lazy](https://kotlinlang.org/docs/delegated-properties.html) (да здравствуют делегаты!) константную переменную
+
+   ```kotlin
+   /**
+     * Почему Missing PendingIntent mutability flag?
+     */
+    private val bcPendingIntent: PendingIntent by lazy {
+        PendingIntent.getBroadcast(
+            bleScanManager.applicationContext,
+            REQUEST_CODE_BLE_SCANNER_PENDING_INTENT,
+            Intent(ACTION_BLE_SCAN),
+            PendingIntent.FLAG_UPDATE_CURRENT
+        )
+    }
+    ```
+
+    И уже в [BleScanManager]() получаем экземпляр класса и обращаемся к методу:
+
+    ```kotlin
+        private var bleScanPendingIntent: PendingIntent = bcScanReceiver.pendingIntent
+    ```
+
+    Поскольку, все менеджеры наследованы от [DefaultLifecycleObserver](https://developer.android.com/reference/androidx/lifecycle/DefaultLifecycleObserver), используем штатные коллбэки LifeCycle: [onCreate()](https://developer.android.com/reference/androidx/lifecycle/DefaultLifecycleObserver#onCreate(androidx.lifecycle.LifecycleOwner)), [onDestroy()](https://developer.android.com/reference/androidx/lifecycle/DefaultLifecycleObserver#onDestroy(androidx.lifecycle.LifecycleOwner)). И в [onCreate()](https://developer.android.com/reference/androidx/lifecycle/DefaultLifecycleObserver#onCreate(androidx.lifecycle.LifecycleOwner)) вызываем регистрацию рессивера, а в [onDestroy()](https://developer.android.com/reference/androidx/lifecycle/DefaultLifecycleObserver#onDestroy(androidx.lifecycle.LifecycleOwner)) — его разрегистрацию:
+
+    ```kotlin
+    override fun onCreate(owner: LifecycleOwner) {
+        super.onCreate(owner)
+        Log.d(tagLog, "onCreate()")
+        bleManager.applicationContext.registerReceiver(bcScanReceiver, makeIntentFilters())
+    }
+
+    override fun onDestroy(owner: LifecycleOwner) {
+        bleManager.applicationContext.unregisterReceiver(bcScanReceiver)
+        stopScan()
+        super.onDestroy(owner)
+    }
+    ```
+
+    и делаем метод для формирования списка фильтров событий:
+
+    ```kotlin
+    private fun makeIntentFilters() : IntentFilter = IntentFilter().let { intentFilter ->
+        intentFilter.addAction(Intent.CATEGORY_DEFAULT)
+        intentFilter.addAction(BcScanReceiver.ACTION_BLE_SCAN)
+        intentFilter
+    }
+    ```
+
 Основная часть работы совершается в интерфейсе обратных вызовов, наследованном от [BluetoothLeScanner](https://developer.android.com/reference/android/bluetooth/le/BluetoothLeScanner)
 
-#### Класс обработки обратного вызова BLE-сканнера [LeScanCallback](./app/src/main/java/com/grandfatherpikhto/blescan/service/LeScanCallback.kt)
+В [BcScanReceiver()](https://github.com/GrandFatherPikhto/BLEScan/blob/master/blin/src/main/java/com/grandfatherpikhto/blin/receivers/BcScanReceiver.kt)
 
-Здесь происходит обработка найденных устройств.
-
-Перехватываются обратные вызовы
+Перегрузка метода [onReceive(context: Context?, intent: Intent?)] перехватывает события сканирования
 
 ```kotlin
-    /**
-     * Пакетный режим (сразу несколько устройств)
-     * Срабатывает по вызову flushPendingScanResults()
-     * после остановки сканирования
-     */
-    override fun onBatchScanResults(results: MutableList<ScanResult>?) {
-        super.onBatchScanResults(results)
-        results?.forEach { result ->
-            // Log.d(TAG, "[BatchScan] Найдено устройство: ${result.device.address} ${result.device.name}")
-            emitDevice(result.device)
-        }
-    }
-
-    /**
-     * Найдено одно устройство.
-     */
-    override fun onScanResult(callbackType: Int, result: ScanResult?) {
-        super.onScanResult(callbackType, result)
-        // Log.d(TAG, "[Scan] Найдено устройство: ${result?.device?.address} ${result?.device?.name}")
-        if(result != null && result.device != null) {
-            emitDevice(result.device)
-        }
-    }
-```
-
-Если фильтр совпадает или пуст, вызывается генерация события `deviceFound`
-
-```kotlin
-    /**
-     * Проверяет соответствует ли устройство списку фильтров
-     * Если фильтр совпадает или пуст, генерирует событие обнаруженного устройства
-     */
-    private fun emitDevice(bluetoothDevice: BluetoothDevice?) {
-        if(bluetoothDevice != null) {
-            if(checkName(bluetoothDevice)
-                &&  checkAddress(bluetoothDevice)) {
-                bluetoothInterface.deviceFound = bluetoothDevice.toBtLeDevice()
-            }
-        }
-    }
-```
-
-### Класс подключения устройств [BtLeConnector](./app/src/main/java/com/grandfatherpikhto/blescan/service/BtLeConnector.kt)
-
-Содержит в себе достаточно полный набор состояний, описывающий процесс подключения, отключения, получения и отправки данных через GATT:
-
-```kotlin
-    /**
-     * Список состояний GATT, процедуры подключения, пересканирования
-     */
-    enum class State(val value:Int) {
-        Unknown(0x00),       // Просто, для инициализации
-        Disconnecting(0x01), // Отключение от GATT
-        Disconnected(0x02),  // Отключены
-        Connecting(0x03),    // Процесс подключения к GATT
-        Connected(0x04),     // Подключены
-        Discovering(0x05),   // Начали исследовать сервисы
-        Discovered(0x06),    // Сервисы исследованы
-        Rescan(0x07),        // Запущено пересканирование по адресу устройства
-        CharWrited(0x08),    // Характеристика записана
-        CharReaded(0x09),    // Характеристика прочитана
-        CharChanged(0x0A),   // Дескриптор изменён
-        DescrWrited(0x0B),   // Дескриптор записан
-        DescrReaded(0x0C),   // Дескриптор прочитан
-        ServiceChanged(0x0D),// Сервис изменился
-        Error(0xFE),         // Получена ошибка
-        FatalError(0xFF)     // Получена фатальная ошибка. Возвращаемся к Фрагменту сканирования устройств
-    }
-```
-
-Может и не стоило создавать свой собственный список, а просто воспользоваться набором штатных значений [BluetoothProfile](https://developer.android.com/reference/android/bluetooth/BluetoothProfile)? Возможно. Просто, так немного удобнее, поскольку состояния `Discovering`, `Discovered`, вообще находятся вне пула состояний `BluetoothProfile`
-
-В классе просто собраны возможные наборы состояний, которые могут возникать в процессе работы с GATT устройства. При необходимости, вызывается пересканирование устройства по адресу:
-
-```kotlin
-    /**
-     * Запрос на пересканирование с адресом устройства и остановкой сканирования
-     * после обнаружения устройства
-     */
-    private fun doRescan() {
-        if(bluetoothInterface.bluetoothDevice != null) {
-            service.scanner.scanLeDevices(
-                addresses = bluetoothInterface.currentDevice!!.address,
-                mode = BtLeScanner.Mode.StopOnFind
-            )
-            bluetoothInterface.connectorState = State.Rescan
-        }
-    }
-```
-
-Здесь же создаётся запрос на сопряжение устройства и попытка повторного подключения после сопряжения:
-
-```kotlin
-if (bluetoothInterface.bluetoothDevice!!.bondState
-        == BluetoothDevice.BOND_NONE) {
-    Log.d(TAG, "Пытаемся сопрячь устройство ${bluetoothInterface.currentDevice?.address}")
-    bluetoothInterface.bluetoothDevice!!.createBond()
-} else {
-    doConnect()
-}
-
-```
-
-При отключении от устройства важно дождаться состояния `Disconnected`. Если этого не сделать, 
-
-во-первых, устройство будет недоступно для сканирования и подключения довольно долгий период (от 30 секунд до 2 минут)
-
-во-вторых, будет увеличиваться счётчик активных подключений к Bluetooth в Android. В результате, подключение к устройству будет постоянно сбрасываться, поскольку в Android ограничено количество подключений (в зависимости от версии и реализации).
-
-Для ожидания используется сопрограмма (coroutine) [runBlocking](https://kotlin.github.io/kotlinx.coroutines/kotlinx-coroutines-core/kotlinx.coroutines/run-blocking.html)
-
-```kotlin
-    /**
-     * Дождаться состояния Disconnect.
-     * Если этого не сделать, устройство в течение 30-180 секунд
-     * будет недоступно для повторного подключения и сканирования
-     */
-    fun close() {
-        reconnect = false
-        runBlocking {
-            launch {
-                bluetoothInterface.bluetoothGatt?.let { gatt ->
-                    gatt.disconnect()
-                    Log.d(TAG, "Ждём закрытия")
-                    while (bluetoothInterface.connectorState != State.Disconnected) {
-                        delay(100)
-                        Log.d(TAG, "Проверка state ${bluetoothInterface.connectorState}")
-                    }
-                    bluetoothInterface.bluetoothGatt?.close()
-                    Log.d(TAG, "Дождались")
+    override fun onReceive(context: Context?, intent: Intent?) {
+        if ( context != null && intent != null ) {
+            when (intent.action) {
+                ACTION_BLE_SCAN -> {
+                    extractScanResult(intent)
+                }
+                else -> {
+                    Log.d(tagLog, "Action: ${intent.action}")
                 }
             }
         }
     }
 ```
 
-#### Класс обработки обратных вызовов процедуры подключения/исследования/обмена данными/отключения GATT-устройства [LeGattCallback](./app/src/main/java/com/grandfatherpikhto/blescan/service/LeGattCallback.kt)
-
-Наследован от интерфейса [BluetoothGattCallback]() и перехватывает все состояния подключения, передачи, приёма данных и ошибки. В частности, после исследования GATT, сообщает об этом.
+Если `intent` не содержит ошибок ```intent.hasExtra(BluetoothLeScanner.EXTRA_ERROR_CODE)```, можно извлечь 'ScanResult':
 
 ```kotlin
-    override fun onServicesDiscovered(btgatt: BluetoothGatt?, status: Int) {
-        super.onServicesDiscovered(btgatt, status)
-        bluetoothInterface.connectorState = BtLeConnector.State.Discovered
-        if(status == BluetoothGatt.GATT_SUCCESS) {
-            if(btgatt != null) {
-                bluetoothInterface.bluetoothGatt = btgatt
+        if (errorCode == -1 && intent.hasExtra(BluetoothLeScanner.EXTRA_LIST_SCAN_RESULT)) {
+            intent.getParcelableArrayListExtra<ScanResult>(BluetoothLeScanner.EXTRA_LIST_SCAN_RESULT)
+                ?.let { results ->
+                    results.forEach { result ->
+                        result.device?.let { _ ->
+                            // Log.d(tagLog, "Device: $device")
+                            bleScanManager.onReceiveScanResult(result)
+                            return result
+                        }
+                    }
+                }
+        }
+```
+
+Осталось «прогнать» результат через фильтры (если они заполнены значениями) и можно эмитрировать результат и остановить сканирование при совпадении, если взведена переменная 
+
+```kotlin
+    private val mutableSharedFlowScanResult = MutableSharedFlow<ScanResult>(replay = 100)
+    val sharedFlowScanResult:SharedFlow<ScanResult> get() = mutableSharedFlowScanResult.asSharedFlow()
+
+    @SuppressLint("MissingPermission")
+    fun onReceiveScanResult(scanResult: ScanResult) {
+        scanResult.device.let { bluetoothDevice ->
+            if ( filterName(bluetoothDevice)
+                .and(filterAddress(bluetoothDevice))
+                .and(filterUuids(bluetoothDevice.uuids))
+            ) {
+                if (isEmitScanResult(scanResult)) {
+                    mutableSharedFlowScanResult.tryEmit(scanResult)
+                    mutableSharedFlowBleScanResult.tryEmit(BleScanResult(scanResult))
+                }
+                if (stopOnFind &&
+                    (names.isNotEmpty()
+                    .or(addresses.isNotEmpty()
+                    .or(uuids.isNotEmpty())))
+                ) {
+                    stopScan()
+                }
             }
         }
     }
 ```
 
-По этому событию в списке [DeviceFragment]() создаётся список сервисов, характеристик и дескрипторов.
-
-Если получены статус 6 или 133, отправляем сообщение об ошибке, по котором [BtLeConnector]() запрашивает рескан устройства по адресу, а потом повторную попытку подключения.
+В некоторых случаях бывает нужен список отсканированных устройств. Перехватывать внутренний буффер [MutableSharedFlow()]() — занятие вредное и совершенно бессмысленное. Как и искать последний элемент. Поэтому, есть отдельный массив, содержащий неповторяющиеся элементы сканирования.
 
 ```kotlin
-if(status == 6 || status == 133) {
-    Log.d(TAG, "onConnectionStateChange $status $newState запустить рескан")
-    if (tryConnectCounter >= MAX_TRY_CONNECT - 1) {
-        tryConnectCounter = 0
-        bluetoothInterface.connectorState = BtLeConnector.State.FatalError
-    } else {
-        bluetoothInterface.connectorState = BtLeConnector.State.Error
-        tryConnectCounter++
-    }
-}
+    val scanResults = mutableListOf<ScanResult>()
 ```
+
+При помощи которого можно при необходимости отбрасывать повторные результаты сканирования. Вряд ли в списке будет больше 100 элементов, поэтому, нагрузка от такого массива будет не велика.
 
 ### Класс обработки широковещательных событий [BcReceiver](./app/src/main/java/com/grandfatherpikhto/blescan/service/BcReceiver.kt)
 

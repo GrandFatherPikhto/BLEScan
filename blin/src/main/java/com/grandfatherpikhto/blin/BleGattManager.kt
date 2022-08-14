@@ -2,6 +2,8 @@ package com.grandfatherpikhto.blin
 
 import android.annotation.SuppressLint
 import android.bluetooth.*
+import android.bluetooth.le.BluetoothLeScanner
+import android.content.Context
 import android.util.Log
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
@@ -18,15 +20,23 @@ import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.util.*
 
-class BleGattManager constructor(private val bleManager: BleManager,
+class BleGattManager constructor(private val context: Context,
+                                 private val bleScanManager: BleScanManager,
                                  dispatcher: CoroutineDispatcher = Dispatchers.IO)
     : DefaultLifecycleObserver {
 
     companion object {
         const val MAX_ATTEMPTS = 6
-        val NOTIFY_DESCRIPTOR_UUID = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb".uppercase())
+        val NOTIFY_DESCRIPTOR_UUID: UUID =
+            UUID.fromString("00002902-0000-1000-8000-00805f9b34fb".uppercase())
     }
-    
+
+    private val bluetoothManager: BluetoothManager =
+        context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
+    private val bluetoothAdapter: BluetoothAdapter
+            = bluetoothManager.adapter
+    private val applicationContext:Context get() = context.applicationContext
+
     enum class State(val value:Int) {
         Disconnected  (0x00), // Отключены
         Disconnecting (0x01), // Отключаемся
@@ -73,8 +83,6 @@ class BleGattManager constructor(private val bleManager: BleManager,
     val stateFlowBleGatt get() = mutableStateFlowBleGatt.asStateFlow()
     val bleGatt get() = mutableStateFlowBleGatt.value
 
-    val bleScanManager = bleManager.bleScanManager
-
     private val mutableListNotifiedCharacteristic = mutableListOf<BluetoothGattCharacteristic>()
     val notifiedCharacteristic get() = mutableListNotifiedCharacteristic.toList()
 
@@ -113,7 +121,7 @@ class BleGattManager constructor(private val bleManager: BleManager,
     private fun doRescan() {
         if (attemptReconnect && reconnectAttempts < MAX_ATTEMPTS) {
             bluetoothDevice?.let { device ->
-                bleManager.startScan(addresses = listOf(device.address),
+                bleScanManager.startScan(addresses = listOf(device.address),
                     stopTimeout = 2000L,
                     stopOnFind = true)
             }
@@ -124,7 +132,7 @@ class BleGattManager constructor(private val bleManager: BleManager,
         Log.d(tagLog, "connect($address)")
         if (connectState == State.Disconnected) {
             connectIdling?.idling = false
-            bleManager.bluetoothAdapter.getRemoteDevice(address)?.let { device ->
+            bluetoothAdapter.getRemoteDevice(address)?.let { device ->
                 mutableStateFlowConnectState.tryEmit(State.Connecting)
                 bluetoothDevice = device
                 attemptReconnect = true
@@ -142,7 +150,7 @@ class BleGattManager constructor(private val bleManager: BleManager,
             reconnectAttempts ++
 
             return device.connectGatt(
-                bleManager.applicationContext,
+                applicationContext,
                 device.type == BluetoothDevice.DEVICE_TYPE_UNKNOWN,
                 bleGattCallback,
                 BluetoothDevice.TRANSPORT_LE

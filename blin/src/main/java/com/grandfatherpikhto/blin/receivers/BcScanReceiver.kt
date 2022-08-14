@@ -86,5 +86,4 @@ class BcScanReceiver constructor(private val bleScanManager: BleScanManager, dis
             }
         }
     }
-
 }
