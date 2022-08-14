@@ -7,7 +7,7 @@ import android.util.Log
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import com.grandfatherpikhto.blin.buffer.BleCharacteristicNotify
-import com.grandfatherpikhto.blin.data.GattData
+import com.grandfatherpikhto.blin.data.BleGattItem
 import com.grandfatherpikhto.blin.data.BleGatt
 import com.grandfatherpikhto.blin.idling.ScanIdling
 import kotlinx.coroutines.*
@@ -277,7 +277,7 @@ class BleGattManager constructor(private val context: Context,
         }
     }
 
-    fun writeGattData(gattData: GattData) = bleGattCallback.writeGattData(gattData)
+    fun writeGattData(bleGattData: BleGattItem) = bleGattCallback.writeGattData(bleGattData)
 
     fun isCharacteristicNotified(bluetoothGattCharacteristic: BluetoothGattCharacteristic) : Boolean =
         mutableListNotifiedCharacteristic.isNotEmpty()
@@ -291,7 +291,7 @@ class BleGattManager constructor(private val context: Context,
                     gatt.setCharacteristicNotification(bluetoothGattCharacteristic, false)
                     bluetoothGattDescriptor.value =
                         BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE
-                    writeGattData(GattData(bluetoothGattDescriptor))
+                    writeGattData(BleGattItem(bluetoothGattDescriptor))
                 }
         }
     }
@@ -304,7 +304,7 @@ class BleGattManager constructor(private val context: Context,
                     gatt.setCharacteristicNotification(bluetoothGattCharacteristic, true)
                     bluetoothGattDescriptor.value =
                         BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
-                    writeGattData(GattData(bluetoothGattDescriptor))
+                    writeGattData(BleGattItem(bluetoothGattDescriptor))
                 }
         }
     }
@@ -318,10 +318,10 @@ class BleGattManager constructor(private val context: Context,
         }
     }
 
-    fun notifyCharacteristic(gattData: GattData) {
+    fun notifyCharacteristic(bleGattData: BleGattItem) {
         bluetoothGatt?.let { gatt ->
-            gatt.getService(gattData.uuidService)?.let { service ->
-                service.getCharacteristic(gattData.uuidCharacteristic).let { char ->
+            gatt.getService(bleGattData.uuidService)?.let { service ->
+                service.getCharacteristic(bleGattData.uuidCharacteristic).let { char ->
                     notifyCharacteristic(char)
                 }
             }
@@ -338,12 +338,12 @@ class BleGattManager constructor(private val context: Context,
     }
 
     @SuppressLint("MissingPermission")
-    fun readGattData(gattData: GattData) : Boolean {
+    fun readGattData(bleGattData: BleGattItem) : Boolean {
         bluetoothGatt?.let { gatt ->
-            gatt.getService(gattData.uuidService)?.let { service ->
-                service.getCharacteristic(gattData.uuidCharacteristic)?.let { characteristic ->
-                    if (gattData.uuidDescriptor == null) return readCharacteristic(characteristic)
-                    else characteristic.getDescriptor(gattData.uuidDescriptor)?.let { descriptor ->
+            gatt.getService(bleGattData.uuidService)?.let { service ->
+                service.getCharacteristic(bleGattData.uuidCharacteristic)?.let { characteristic ->
+                    if (bleGattData.uuidDescriptor == null) return readCharacteristic(characteristic)
+                    else characteristic.getDescriptor(bleGattData.uuidDescriptor)?.let { descriptor ->
                         return readDescriptor(descriptor)
                     }
                 }

@@ -4,7 +4,7 @@ import android.bluetooth.*
 import android.content.Context
 import androidx.lifecycle.LifecycleOwner
 import com.grandfatherpikhto.blin.buffer.BleCharacteristicNotify
-import com.grandfatherpikhto.blin.data.GattData
+import com.grandfatherpikhto.blin.data.BleGattItem
 import com.grandfatherpikhto.blin.data.BleBondState
 import com.grandfatherpikhto.blin.data.BleGatt
 import com.grandfatherpikhto.blin.data.BleScanResult
@@ -89,13 +89,13 @@ class BleManager constructor(private val context: Context,
 
     override fun disconnect() = bleGattManager.disconnect()
 
-    override fun writeGattData(gattData: GattData) = bleGattManager.writeGattData(gattData)
+    override fun writeGattData(bleGattData: BleGattItem) = bleGattManager.writeGattData(bleGattData)
 
     override fun readCharacteristic(bluetoothGattCharacteristic: BluetoothGattCharacteristic)
         = bleGattManager.readCharacteristic(bluetoothGattCharacteristic)
 
-    override fun readGattData(gattData: GattData): Boolean =
-        bleGattManager.readGattData(gattData)
+    override fun readGattData(bleGattData: BleGattItem): Boolean =
+        bleGattManager.readGattData(bleGattData)
 
     override fun readDescriptor(bluetoothGattDescriptor: BluetoothGattDescriptor)
         = bleGattManager.readDescriptor(bluetoothGattDescriptor)
@@ -104,8 +104,8 @@ class BleManager constructor(private val context: Context,
         bluetoothGattCharacteristic: BluetoothGattCharacteristic)
         = bleGattManager.notifyCharacteristic(bluetoothGattCharacteristic)
 
-    override fun notifyCharacteristic(gattData: GattData) =
-        bleGattManager.notifyCharacteristic(gattData)
+    override fun notifyCharacteristic(bleGattData: BleGattItem) =
+        bleGattManager.notifyCharacteristic(bleGattData)
 
     override fun isCharacteristicNotified(
         bluetoothGattCharacteristic: BluetoothGattCharacteristic): Boolean

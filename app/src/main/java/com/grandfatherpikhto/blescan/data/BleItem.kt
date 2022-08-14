@@ -3,7 +3,7 @@ package com.grandfatherpikhto.blescan.data
 import android.bluetooth.BluetoothGattCharacteristic
 import android.bluetooth.BluetoothGattDescriptor
 import android.bluetooth.BluetoothGattService
-import com.grandfatherpikhto.blin.data.GattData
+import com.grandfatherpikhto.blin.data.BleGattItem
 import com.grandfatherpikhto.blin.helper.toHexString
 import java.util.*
 
@@ -94,9 +94,9 @@ class BleItem ( val uuidService: UUID,
             BluetoothGattDescriptor(uuidDescriptor, descrPermission)
         } else null
 
-    val gattData: GattData
+    val bleGattData: BleGattItem
         get() =
-            GattData(value = value,
+            BleGattItem(value = value,
             uuidService = uuidService,
             uuidCharacteristic = uuidCharacteristic,
             uuidDescriptor = uuidDescriptor)

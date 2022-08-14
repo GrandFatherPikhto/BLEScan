@@ -4,7 +4,7 @@ import android.bluetooth.BluetoothGatt
 import android.bluetooth.BluetoothGattCallback
 import android.bluetooth.BluetoothGattCharacteristic
 import android.bluetooth.BluetoothGattDescriptor
-import com.grandfatherpikhto.blin.data.GattData
+import com.grandfatherpikhto.blin.data.BleGattItem
 import com.grandfatherpikhto.blin.buffer.OutputBuffer
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -85,5 +85,5 @@ class BleGattCallback constructor(private val bleGattManager: BleGattManager,
         super.onServiceChanged(gatt)
     }
 
-    fun writeGattData(gattData: GattData) = outputBuffer.writeGattData(gattData)
+    fun writeGattData(bleGattData: BleGattItem) = outputBuffer.writeGattData(bleGattData)
 }

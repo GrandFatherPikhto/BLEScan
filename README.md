@@ -70,9 +70,9 @@
         }
     ```
 
-2. Ошибка **133**. Функция [public boolean discoverServices ()](https://developer.android.com/reference/android/bluetooth/BluetoothGatt#discoverServices()) часто возвращает `false` и генерирует ошибки с кодом **6/133**.
+2. Ошибка `133`. Функция [public boolean discoverServices ()](https://developer.android.com/reference/android/bluetooth/BluetoothGatt#discoverServices()) часто возвращает `false` и генерирует ошибки с кодом `6/133`.
 
-    ```
+    ```log
     …
     E/DfuBaseService: Service discovery error: 129
     E/DfuBaseService: An error occurred while connecting to the device:16513
@@ -83,7 +83,7 @@
     ```
 
     Разработчики [Nordic Semiconductor](https://devzone.nordicsemi.com/f/nordic-q-a/33313/android-gatt-133-error) проснифили обмен с устройством блютуз и обнаружили, что в работе стека BLE Android нарушен протокол Bluetooth 4+.
-    > «Это известная проблема с Android, у нас были похожие проблемы, когда возвращалась ошибка 133. В случае появления этой ошибки мы запускали сниффер, и увидели, что телефон сначала отправляет LL_VERSION_IND, а затем отправляет LL_FEATURE_REQ  до  того, как периферийное устройство отправило свою LL_VERSION_IND. Другими словами, телефон инициирует вторую процедуру управления LL до завершения первой, и это явное нарушение спецификации Bluetooth. Из-за этой ошибки SoftDevice отключается.» ©
+    > «Это известная проблема с Android, у нас были похожие проблемы, когда возвращалась ошибка `133`. В случае появления этой ошибки мы запускали сниффер, и увидели, что телефон сначала отправляет LL_VERSION_IND, а затем отправляет LL_FEATURE_REQ  до  того, как периферийное устройство отправило свою LL_VERSION_IND. Другими словами, телефон инициирует вторую процедуру управления LL до завершения первой, и это явное нарушение спецификации Bluetooth. Из-за этой ошибки SoftDevice отключается.» ©
 
     Не исключено, что это сделано намеренно, чтобы предотвратить действия злоумышленников, но это безумно раздражает!
 
@@ -353,7 +353,7 @@
 1. Статический.
    В этом случае надо создать статические «получатели» [PendingIntent()](https://developer.android.com/reference/android/app/PendingIntent), в классе, наследованном от [BroadcastReceiver()](https://developer.android.com/reference/android/content/BroadcastReceiver):
 
-   ```
+   ```kotlin
    ...
     companion object Receiver {
         private const val TAG="BleScanReceiver"
@@ -738,7 +738,7 @@ disconnect()
 
 Соответственно, `Disconnected` генерируется, когда в [onConnectionStateChange]() приходит [BluetoothProfile.STATE_DISCONNECTED](), `Disconnecting` эмитируется после вызова функции `disconnect()`. `Connecting` — в момент вызова функции `connect(address: String)` и `Connected`, после успешного обратного вызова [onConnectionStateChange](). Можно, конечно, усложнить градацию состояний оповещения, скажем, добавить что-то вроде `Rescan`, `Reconnect`, но на мой взгляд это ненужно усложнит систему оповещения.
 
-В методе `connect(address: String)` умышленно передаётся именно строковый адрес устройства. Это дополнительная проверка того, что устройство может быть вообще подключено при помощи метода [getRemoteDevice(address: String)](https://developer.android.com/reference/android/bluetooth/BluetoothAdapter#getRemoteDevice(java.lang.String)). Однако, не следует забывать, что согласно [официальной документации](https://developer.android.com/reference/android/bluetooth/BluetoothAdapter#getRemoteDevice(java.lang.String)), адрес надо передавать в `верхнем регистре`, иначе можем получать непонятные сообщения об ошибке. Поэтому, в код добавлена статическая функция (обратите внимание, _статическая_, а то будете искать её в объекте `bluetoothManager`...)
+В методе `connect(address: String)` умышленно передаётся именно строковый адрес устройства. Это дополнительная проверка того, что устройство может быть вообще подключено при помощи метода [getRemoteDevice(address: String)](https://developer.android.com/reference/android/bluetooth/BluetoothAdapter#getRemoteDevice(java.lang.String)). Однако, не следует забывать, что согласно [официальной документации](https://developer.android.com/reference/android/bluetooth/BluetoothAdapter#getRemoteDevice(java.lang.String)), адрес надо передавать в `верхнем регистре`, иначе можем получать непонятные сообщения об ошибке. Поэтому, в код добавлена статическая функция (обратите внимание, *статическая*, а то будете искать её в объекте `bluetoothManager`...)
 
 > Действительные аппаратные адреса Bluetooth должны быть указаны в верхнем регистре, в порядке следования байтов и в таком формате, как «00:11:22:33:AA:BB». Метод  checkBluetoothAddress(String) поможет проверить адрес Bluetooth.
 > BluetoothDevice будет считать аппаратный адрес действительным, даже если адаптер [BluetoothAdapter]() никогда не видел это устройство.
@@ -831,6 +831,35 @@ private val mutableListNotifiedCharacteristic = mutableListOf<BluetoothGattChara
 
 и в момент выключения не забыть вернуть в исходное состояние все перекоряченные характеристики. Хотя... честно говоря, не думаю, что этим кто-то будет пользоваться. Этот режим работает очень медленно и при начилии буффера для обмена данными, вообще не нужен. Достаточно уведомлений о прочтении/записи характеристики/дескриптора в [BluetoothGattCallback]()
 
+Буффер исходящих сообщений реализован совершенно варварски, на основе [MutableList]() и прицеплен к [BleGattCallback](), поскольку удобнее всего обрабатывать события [onCharacteristicWrite]()/[onDescriptorRead] сразу внутри интерфейса, а не тащить их ещё куда-то.
+
+[OutputBuffer](https://github.com/GrandFatherPikhto/BLEScan/blob/master/blin/src/main/java/com/grandfatherpikhto/blin/buffer/OutputBuffer.kt) Это обычный блокирующий буффер, хранящий объект [MutableListQueue](), что чистое варварство по всем статьям.
+
+Если не всё понятно, подробнее об Очередях, можно почитать, например в книжке [Структуры данных и алгоритмы](https://www.raywenderlich.com/books/data-structures-algorithms-in-kotlin/v1.0/chapters/5-queues) очень спокойное объяснение для начинашек.
+
+Если список исходящих сообщений в буфере пуст, данные сразу отправляются на запись, если очередь не пуста, значение добавляется в очередь. Никаких решений, скажем, с BackPressure, пока не сделано, но добавить такую возможность довольно просто.
+
+```kotlin
+    fun writeGattData(gattData: GattData) {
+        buffer.enqueue(gattData)
+        if (buffer.count == 1) {
+            writeNextGattData(gattData)
+        }
+    }
+```
+
+Соответственно, когда приходит уведомление [onCharacteristicWrite]()/[onDescriptorWrite]() и `status == BluetoothGatt.GATT_SUCCESS`, данные изымаются из очереди и считаются записанными
+
+```kotlin
+    private fun dequeueAndWriteNextGattData(gattData: GattData) {
+        if (buffer.peek() == gattData) {
+            buffer.dequeue()
+            buffer.peek()?.let { nextGattData ->
+                writeNextGattData(nextGattData)
+            }
+        }
+    }
+```
 
 
 ## Инструментальное тестирование [BleScanManager](https://github.com/GrandFatherPikhto/BLEScan/blob/master/blin/src/main/java/com/grandfatherpikhto/blin/BleScanManager.kt)

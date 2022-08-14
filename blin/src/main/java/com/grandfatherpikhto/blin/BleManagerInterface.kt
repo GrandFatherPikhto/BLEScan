@@ -4,7 +4,7 @@ import android.bluetooth.BluetoothGattCharacteristic
 import android.bluetooth.BluetoothGattDescriptor
 import androidx.lifecycle.DefaultLifecycleObserver
 import com.grandfatherpikhto.blin.buffer.BleCharacteristicNotify
-import com.grandfatherpikhto.blin.data.GattData
+import com.grandfatherpikhto.blin.data.BleGattItem
 import com.grandfatherpikhto.blin.data.BleBondState
 import com.grandfatherpikhto.blin.data.BleGatt
 import com.grandfatherpikhto.blin.data.BleScanResult
@@ -53,12 +53,12 @@ interface BleManagerInterface : DefaultLifecycleObserver {
     fun connect(address: String) : BleGatt?
     fun disconnect()
 
-    fun writeGattData(gattData: GattData)
+    fun writeGattData(bleGattData: BleGattItem)
 
     fun readCharacteristic(bluetoothGattCharacteristic: BluetoothGattCharacteristic) : Boolean
     fun readDescriptor(bluetoothGattDescriptor: BluetoothGattDescriptor) : Boolean
-    fun readGattData(gattData: GattData): Boolean
+    fun readGattData(bleGattData: BleGattItem): Boolean
     fun notifyCharacteristic(bluetoothGattCharacteristic: BluetoothGattCharacteristic)
-    fun notifyCharacteristic(gattData: GattData)
+    fun notifyCharacteristic(bleGattData: BleGattItem)
     fun isCharacteristicNotified(bluetoothGattCharacteristic: BluetoothGattCharacteristic) : Boolean
 }

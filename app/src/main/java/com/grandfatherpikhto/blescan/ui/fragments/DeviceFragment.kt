@@ -188,7 +188,7 @@ class DeviceFragment : Fragment() {
         }
 
         rvBleDeviceAdapter.setOnCharacteristicReadClickListener { bleItem, _ ->
-            bleManager.readGattData(bleItem.gattData)
+            bleManager.readGattData(bleItem.bleGattData)
         }
 
         rvBleDeviceAdapter.setOnCharacteristicWriteClickListener { bleItem, _ ->
@@ -197,18 +197,18 @@ class DeviceFragment : Fragment() {
                 value?.let { characteristicValue ->
                     Log.d(tagLog, characteristicValue.joinToString(",") { String.format("%02X", it)})
                     bleItem.value = characteristicValue
-                    bleManager.writeGattData(bleItem.gattData)
+                    bleManager.writeGattData(bleItem.bleGattData)
                 }
             }
             sendDialogFragment.show(requireActivity().supportFragmentManager, "Dialog")
         }
 
         rvBleDeviceAdapter.setOnCharacteristicNotifyClickListener { bleItem, _ ->
-            bleManager.notifyCharacteristic(bleItem.gattData)
+            bleManager.notifyCharacteristic(bleItem.bleGattData)
         }
 
         rvBleDeviceAdapter.setOnDescriptorReadClickListener { bleItem, _ ->
-            bleManager.readGattData(bleItem.gattData)
+            bleManager.readGattData(bleItem.bleGattData)
         }
 
         lifecycleScope.launch {

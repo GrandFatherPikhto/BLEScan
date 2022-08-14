@@ -6,7 +6,7 @@ import com.grandfatherpikhto.blin.BleGattManager
 import com.grandfatherpikhto.blin.BleManagerInterface
 import com.grandfatherpikhto.blin.BleScanManager
 import com.grandfatherpikhto.blin.buffer.BleCharacteristicNotify
-import com.grandfatherpikhto.blin.data.GattData
+import com.grandfatherpikhto.blin.data.BleGattItem
 import com.grandfatherpikhto.blin.data.*
 import com.grandfatherpikhto.blin.idling.ConnectingIdling
 import com.grandfatherpikhto.blin.idling.DisconnectingIdling
@@ -176,7 +176,7 @@ class FakeBleManager : BleManagerInterface {
         }
     }
 
-    override fun writeGattData(gattData: GattData) {
+    override fun writeGattData(bleGattData: BleGattItem) {
 
     }
 
@@ -185,11 +185,11 @@ class FakeBleManager : BleManagerInterface {
 
     }
 
-    override fun readGattData(gattData: GattData): Boolean {
+    override fun readGattData(bleGattData: BleGattItem): Boolean {
         return false
     }
 
-    override fun notifyCharacteristic(gattData: GattData) { }
+    override fun notifyCharacteristic(bleGattData: BleGattItem) { }
 
     override fun readDescriptor(bluetoothGattDescriptor: BluetoothGattDescriptor) : Boolean {
         return false

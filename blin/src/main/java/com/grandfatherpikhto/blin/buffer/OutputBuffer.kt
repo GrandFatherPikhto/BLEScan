@@ -5,7 +5,7 @@ import android.bluetooth.BluetoothGatt
 import android.bluetooth.BluetoothGattCharacteristic
 import android.bluetooth.BluetoothGattDescriptor
 import com.grandfatherpikhto.blin.BleGattCallback
-import com.grandfatherpikhto.blin.data.GattData
+import com.grandfatherpikhto.blin.data.BleGattItem
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -16,7 +16,7 @@ class OutputBuffer (private val bleGattCallback: BleGattCallback,
                     dispatcher: CoroutineDispatcher = Dispatchers.IO) {
     private val tagLog = this.javaClass.simpleName
     private val scope = CoroutineScope(dispatcher)
-    private val buffer = MutableListQueue<GattData>()
+    private val buffer = MutableListQueue<BleGattItem>()
     private val bufferMutex = Mutex(locked = false)
 
     var bluetoothGatt:BluetoothGatt? by Delegates.observable(null) { _, _, newValue ->
@@ -28,15 +28,11 @@ class OutputBuffer (private val bleGattCallback: BleGattCallback,
     }
 
     @SuppressLint("MissingPermission")
-    private fun writeNextCharacteristic(gattData: GattData) : Boolean {
+    private fun writeNextCharacteristic(bleGattItem: BleGattItem) : Boolean {
         bluetoothGatt?.let { gatt ->
-            if (gattData.uuidDescriptor == null) {
-                gatt.getService(gattData.uuidService)?.let { service ->
-                    service.getCharacteristic(gattData.uuidCharacteristic)?.let { characteristic ->
-                        characteristic.value = gattData.value
-                        return gatt.writeCharacteristic(characteristic)
-                    }
-                }
+            bleGattItem.getCharacteristic(gatt)?.let { characteristic ->
+                characteristic.value = bleGattItem.value
+                return gatt.writeCharacteristic(characteristic)
             }
         }
 
@@ -44,31 +40,27 @@ class OutputBuffer (private val bleGattCallback: BleGattCallback,
     }
 
     @SuppressLint("MissingPermission")
-    private fun writeNextDescriptor(gattData: GattData) : Boolean {
+    private fun writeNextDescriptor(bleGattItem: BleGattItem) : Boolean {
         bluetoothGatt?.let { gatt ->
-            gatt.getService(gattData.uuidService)?.let { service ->
-                service.getCharacteristic(gattData.uuidCharacteristic)?.let { characteristic ->
-                    characteristic.getDescriptor(gattData.uuidDescriptor)?.let { descriptor ->
-                        descriptor.value = gattData.value
-                        return gatt.writeDescriptor(descriptor)
-                    }
-                }
+            bleGattItem.getDescriptor(gatt)?.let { descriptor ->
+                descriptor.value = bleGattItem.value
+                return gatt.writeDescriptor(descriptor)
             }
         }
 
         return false
     }
 
-    private fun writeNextGattData(gattData: GattData) : Boolean {
-        return if (gattData.uuidDescriptor == null) {
-            writeNextCharacteristic(gattData)
+    private fun writeNextGattData(bleGattData: BleGattItem) : Boolean {
+        return if (bleGattData.uuidDescriptor == null) {
+            writeNextCharacteristic(bleGattData)
         } else {
-            writeNextDescriptor(gattData)
+            writeNextDescriptor(bleGattData)
         }
     }
 
-    private fun dequeueAndWriteNextGattData(gattData: GattData) {
-        if (buffer.peek() == gattData) {
+    private fun dequeueAndWriteNextGattData(bleGattData: BleGattItem) {
+        if (buffer.peek() == bleGattData) {
             buffer.dequeue()
             buffer.peek()?.let { nextGattData ->
                 writeNextGattData(nextGattData)
@@ -81,11 +73,11 @@ class OutputBuffer (private val bleGattCallback: BleGattCallback,
                                status: Int) {
         if (status == BluetoothGatt.GATT_SUCCESS) {
             if (gatt != null && characteristic != null) {
-                dequeueAndWriteNextGattData(GattData(characteristic))
+                dequeueAndWriteNextGattData(BleGattItem(characteristic))
             }
         } else {
             if (gatt != null && characteristic != null) {
-                writeNextGattData(GattData(characteristic))
+                writeNextGattData(BleGattItem(characteristic))
             }
         }
     }
@@ -96,19 +88,19 @@ class OutputBuffer (private val bleGattCallback: BleGattCallback,
 
         if (status == BluetoothGatt.GATT_SUCCESS) {
             if (gatt != null && descriptor != null) {
-                dequeueAndWriteNextGattData(GattData(descriptor))
+                dequeueAndWriteNextGattData(BleGattItem(descriptor))
             }
         } else {
             if (gatt != null && descriptor != null) {
-                writeNextGattData(GattData(descriptor))
+                writeNextGattData(BleGattItem(descriptor))
             }
         }
     }
 
-    fun writeGattData(gattData: GattData) {
-        buffer.enqueue(gattData)
+    fun writeGattData(bleGattItem: BleGattItem) {
+        buffer.enqueue(bleGattItem)
         if (buffer.count == 1) {
-            writeNextGattData(gattData)
+            writeNextGattData(bleGattItem)
         }
     }
 }
