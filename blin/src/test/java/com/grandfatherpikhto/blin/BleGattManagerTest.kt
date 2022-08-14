@@ -4,6 +4,9 @@ import android.bluetooth.BluetoothGatt
 import android.bluetooth.BluetoothProfile
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
+import com.grandfatherpikhto.blin.helper.mockBluetoothDevice
+import com.grandfatherpikhto.blin.helper.mockBluetoothGatt
+import com.grandfatherpikhto.blin.helper.mockScanResult
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import org.junit.Assert.*
@@ -13,7 +16,6 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.MockitoAnnotations
-import org.mockito.kotlin.verify
 import org.robolectric.RobolectricTestRunner
 
 @OptIn(ExperimentalCoroutinesApi::class)

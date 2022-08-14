@@ -2,6 +2,7 @@ package com.grandfatherpikhto.blin
 
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
+import com.grandfatherpikhto.blin.helper.mockRandomScanResults
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest

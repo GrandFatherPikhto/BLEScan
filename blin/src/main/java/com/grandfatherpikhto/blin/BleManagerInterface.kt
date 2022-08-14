@@ -1,11 +1,10 @@
 package com.grandfatherpikhto.blin
 
-import android.bluetooth.BluetoothGatt
 import android.bluetooth.BluetoothGattCharacteristic
 import android.bluetooth.BluetoothGattDescriptor
 import androidx.lifecycle.DefaultLifecycleObserver
 import com.grandfatherpikhto.blin.buffer.BleCharacteristicNotify
-import com.grandfatherpikhto.blin.buffer.GattData
+import com.grandfatherpikhto.blin.data.GattData
 import com.grandfatherpikhto.blin.data.BleBondState
 import com.grandfatherpikhto.blin.data.BleGatt
 import com.grandfatherpikhto.blin.data.BleScanResult

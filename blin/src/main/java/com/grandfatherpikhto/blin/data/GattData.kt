@@ -1,4 +1,4 @@
-package com.grandfatherpikhto.blin.buffer
+package com.grandfatherpikhto.blin.data
 
 import android.bluetooth.BluetoothGattCharacteristic
 import android.bluetooth.BluetoothGattDescriptor

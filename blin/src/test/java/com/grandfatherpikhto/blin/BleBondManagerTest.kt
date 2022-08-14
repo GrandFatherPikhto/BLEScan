@@ -5,6 +5,7 @@ import android.bluetooth.BluetoothManager
 import android.content.Context
 import androidx.core.content.getSystemService
 import androidx.test.core.app.ApplicationProvider
+import com.grandfatherpikhto.blin.helper.mockBluetoothDevice
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest

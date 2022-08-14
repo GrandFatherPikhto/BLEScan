@@ -4,8 +4,8 @@ import android.annotation.SuppressLint
 import android.bluetooth.BluetoothGatt
 import android.bluetooth.BluetoothGattCharacteristic
 import android.bluetooth.BluetoothGattDescriptor
-import android.util.Log
 import com.grandfatherpikhto.blin.BleGattCallback
+import com.grandfatherpikhto.blin.data.GattData
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -18,6 +18,7 @@ class OutputBuffer (private val bleGattCallback: BleGattCallback,
     private val scope = CoroutineScope(dispatcher)
     private val buffer = MutableListQueue<GattData>()
     private val bufferMutex = Mutex(locked = false)
+
     var bluetoothGatt:BluetoothGatt? by Delegates.observable(null) { _, _, newValue ->
         newValue?.let { _ ->
             buffer.peek()?.let { nextGattData ->

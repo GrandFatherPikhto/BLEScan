@@ -15,11 +15,11 @@ import androidx.navigation.ui.navigateUp
 import androidx.navigation.ui.setupActionBarWithNavController
 import com.grandfatherpikhto.blin.BleManager
 import com.grandfatherpikhto.blin.BleManagerInterface
-import com.grandfatherpikhto.blin.FakeBleManager
 import com.grandfatherpikhto.blin.permissions.RequestPermissions
 import com.grandfatherpikhto.blescan.BleScanApp
 import com.grandfatherpikhto.blescan.R
 import com.grandfatherpikhto.blescan.databinding.ActivityMainBinding
+import com.grandfatherpikhto.blescan.fake.FakeBleManager
 import com.grandfatherpikhto.blescan.helper.linkMenu
 import com.grandfatherpikhto.blescan.models.MainActivityViewModel
 import kotlinx.coroutines.flow.filterNotNull

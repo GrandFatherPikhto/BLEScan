@@ -1,4 +1,4 @@
-package com.grandfatherpikhto.blin
+package com.grandfatherpikhto.blin.helper
 
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothGatt
@@ -6,17 +6,20 @@ import android.bluetooth.le.BluetoothLeScanner
 import android.bluetooth.le.ScanRecord
 import android.bluetooth.le.ScanResult
 import android.content.Intent
-import org.mockito.Mockito.lenient
+import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import org.robolectric.RuntimeEnvironment
 import kotlin.random.Random
 
 fun mockBluetoothDevice(name: String? = null, address: String? = null): BluetoothDevice {
-    val bluetoothDevice = mock<BluetoothDevice>()
-    lenient().`when`(bluetoothDevice.name).thenReturn(name)
-    lenient().`when`(bluetoothDevice.address)
-        .thenReturn(address ?: Random.nextBytes(6)
-            .joinToString (":") { String.format("%02X", it) })
+    val bluetoothDevice = mock<BluetoothDevice> { bluetoothDevice ->
+        on {bluetoothDevice.name} doReturn name
+        on {bluetoothDevice.address} doReturn (
+            address ?: Random.nextBytes(6)
+                .joinToString (":") {
+                    String.format("%02X", it) })
+        }
+
     return bluetoothDevice
 }
 
@@ -36,7 +39,8 @@ fun mockRandomScanResults(num: Int, name: String? = null) : List<ScanResult> {
     val scanResults = mutableListOf<ScanResult>()
     (1..num).forEach { number ->
         val scanResult = mockScanResult(
-            mockBluetoothDevice(name = String.format(name ?: "BLE_%02d", number)))
+            mockBluetoothDevice(name = String.format(name ?: "BLE_%02d", number))
+        )
         scanResults.add(scanResult)
     }
 
@@ -60,8 +64,9 @@ fun mockBluetoothGatt(address: String? = null, name: String? = null) : Bluetooth
 }
 
 fun mockBluetoothGatt(bluetoothDevice: BluetoothDevice) : BluetoothGatt {
-    val bluetoothGatt = mock<BluetoothGatt>()
-    lenient().`when`(bluetoothGatt.discoverServices()).thenReturn(true)
-    lenient().`when`(bluetoothGatt.device).thenReturn(bluetoothDevice)
+    val bluetoothGatt = mock<BluetoothGatt> { bluetoothGatt ->
+        on { bluetoothGatt.discoverServices()} doReturn true
+        on { bluetoothGatt.device } doReturn bluetoothDevice
+    }
     return bluetoothGatt
 }

@@ -3,8 +3,7 @@ package com.grandfatherpikhto.blescan.data
 import android.bluetooth.BluetoothGattCharacteristic
 import android.bluetooth.BluetoothGattDescriptor
 import android.bluetooth.BluetoothGattService
-import com.grandfatherpikhto.blin.buffer.GattData
-import com.grandfatherpikhto.blin.data.BleGatt
+import com.grandfatherpikhto.blin.data.GattData
 import com.grandfatherpikhto.blin.helper.toHexString
 import java.util.*
 

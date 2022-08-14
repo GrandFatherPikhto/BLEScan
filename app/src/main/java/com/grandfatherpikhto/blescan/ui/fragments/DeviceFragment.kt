@@ -1,7 +1,6 @@
 package com.grandfatherpikhto.blescan.ui.fragments
 
 import android.bluetooth.BluetoothDevice
-import android.bluetooth.BluetoothGattCharacteristic
 import android.os.Bundle
 import android.util.Log
 import android.view.*
@@ -12,14 +11,12 @@ import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.grandfatherpikhto.blin.*
-import com.grandfatherpikhto.blin.buffer.GattData
 import com.grandfatherpikhto.blescan.BleScanApp
 import com.grandfatherpikhto.blescan.R
 import com.grandfatherpikhto.blescan.databinding.FragmentDeviceBinding
 import com.grandfatherpikhto.blescan.helper.linkMenu
 import com.grandfatherpikhto.blescan.models.*
 import com.grandfatherpikhto.blescan.ui.fragments.adapters.RvBleDeviceAdapter
-import com.grandfatherpikhto.blin.helper.hasFlag
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.launch
 

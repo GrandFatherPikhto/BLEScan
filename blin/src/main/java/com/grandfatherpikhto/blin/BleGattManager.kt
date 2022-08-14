@@ -2,13 +2,12 @@ package com.grandfatherpikhto.blin
 
 import android.annotation.SuppressLint
 import android.bluetooth.*
-import android.bluetooth.le.BluetoothLeScanner
 import android.content.Context
 import android.util.Log
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import com.grandfatherpikhto.blin.buffer.BleCharacteristicNotify
-import com.grandfatherpikhto.blin.buffer.GattData
+import com.grandfatherpikhto.blin.data.GattData
 import com.grandfatherpikhto.blin.data.BleGatt
 import com.grandfatherpikhto.blin.idling.ScanIdling
 import kotlinx.coroutines.*
@@ -29,6 +28,7 @@ class BleGattManager constructor(private val context: Context,
         const val MAX_ATTEMPTS = 6
         val NOTIFY_DESCRIPTOR_UUID: UUID =
             UUID.fromString("00002902-0000-1000-8000-00805f9b34fb".uppercase())
+        const val WAIT_TIMEOUT = 2000L
     }
 
     private val bluetoothManager: BluetoothManager =
@@ -129,15 +129,18 @@ class BleGattManager constructor(private val context: Context,
     }
 
     fun connect(address:String) : BluetoothGatt? {
-        Log.d(tagLog, "connect($address)")
+        val validAddress = address.uppercase()
+        Log.d(tagLog, "connect($validAddress)")
         if (connectState == State.Disconnected) {
             connectIdling?.idling = false
-            bluetoothAdapter.getRemoteDevice(address)?.let { device ->
-                mutableStateFlowConnectState.tryEmit(State.Connecting)
-                bluetoothDevice = device
-                attemptReconnect = true
-                reconnectAttempts = 0
-                doConnect()
+            if (BluetoothAdapter.checkBluetoothAddress(validAddress)) {
+                bluetoothAdapter.getRemoteDevice(validAddress)?.let { device ->
+                    mutableStateFlowConnectState.tryEmit(State.Connecting)
+                    bluetoothDevice = device
+                    attemptReconnect = true
+                    reconnectAttempts = 0
+                    doConnect()
+                }
             }
         }
 
@@ -183,14 +186,18 @@ class BleGattManager constructor(private val context: Context,
                 disableNotifyCharacteristic(characteristic)
             }
 
-            while (mutableListNotifiedCharacteristic.isNotEmpty()) {
-                delay(20)
+            withTimeout(WAIT_TIMEOUT) {
+                while (mutableListNotifiedCharacteristic.isNotEmpty()) {
+                    delay(20)
+                }
             }
 
             Log.d(tagLog, "doDisconnect($bluetoothDevice)")
             gatt.disconnect()
-            while (connectState != State.Disconnected) {
-                delay(20)
+            withTimeout(WAIT_TIMEOUT) {
+                while (connectState != State.Disconnected) {
+                    delay(20)
+                }
             }
             gatt.close()
         }

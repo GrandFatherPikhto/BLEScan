@@ -4,14 +4,11 @@ import android.bluetooth.BluetoothGatt
 import android.bluetooth.BluetoothGattCallback
 import android.bluetooth.BluetoothGattCharacteristic
 import android.bluetooth.BluetoothGattDescriptor
-import android.util.Log
-import com.grandfatherpikhto.blin.buffer.GattData
+import com.grandfatherpikhto.blin.data.GattData
 import com.grandfatherpikhto.blin.buffer.OutputBuffer
-import com.grandfatherpikhto.blin.helper.hasFlag
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import java.nio.ByteBuffer
 
 class BleGattCallback constructor(private val bleGattManager: BleGattManager,
                                   dispatcher: CoroutineDispatcher = Dispatchers.IO)

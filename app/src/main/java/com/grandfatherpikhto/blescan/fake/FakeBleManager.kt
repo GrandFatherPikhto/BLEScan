@@ -1,9 +1,12 @@
-package com.grandfatherpikhto.blin
+package com.grandfatherpikhto.blescan.fake
 
 import android.bluetooth.*
 import android.util.Log
+import com.grandfatherpikhto.blin.BleGattManager
+import com.grandfatherpikhto.blin.BleManagerInterface
+import com.grandfatherpikhto.blin.BleScanManager
 import com.grandfatherpikhto.blin.buffer.BleCharacteristicNotify
-import com.grandfatherpikhto.blin.buffer.GattData
+import com.grandfatherpikhto.blin.data.GattData
 import com.grandfatherpikhto.blin.data.*
 import com.grandfatherpikhto.blin.idling.ConnectingIdling
 import com.grandfatherpikhto.blin.idling.DisconnectingIdling
