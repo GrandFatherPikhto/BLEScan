@@ -3,9 +3,11 @@ package com.grandfatherpikhto.blin
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothManager
 import android.content.Context
-import androidx.core.content.getSystemService
+import android.content.Intent
+import androidx.appcompat.app.AppCompatActivity
 import androidx.test.core.app.ApplicationProvider
-import com.grandfatherpikhto.blin.helper.mockBluetoothDevice
+import com.grandfatherpikhto.blin.data.BleBondState
+import com.grandfatherpikhto.blin.data.BleDevice
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
@@ -15,33 +17,43 @@ import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mockito.Mockito.lenient
 import org.mockito.MockitoAnnotations
-import org.robolectric.RobolectricTestRunner
+import org.robolectric.*
+import org.robolectric.Shadows.shadowOf import org.robolectric.shadows.*
 import kotlin.random.Random
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
 class BleBondManagerTest {
     companion object {
-        const val ADDRESS = "01:02:03:04:05"
-        const val NAME    = "BLE_DEVICE"
+        const val NAME = "BLE_DEVICE"
     }
 
-    private lateinit var closeable:AutoCloseable
-    private val bleManager =
-        BleManager(
-            ApplicationProvider.getApplicationContext<Context?>().applicationContext,
-            UnconfinedTestDispatcher())
+    private val dispatcher = UnconfinedTestDispatcher()
 
-    private val bluetoothManager =
-        (ApplicationProvider.getApplicationContext<Context?>()
-            .getSystemService<BluetoothManager>())!!
+    private lateinit var closeable:AutoCloseable
+
+    private lateinit var context: Context
+
+    private val applicationContext = ApplicationProvider.getApplicationContext<Context>()
+    private val bluetoothManager = applicationContext.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
+    private val shadowBluetoothManager = shadowOf(bluetoothManager)
     private val bluetoothAdapter = bluetoothManager.adapter
+    private val shadowAdapter = shadowOf(bluetoothAdapter)
+
+    private val bleBondManager = BleBondManager(applicationContext, dispatcher)
+
+    private val controllerActivity = Robolectric.buildActivity(AppCompatActivity::class.java)
+        .create()
+        .start()
+
+    private val appCompatActivity = controllerActivity.get()
+
 
     @Before
     fun setUp() {
         closeable = MockitoAnnotations.openMocks(this)
+        appCompatActivity.lifecycle.addObserver(bleBondManager)
     }
 
     @After
@@ -49,43 +61,68 @@ class BleBondManagerTest {
         closeable.close()
     }
 
+    private fun putIntentDevice(bluetoothDevice: BluetoothDevice, newBondState: Int = BluetoothDevice.BOND_BONDED) =
+        applicationContext.sendBroadcast(Intent(BluetoothDevice.ACTION_BOND_STATE_CHANGED).let {
+            it.putExtra(BluetoothDevice.EXTRA_DEVICE, bluetoothDevice)
+            it.putExtra(BluetoothDevice.EXTRA_PREVIOUS_BOND_STATE, BluetoothDevice.BOND_NONE)
+            it.putExtra(BluetoothDevice.EXTRA_BOND_STATE, newBondState)
+            it
+        })
+
+    private fun shadowBluetoothDevice(address: String, name: String, bondState: Int = BluetoothDevice.BOND_NONE) : BluetoothDevice =
+        bluetoothAdapter.getRemoteDevice(address).let { bluetoothDevice ->
+            shadowOf(bluetoothDevice).setBondState(bondState)
+            shadowOf(bluetoothDevice).setName(name)
+            return bluetoothDevice
+        }
+
+    private val randomBluetoothAddress: String
+        get() = Random.nextBytes(6)
+            .joinToString (":"){ String.format("%02X", it) }
+
     @Test
-    fun bondDevice() = runTest(UnconfinedTestDispatcher()) {
+    fun bondDevice() = runTest(dispatcher) {
         // Буквы адреса должны быть в ВЕРХНЕМ регистре
-        val address = Random.nextBytes(6)
-            .joinToString(":") { String.format("%02X", it)}
-        val bluetoothDevice = mockBluetoothDevice(address = address, name = "BLE_DEVICE")
-        lenient().`when`(bluetoothDevice.bondState).thenReturn(BluetoothDevice.BOND_NONE)
-        lenient().`when`(bluetoothDevice.createBond()).thenReturn(true)
-        assertEquals(BleBondManager.State.None, bleManager.bondState?.state)
-        // bleManager.bondRequest(address)
-        bleManager.bleBondManager.bondRequest(bluetoothDevice)
-        assertEquals(BleBondManager.State.Bonding, bleManager.bondState?.state)
-        lenient().`when`(bluetoothDevice.bondState).thenReturn(BluetoothDevice.BOND_BONDED)
-        bleManager.bleBondManager.onSetBondingDevice(bluetoothDevice, BluetoothDevice.BOND_NONE, BluetoothDevice.BOND_BONDED)
-        assertEquals(BleBondManager.State.Bonded, bleManager.bondState?.state)
+        val address = randomBluetoothAddress
+        val bluetoothDevice = shadowBluetoothDevice(address, NAME)
+        shadowOf(bluetoothDevice).setCreatedBond(true)
+        bleBondManager.bondRequest(address)
+        assertEquals(BleBondState(BleDevice(bluetoothDevice),
+            BleBondManager.State.Request), bleBondManager.bondState)
+        shadowAdapter.setBondedDevices(mutableSetOf(bluetoothDevice))
+        shadowOf(bluetoothDevice).setBondState(BluetoothDevice.BOND_BONDED)
+        putIntentDevice(bluetoothDevice)
+        ShadowLooper.shadowMainLooper().idle()
+        assertEquals(BleBondState(BleDevice(bluetoothDevice), BleBondManager.State.Bonded),
+            bleBondManager.bondState)
     }
+
 
     @Test
     fun errorBondingDevice() = runTest(UnconfinedTestDispatcher()) {
-        val bluetoothDevice = mockBluetoothDevice(address = ADDRESS, name = NAME)
-        lenient().`when`(bluetoothDevice.bondState).thenReturn(BluetoothDevice.BOND_NONE)
-        lenient().`when`(bluetoothDevice.createBond()).thenReturn(false)
-        assertEquals(BleBondManager.State.None, bleManager.bondState?.state)
-        bleManager.bleBondManager.bondRequest(bluetoothDevice)
-        assertEquals(BleBondManager.State.Error, bleManager.bondState?.state)
+        val address = randomBluetoothAddress
+        val bluetoothDevice = shadowBluetoothDevice(address, NAME)
+        shadowBluetoothManager.addDevice(0, 0, bluetoothDevice)
+        shadowOf(bluetoothDevice).setCreatedBond(false)
+        bleBondManager.bondRequest(address)
+        ShadowLooper.shadowMainLooper().idle()
+        assertEquals(BleBondState(BleDevice(bluetoothDevice),
+            BleBondManager.State.Error), bleBondManager.bondState)
     }
 
     @Test
     fun rejectBondDevice() = runTest(UnconfinedTestDispatcher()) {
-        val bluetoothDevice = mockBluetoothDevice(address = ADDRESS, name = NAME)
-        lenient().`when`(bluetoothDevice.bondState).thenReturn(BluetoothDevice.BOND_NONE)
-        lenient().`when`(bluetoothDevice.createBond()).thenReturn(true)
-        assertEquals(BleBondManager.State.None, bleManager.bondState?.state)
-        bleManager.bleBondManager.bondRequest(bluetoothDevice)
-        assertEquals(BleBondManager.State.Bonding, bleManager.bondState?.state)
-        lenient().`when`(bluetoothDevice.bondState).thenReturn(BluetoothDevice.BOND_BONDED)
-        bleManager.bleBondManager.onSetBondingDevice(bluetoothDevice, BluetoothDevice.BOND_NONE, BluetoothDevice.BOND_NONE)
-        assertEquals(BleBondManager.State.Reject, bleManager.bondState?.state)
+        val address = randomBluetoothAddress
+        val bluetoothDevice = shadowBluetoothDevice(address, NAME)
+        shadowOf(bluetoothDevice).setCreatedBond(true)
+        bleBondManager.bondRequest(address)
+        assertEquals(BleBondState(BleDevice(bluetoothDevice),
+            BleBondManager.State.Request), bleBondManager.bondState)
+        shadowAdapter.setBondedDevices(mutableSetOf(bluetoothDevice))
+        shadowOf(bluetoothDevice).setBondState(BluetoothDevice.BOND_NONE)
+        putIntentDevice(bluetoothDevice, BluetoothDevice.BOND_NONE)
+        ShadowLooper.shadowMainLooper().idle()
+        assertEquals(BleBondState(BleDevice(bluetoothDevice), BleBondManager.State.Reject),
+            bleBondManager.bondState)
     }
 }

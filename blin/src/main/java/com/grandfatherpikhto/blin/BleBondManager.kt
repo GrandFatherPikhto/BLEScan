@@ -51,6 +51,9 @@ class BleBondManager (private val context: Context,
         BcBondReceiver(this, dispatcher)
     }
 
+    init {
+    }
+
     override fun onCreate(owner: LifecycleOwner) {
         super.onCreate(owner)
         applicationContext.applicationContext.registerReceiver(bcBondReceiver,
@@ -65,17 +68,21 @@ class BleBondManager (private val context: Context,
     /**
      * Uppercase -- важно! Потому, что иначе, устройство не будет найдено!
      */
+    @SuppressLint("MissingPermission")
     fun bondRequest(address: String) : Boolean {
-        bluetoothAdapter.getRemoteDevice(address.uppercase())?.let { bluetoothDevice ->
-            return bondRequest(bluetoothDevice)
+        val validAddress = address.uppercase()
+        if (BluetoothAdapter.checkBluetoothAddress(validAddress)) {
+            bluetoothAdapter.getRemoteDevice(address.uppercase())?.let { bluetoothDevice ->
+                // println("bondRequest(${bluetoothDevice.address}, ${bluetoothDevice.name})")
+                return bondRequest(bluetoothDevice)
+            }
         }
-
         return false
     }
 
     @SuppressLint("MissingPermission")
-    fun bondRequest(bluetoothDevice: BluetoothDevice) : Boolean {
-        println("Bond Device: ${bluetoothDevice.address}")
+    private fun bondRequest(bluetoothDevice: BluetoothDevice) : Boolean {
+        Log.d(logTag, "bondRequest(${bluetoothDevice.address})")
         if(bluetoothDevice.bondState == BluetoothDevice.BOND_BONDED) {
             mutableStateFlowBleBondState.tryEmit(BleBondState(BleDevice(bluetoothDevice), State.Bonded))
         } else {

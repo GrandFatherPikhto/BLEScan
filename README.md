@@ -861,10 +861,211 @@ private val mutableListNotifiedCharacteristic = mutableListOf<BluetoothGattChara
     }
 ```
 
+Данные в очереди обёрнуты в самопальный класс [BleGattItem]():
+
+```kotlin
+data class BleGattItem (val uuidService: UUID,
+                        val uuidCharacteristic: UUID? = null,
+                        val uuidDescriptor: UUID? = null,
+                        val value:ByteArray? = null,
+) {
+    ...
+    constructor(bluetoothGattDescriptor: BluetoothGattDescriptor) :
+            this(uuidService = bluetoothGattDescriptor.characteristic.service.uuid,
+                uuidCharacteristic = bluetoothGattDescriptor.characteristic.uuid,
+                uuidDescriptor = bluetoothGattDescriptor.uuid,
+                value = bluetoothGattDescriptor.value,
+            )
+    ...
+    fun getDescriptor(bluetoothGatt: BluetoothGatt) : BluetoothGattDescriptor? =
+        if (uuidCharacteristic == null && uuidDescriptor == null) {
+            null
+        } else {
+            bluetoothGatt.getService(uuidService)?.let { service ->
+                service.getCharacteristic(uuidCharacteristic)?.let { characteristic ->
+                    characteristic.getDescriptor(uuidDescriptor)
+                }
+            }
+        }
+
+```
+
+За счёт дополнительных конструкторов можно инициализировать данные из объектов [BluetoothGattService](), [BluetoothGattCharacteristic](), [BluetoothGattDescriptor](). Соответственно, сделано три функции для получения Сервиса, Характеристики и Дескриптора, что несложно при наличии объекта [BluetoothGatt](). Объекты [BluetoothGattService](), [BluetoothGattCharacteristic](), [BluetoothGattDescriptor](),как ни странно прекрасно генерируются без всякого «мокания». Подменный объект [BleGattItem]() сделан не из отладочных соображений, а для того, чтобы не использовать в очереди разнородные объекты и, упаси Вселенная, тип `Any`. Отладка с таким типом — тот ещё ад.
+
+Так, что запись очередного значения из очереди выглядит очень просто:
+
+```kotlin
+    @SuppressLint("MissingPermission")
+    private fun writeNextCharacteristic(bleGattItem: BleGattItem) : Boolean {
+        bluetoothGatt?.let { gatt ->
+            bleGattItem.getCharacteristic(gatt)?.let { characteristic ->
+                characteristic.value = bleGattItem.value
+                return gatt.writeCharacteristic(characteristic)
+            }
+        }
+
+        return false
+    }
+
+    @SuppressLint("MissingPermission")
+    private fun writeNextDescriptor(bleGattItem: BleGattItem) : Boolean {
+        bluetoothGatt?.let { gatt ->
+            bleGattItem.getDescriptor(gatt)?.let { descriptor ->
+                descriptor.value = bleGattItem.value
+                return gatt.writeDescriptor(descriptor)
+            }
+        }
+```
+
+Остаётся дождаться уведомления [onCharacteristicWrite]()/[onDescriptorWrite]() от наследника [BluetoothGattCallback]() и убрать соответствующее значение из очереди.
+
+## Юнит-тестирование [BleGattManager]()
+
+Пока не реализовано
+
+## Менеджер сопряжения BLE-устройств [BleBondManager]()
+
+В основе — класс обработки широковещательных событий [BcBondReceiver](). Он наследуется от [BroadcastReceiver]() и перехватывает событие сопряжения устройства и инициализировать повторное подключение. Проблема в том, что событие `BluetoothDevice.ACTION_BOND_STATE_CHANGED` генерируется при любом подключении к устройству. Поэтому, сначала надо перехватить запрос `BluetoothDevice.ACTION_PAIRING_REQUEST`, а потом сравнить адрес устройства в запросе на сопряжение, и при совпадении сформировать событие «Устройство сопряжено».
+
+```kotlin
+    override fun onReceive(context: Context?, intent: Intent?) {
+        if ( context != null && intent != null ) {
+            when (intent.action) {
+                BluetoothDevice.ACTION_BOND_STATE_CHANGED -> {
+                    val bondState: Int = intent.getIntExtra(BluetoothDevice.EXTRA_BOND_STATE, -1);
+                    val previousBondState: Int =
+                        intent.getIntExtra(BluetoothDevice.EXTRA_PREVIOUS_BOND_STATE, -1);
+                    val bluetoothDevice: BluetoothDevice? =
+                        intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE)
+                    // Log.d(TAG, "ACTION_BOND_STATE_CHANGED(${device?.address}): $previousBondState => $bondState")
+                    bleBondManager.onSetBondingDevice(bluetoothDevice, previousBondState, bondState)
+                }
+                else -> {
+
+                }
+            }
+        }
+    }
+```
+
+Осталось в классе [BleBondManager]() зарегистрировать получатель:
+
+```kotlin
+    override fun onCreate(owner: LifecycleOwner) {
+        super.onCreate(owner)
+        applicationContext.applicationContext.registerReceiver(bcBondReceiver,
+            makeIntentFilter())
+    }
+
+    override fun onDestroy(owner: LifecycleOwner) {
+        applicationContext.unregisterReceiver(bcBondReceiver)
+        super.onDestroy(owner)
+    }
+
+    private fun makeIntentFilter() = IntentFilter().let { intentFilter ->
+        intentFilter.addAction(BluetoothAdapter.ACTION_REQUEST_ENABLE)
+        intentFilter.addAction(BluetoothAdapter.ACTION_STATE_CHANGED)
+        intentFilter.addAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED)
+        intentFilter.addAction(BluetoothDevice.ACTION_PAIRING_REQUEST)
+        intentFilter.addAction(BluetoothDevice.ACTION_FOUND)
+
+        intentFilter
+    }
+```
+
+вызвать метод `bondRequest(address: String)` и следить за событиями:
+
+```kotlin
+    /**
+     * BluetoothDevice.BOND_NONE    10
+     * BluetoothDevice.BOND_BONDING 11
+     * BluetoothDevice.BOND_BONDED  12
+     */
+    fun onSetBondingDevice(bluetoothDevice: BluetoothDevice?, oldState: Int, newState: Int) {
+        bluetoothDevice?.let { device ->
+            if (device == requestDevice) {
+                Log.d(logTag, "onSetBondingDevice($bluetoothDevice, $oldState, $newState)")
+                when(newState) {
+                    BluetoothDevice.BOND_BONDING -> { mutableStateFlowBleBondState
+                        .tryEmit(BleBondState(BleDevice(bluetoothDevice), State.Bonding)) }
+                    BluetoothDevice.BOND_BONDED -> { mutableStateFlowBleBondState
+                        .tryEmit(BleBondState(BleDevice(bluetoothDevice), State.Bonded)) }
+                    BluetoothDevice.BOND_NONE -> { mutableStateFlowBleBondState
+                        .tryEmit(BleBondState(BleDevice(bluetoothDevice), State.Reject)) }
+                    else -> { Log.d(logTag, "Unknown State: $newState")}
+                }
+            }
+        }
+    }
+```
+
+К сожалению, такое сопряжение не будет работать на ряде устройств Samsung из-за [Knox](). Как это обойти, пока, увы, не знаю.
+
+## Юнит-тестирование [BleBondManager]()
+
+В классе [BleBondManagerTest] снова ничего сложного, однако, надо не забыть: этот класс — наследник [DefaultLifecycleObjserver](), а значит, надо «замокать» основные события [onCreate()]() и [onDestroy()]()
+
+## Наконец, последний класс — [BleManager]()
+
+Это просто обёртка для потоков, данных, методов всех трёх основных менеджеров [BleScannManager](), [BleGattManager](), [BleBondManager]()
+
+[BleManager]() наследуютеся от [BleManagerInterface](). Это нужно, чтобы в app (приложении) можно было создать свой фейковый объект, скажем [FakeBleManager]() и запустить с его помощью управляемый инструментальный тест. Он крайне тупо состоит из одних геттеров и присваиваний.
+А больше здесь особо ничего и не нужно:
+
+```kotlin
+class BleManager constructor(private val context: Context,
+                             dispatcher: CoroutineDispatcher = Dispatchers.IO)
+    : BleManagerInterface {
+
+    private val logTag = this.javaClass.simpleName
+    private val scope = CoroutineScope(dispatcher)
+
+    val applicationContext:Context get() = context.applicationContext
+
+    val bleScanManager: BleScanManager = BleScanManager(context, dispatcher)
+    val bleGattManager: BleGattManager = BleGattManager(context, bleScanManager, dispatcher)
+    val bleBondManager: BleBondManager = BleBondManager(context, dispatcher)
+
+    override val stateFlowScanState get() = bleScanManager.stateFlowScanState
+    override val scanState get()     = bleScanManager.scanState
+
+    override val sharedFlowBleScanResult get() = bleScanManager.sharedFlowBleScanResult
+
+    override val scanResults get() = bleScanManager.scanResults.map { BleScanResult(it) }
+
+    ....
+
+        override
+    fun startScan(addresses: List<String>,
+                  names: List<String>,
+                  services: List<String>,
+                  stopOnFind: Boolean,
+                  filterRepeatable: Boolean,
+                  stopTimeout: Long
+    ) : Boolean = bleScanManager.startScan( addresses, names, services,
+        stopOnFind, filterRepeatable, stopTimeout )
+
+    override fun stopScan() = bleScanManager.stopScan()
+
+    override fun connect(address: String): BleGatt? {
+        bleGattManager.connect(address)?.let {
+            return BleGatt(it)
+        }
+
+        return null
+    }
+
+    override fun disconnect() = bleGattManager.disconnect()
+
+    ....
+
+```
+
+`Сервис взаимодействия с BLE устройством создан`
 
 ## Инструментальное тестирование [BleScanManager](https://github.com/GrandFatherPikhto/BLEScan/blob/master/blin/src/main/java/com/grandfatherpikhto/blin/BleScanManager.kt)
 
-А вот здесь всё становится неопрятным и громоздким. Потому, что увы, даже [MockK](mockk.io) криво съехал с темы на ошибке [Unable to dlopen libmockkjvmtiagent.so: dlopen failed: library "libmockkjvmtiagent.so" not found](https://github.com/mockk/mockk/issues/819). Хотя, в [Официальной Документации](https://mockk.io/ANDROID.html) утверждается, что всё прекрасно должно работать... не работает, зараза.
+А вот здесь всё становится неопрятным и громоздким. Потому, что увы, даже [MockK](mockk.io) стрёмно съехал с темы на ошибке [Unable to dlopen libmockkjvmtiagent.so: dlopen failed: library "libmockkjvmtiagent.so" not found](https://github.com/mockk/mockk/issues/819). Хотя, в [Официальной Документации](https://mockk.io/ANDROID.html) утверждается, что всё прекрасно должно работать... не работает, зараза.
 
 Проверить «чистый» [Dexopener](https://github.com/tmurakami/dexopener) пока руки не дошли.
 
@@ -872,35 +1073,7 @@ private val mutableListNotifiedCharacteristic = mutableListOf<BluetoothGattChara
 
 Кроме того, в библиотеку пришлось добавить трёх «Ждунов» — [ConnectingIdling](), [DisconnectingIdling](), [ScanIdling](). Они нужны для того, чтобы не давать приложению совершать определённые шаги до тех пор пока фейковое сканирование, подключени, отключение не будут завершены. (См. [Ресурсы для работы с Espresso на холостом ходу](https://developer.android.com/training/testing/espresso/idling-resource))
 
-Осталось подменить в основном классе приложения 
-
-## Класс обработки широковещательных событий [BcReceiver](./app/src/main/java/com/grandfatherpikhto/blescan/service/BcReceiver.kt)
-
-В основном, нужен для того, чтобы перехватить событие сопряжения устройства и инициализировать повторное подключение. Проблема в том, что событие `BluetoothDevice.ACTION_BOND_STATE_CHANGED` генерируется при любом подключении к устройству. Поэтому, сначала надо перехватить запрос `BluetoothDevice.ACTION_PAIRING_REQUEST`, а потом сравнить адрес устройства в запросе на сопряжение, и при совпадении сформировать событие "Устройство сопряжено".
-
-Это делается в синглтоне [BluetoothInterface](./app/src/main/java/com/grandfatherpikhto/blescan/service/BluetoothInterface.kt):
-
-```kotlin
-    fun changeBluetoothBondState(bluetoothDevice: BluetoothDevice?, oldValue: Int, newValue: Int) {
-        bluetoothPairing?.let { pairing ->
-            if ( bluetoothDevice != null
-                && pairing.address == bluetoothDevice.address
-                && oldValue == BluetoothDevice.BOND_BONDING
-                && newValue == BluetoothDevice.BOND_BONDED ) {
-                bluetoothPairing = pairing
-            }
-            bluetoothListener.forEach { listener ->
-                listener.onBluetoothPaired(pairing.toBtLeDevice())
-            }
-        }
-
-        bluetoothListener.forEach { callback ->
-            callback.onChangeBluetoothBondState(bluetoothDevice, oldValue, newValue)
-        }
-    }
-```
-
-Сервис взаимодействия с BLE устройством создан
+Осталось подменить в основном классе приложения
 
 ### UI
 
