@@ -11,6 +11,7 @@ import com.grandfatherpikhto.blin.GenericUUIDs.genericStringUUID
 import com.grandfatherpikhto.blin.helper.hasFlag
 import com.grandfatherpikhto.blescan.R
 import com.grandfatherpikhto.blescan.data.BleItem
+import com.grandfatherpikhto.blescan.data.CharacteristicProperty
 import com.grandfatherpikhto.blescan.databinding.LayoutCharacteristicBinding
 import com.grandfatherpikhto.blescan.helper.dpToPx
 import com.grandfatherpikhto.blin.GenericUUIDs.findGeneric

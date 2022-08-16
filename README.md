@@ -3,6 +3,7 @@
 ![Logo](images/blescan.svg)
 
 ## Внешний вид программы
+
 ![BLEScan, скрин №1](images/blescan01_min.png)
 ![BLEScan, скрин №2](images/blescan02_min.png)
 ![BLEScan, скрин №3](images/blescan03_min.png)
@@ -18,11 +19,11 @@
 Также, есть прекрасная облегчённая библиотека Мартейна ван Вейлли [BLESSED](https://github.com/weliem/blessed-android) написанная на Java
 и аналогичная версия на Kotlin [Coroutines BLESSED](https://github.com/weliem/blessed-android-coroutines)
 
-Живая и вполне поддерживаемая небольшая библиотека [https://github.com/niedev/BluetoothCommunicator](BluetoothCommunicator)
+Живая и вполне поддерживаемая небольшая библиотека [BluetoothCommunicator](https://github.com/niedev/BluetoothCommunicator)
 
 Одним словом, есть вполне работоспособные и действующие проекты, которые в значительной степени избавляют от необходимости изобретения очередного велосипеда и серии самоподрывов в собственном приложении из-за багов библиотеки BLE, накладывающихся на баги интерфейса.
 
-Просмотр кода библиотеки [NordicSemiconductor Android BLE Library](https://github.com/NordicSemiconductor/Android-BLE-Library/) быстро отрезвляет и приводит к выводу, что лучше пользоваться громоздким, сложным, но уже готовым, чем изобретать велосипед. Создание собственной библиотеки BLE имеет, скорее учебное значение, нежели практическое применение. Однако, своей библиотекой [BLIN](https://github.com/GrandFatherPikhto/BLEScan/tree/master/blin) интерсивно пользуюсь в собственных разработках. Например, для создания интерфейсов управления микропроцессорными устройствами на базе [ESP32](https://www.espressif.com), [STM32](https://st.com) [PIC, AVE](https://www.microchip.com//) и т.д.
+Просмотр кода библиотеки [NordicSemiconductor Android BLE Library](https://github.com/NordicSemiconductor/Android-BLE-Library/) быстро отрезвляет и приводит к выводу, что лучше пользоваться громоздким, сложным, но уже готовым, чем изобретать велосипед. Создание собственной библиотеки BLE имеет, скорее учебное значение, нежели практическое применение. Однако, своей библиотекой [BLIN](https://github.com/GrandFatherPikhto/BLEScan/tree/master/blin) интерсивно пользуюсь в собственных разработках. Например, для создания интерфейсов управления микропроцессорными устройствами на базе [ESP32](https://espressif.com), [STM32](https://st.com) [PIC, AVE](https://www.microchip.com//) и т.д.
 
 ## Траблы (Issues)
 
@@ -89,19 +90,18 @@
 
     Самый простой способ решения проблемы, предложенный, опять-таки программистами [Nordic-Semiconductor](https://github.com/NordicSemiconductor/Android-DFU-Library/issues/1) (значится, как «BLE status = 133 problem #1») — при получении ошибки быстрое сканирование устройства с фильтром по адресу и повторная попытка подключения. Есть небольшая проблема: согласно официальному руководству, за 30 секунд у нас всего 5 попыток. После этого устройство блокируется системой примерно на 1 минуту.
 
-    В штатном описании 133-й ошибки, вообще отсутствует. Есть одинокая константа в файле [gatt_api.h](https://android.googlesource.com/platform/external/bluetooth/bluedroid/+/adc9f28ad418356cb81640059b59eee4d862e6b4/stack/include/gatt_api.h#54)
+    В штатном описании `133`-й ошибки, вообще отсутствует. Есть одинокая константа в файле [gatt_api.h](https://android.googlesource.com/platform/external/bluetooth/bluedroid/+/adc9f28ad418356cb81640059b59eee4d862e6b4/stack/include/gatt_api.h#54)
 
     ```#define  GATT_ERROR                          0x85```
 
     Опять-таки, у Мартина ван Вилли говорится, что в этом случае, нужно просканировать устройство с фильтром по его mac-адресу (используя неагрессивный режим сканирования). После этого можно снова использовать автоподключение»
     [Мартин Веллие](https://medium.com/@martijn.van.welie/making-android-ble-work-part-2-47a3cdaade07) пишет, что при возврате такой ошибки надо пересканировать устройство и повторить попытку подключения.
 
-    Так, что `rescan` — наше всё.
-
 3. [Проблема работы фильтров при сканировании BLE устройств](https://stackoverflow.com/questions/34065210/android-ble-device-scan-with-filter-is-not-working/34092300), так до сих пор и не решена. Это известная «умолчанка» про [BluetoothLeScanner](https://developer.android.com/reference/android/bluetooth/le/BluetoothLeScanner) висит в списке issues уже лет десять. Так же, официально не заявлено, что при шестикратном повторном запуске сканирования, сканирование вообще блокируется на минуту.
 
-4. [В официальном руководстве](https://android-doc.github.io/guide/topics/connectivity/bluetooth-le.html) не сказано о том, что не существует какого либо специального флага уведомлений о том, что характеристика работает в режиме ответа на запись 'NOTIFICATION'/'INDICATION'. Вам надо самим создать список характеристик, которые переведены в режим 'NOTIFICATION' и не забыть их вернуть в обычный режим по окончании работы приложения.
-То есть сам-то метод есть [setCharacteristicNotification(BluetoothGattCharacteristic characteristic, Boolean enable)](https://developer.android.com/reference/android/bluetooth/BluetoothGatt#setCharacteristicNotification(android.bluetooth.BluetoothGattCharacteristic,%20boolean)), конечно, есть. Но толку от него мало, если Вы вручную не поменяете значение соответствующей notification/indication характеристики.
+4. [В официальном руководстве](https://android-doc.github.io/guide/topics/connectivity/bluetooth-le.html) не сказано о том, что не существует какого либо специального флага уведомлений о том, что характеристика работает в режиме ответа на запись [ENABLE_NOTIFICATION_VALUE](https://developer.android.com/reference/android/bluetooth/BluetoothGattDescriptor#ENABLE_NOTIFICATION_VALUE)/[ENABLE_INDICATION_VALUE](https://developer.android.com/reference/android/bluetooth/BluetoothGattDescriptor#ENABLE_INDICATION_VALUE). На самом деле, этот параметр не принадлежит характеристики. Это — значение дескриптора c UUID `00002902-0000-1000-8000-00805f9b34fb`. 
+    Так, что придётся самим создать список характеристик, которые переведены в режим 'NOTIFICATION' и не забыть их вернуть в обычный режим по окончании работы приложения.
+    Есть метод [setCharacteristicNotification(BluetoothGattCharacteristic characteristic, Boolean enable)](https://developer.android.com/reference/android/bluetooth/BluetoothGatt#setCharacteristicNotification(android.bluetooth.BluetoothGattCharacteristic,%20boolean)). Но толку от него мало, если Вы вручную не поменяете значение соответствующей notification/indication характеристики.
 
     ```Kotlin
         @SuppressLint("MissingPermission")
@@ -221,7 +221,7 @@
 
 10. Режим фильтрации сканирования по адресу или UUID-Сервиса на основе [ScanFilter](https://developer.android.com/reference/android/bluetooth/le/ScanFilter) на многих устройствах до сих пор не работает. У меня не заработал ни на одном доступном мне телефоне. По какой-то причине этот дефект не устранён за последние... да лет пять тому, как, чтобы не соврать. Поэтому, нужно делать свой фильтр, что совсем не сложно, но не понятно, почему до сих пор не реализован в `штатном` режиме?
 
-*Однако*, несмотря на груз ошибок и недоработок, иногда бывает нужно сделать что-то совершенно своё, особенное. Для этого надо хорошее понимание основных проблемм работы со стеком BLE и умение с ним обращаться. Например, захотелось триангулировать своё положение при помощи стека BLE. Возможно? Вполне. Например, [Determining the Proximity to an iBeacon Device](https://developer.apple.com/documentation/corelocation/determining_the_proximity_to_an_ibeacon_device)
+*Однако*, несмотря на изрядный набор ошибок и недоработок, иногда бывает нужно сделать что-то совершенно своё, особенное. Для этого надо хорошее понимание основных проблемм работы со стеком BLE и умение с ним обращаться. Например, захотелось триангулировать своё положение при помощи стека BLE. Возможно? Вполне. Например, [Determining the Proximity to an iBeacon Device](https://developer.apple.com/documentation/corelocation/determining_the_proximity_to_an_ibeacon_device)
 
 ## Что читать?
 
@@ -237,9 +237,9 @@
    4. [Making Android BLE work — part 4 // Martin van Welie](https://medium.com/@martijn.van.welie/making-android-ble-work-part-4-72a0b85cb442?source=user_profile---------0-------------------------------) Мартейн ван Велли. Часть 4. Сопряжение с устройствами
    5. Есть отличный перевод этого цикла на Хабре:
       1. [Перевод статьи Мартина ван Велле](https://habr.com/ru/post/536392/) Часть 1. Сканирование
-      2. [Перевод статьи Мартина ван Велле](https://habr.com/ru/post/537526/) Часть 2. Подключение/Отключение
-      3. [Перевод статьи Мартина ван Велле](https://habr.com/ru/post/538768/) Часть 3. Чтение/Запись характеристик
-      4. [Перевод статьи Мартина ван Велле](https://habr.com/ru/post/539740/) Часть 4.Чтение/Запись характеристик. Очереди. Включение/Выключение уведомлений характеристик
+      2. [Перевод статьи Мартина ван Велле](https://habr.com/ru/post/536392/) Часть 2. Подключение/Отключение
+      3. [Перевод статьи Мартина ван Велле](https://habr.com/ru/post/536392/) Часть 3. Чтение/Запись характеристик
+      4. [Перевод статьи Мартина ван Велле](https://habr.com/ru/post/536392/) Часть 4.Чтение/Запись характеристик. Очереди. Включение/Выключение уведомлений характеристик
    6. Библиотеки Мартина ван Велли
       1. [Wellie Blessed](https://github.com/weliem/blessed-android) — Библиотека для Андроид Blessed (Java)
       2. [Wellie Blessed Coroutine](https://github.com/weliem/blessed-android-coroutines) — Библиотека Мартейна ван Велли Blessed на Котлин
@@ -248,7 +248,7 @@
     Можно с уверенностью утверждать, что если Вы будете следовать в разработке своей библиотеки рекомендациям эти руководства, Ваше приложение будет работать хотя бы на 80% современных мобильных устройств, учитывая что особо не хочется поддерживать всё, что ниже версии Marshmallow (хотя, это не так уж и трудно — описано довольно подробно) и на 12-й версии описывают какие-то трудно объяснимые проблемы.
     В частности, [Android 12 Новые разрешения Bluetooth](https://stackoverflow.com/questions/67722950/android-12-new-bluetooth-permissions). Однако, утверждается, что эти проблемы исправлены. Нет гарантии, что не возникнут новые.
 
-5. Разработка [Nordic Semiconductor](https://www.nordicsemi.com/)
+5. Разработка [Nordic Semiconductor](https://devzone.nordicsemi.com/f/nordic-q-a/33313/android-gatt-133-error)
    1. [BLE on Android v1.0.1](https://devzone.nordicsemi.com/cfs-file/__key/communityserver-blogs-components-weblogfiles/00-00-00-00-04-DZ-1046/2604.BLE_5F00_on_5F00_Android_5F00_v1.0.1.pdf) — несколько устаревшее, но подробное и внятное описание работы со стэком Bluetooth Low Energy на Android.
    2. [Android BLE Library](https://github.com/NordicSemiconductor/Android-BLE-Library) — лучшая на сей день работа в тематике Android BLE. Если Вы хотите залезть в тему по-настоящему, читайте исходные коды. Найдёте много ~~ада~~ удивительного.
 
@@ -279,7 +279,7 @@
     4. [RequestPermissions.kt](https://github.com/GrandFatherPikhto/BLEScan/blob/master/blin/src/main/java/com/grandfatherpikhto/blin/permissions/RequestPermissions.kt) — Отдельно в библиотеке реализован класс для запроса Permissions, хотя это не совсем правильно, ведь разрешения привызываются к [Activity](https://developer.android.com/reference/android/app/Activity).
     5. [Idling](https://github.com/GrandFatherPikhto/BLEScan/blob/master/blin/src/main/java/com/grandfatherpikhto/blin/idling/) — Набор ожидалок для инструментального тестирования приложения.
     6. [FakeBleManager.kt](https://github.com/GrandFatherPikhto/BLEScan/blob/master/blin/src/main/java/com/grandfatherpikhto/blin/FakeBleManager.kt) ­— Фейковая заглушка, имитирующая работу всех сервисов, Сканирование, Сопряжение, Подключение, обмен данными и т.д. Поскольку [BleManager.kt](https://github.com/GrandFatherPikhto/BLEScan/blob/master/blin/src/main/java/com/grandfatherpikhto/blin/BleManager.kt), [FakeBleManager.kt](https://github.com/GrandFatherPikhto/BLEScan/blob/master/blin/src/main/java/com/grandfatherpikhto/blin/FakeBleManager.kt) наследованы от [BleManagerInterface.kt](https://github.com/GrandFatherPikhto/BLEScan/blob/master/blin/src/main/java/com/grandfatherpikhto/blin/BleManagerInterface.kt) вполне можно писать собственные тестовые фейки и подменять экземпляр `bleManager`, который традиционно лежит в [Application](https://developer.android.com/reference/android/app/Application)-классе. Других вариантов для инструментального тестирования, увы у меня для вас нет :(
-    7. Обмен данными реализован при помощи связок [MutableStateFlow](https://kotlinlang.org/api/kotlinx.coroutines/kotlinx-coroutines-core/kotlinx.coroutines.flow/-mutable-shared-flow/)/[StateFlow](https://kotlinlang.org/api/kotlinx.coroutines/kotlinx-coroutines-core/kotlinx.coroutines.flow/-state-flow/) и [MutableSharedFlow](https://kotlinlang.org/api/kotlinx.coroutines/kotlinx-coroutines-core/kotlinx.coroutines.flow/-mutable-state-flow/)/[SharedFlow](https://kotlinlang.org/api/kotlinx.coroutines/kotlinx-coroutines-core/kotlinx.coroutines.flow/-shared-flow/). Согласитесь, что библиотека Корутин и реализация холдных/горячих потоков, их преобразование «на лету» из одних в другие, выглядит потрясающе даже на фоне знаменитой [RxJava](https://github.com/ReactiveX/RxJava). А уж на фоне унылых [LiveData](https://developer.android.com/topic/libraries/architecture/livedata), так и вовсе, Космос рядом с крестьянской лошадкой...
+    7. Обмен данными реализован при помощи связок [MutableStateFlow](https://kotlinlang.org/api/kotlinx.coroutines/kotlinx-coroutines-core/kotlinx.coroutines.flow/-mutable-shared-flow/)/[StateFlow](https://kotlinlang.org/api/kotlinx.coroutines/kotlinx-coroutines-core/kotlinx.coroutines.flow/-state-flow/) и [MutableSharedFlow](https://kotlinlang.org/api/kotlinx.coroutines/kotlinx-coroutines-core/kotlinx.coroutines.flow/-mutable-shared-flow.html)/[SharedFlow](https://kotlinlang.org/api/kotlinx.coroutines/kotlinx-coroutines-core/kotlinx.coroutines.flow/-shared-flow/). Согласитесь, что библиотека Корутин и реализация холдных/горячих потоков, их преобразование «на лету» из одних в другие, выглядит потрясающе даже на фоне знаменитой [RxJava](https://github.com/ReactiveX/RxJava). А уж на фоне унылых [LiveData](https://developer.android.com/topic/libraries/architecture/livedata), так и вовсе, Космос рядом с крестьянской лошадкой...
 
 ## [AndroidManifest.xml](https://github.com/GrandFatherPikhto/BLEScan/blob/master/blin/src/main/AndroidManifest.xml) — Файл манифеста библиотеки BLIN.
 
@@ -342,7 +342,7 @@
 
 Параметр ```filterRepeatable: Boolean = false``` применяется для фильтрации повторяющихся значений. Сканнер периодически обходит цепочку доступных устройств, и генерирует сообщение каждый раз, а это не всегда нужно. В некоторых случаях бывает нужно эмитировать устройство с уникальными именем/адресом единожды. Для однократного оповещения надо включить ```filterRepeateble = true```
 
-В сканнере реализована функция обратного вызова, через [PendingIntent()] и, соответственно [BroadcastReceiver](https://developer.android.com/reference/android/content/BroadcastReceiver). [BcScanReceiver.kt](https://github.com/GrandFatherPikhto/BLEScan/blob/master/blin/src/main/java/com/grandfatherpikhto/blin/receivers/BcScanReceiver.kt) получает уведомления о найденных устройствах в виде [ScanResult](https://developer.android.com/reference/android/bluetooth/le/ScanResult) и уведомления об ошибках. И при помощи функции обработного вызова отдаёт результаты в [BleScanManager](https://github.com/GrandFatherPikhto/BLEScan/blob/master/blin/src/main/java/com/grandfatherpikhto/blin/BleScanManager.kt), где они филтруются (если фильтры списков не пустые) и эмитируется событие `stateFlowScanResult` и `stateFlowBleScanResult`.
+В сканнере реализована функция обратного вызова, через [PendingIntent](https://developer.android.com/reference/android/app/PendingIntent) и, соответственно [BroadcastReceiver](https://developer.android.com/reference/android/content/BroadcastReceiver). [BcScanReceiver.kt](https://github.com/GrandFatherPikhto/BLEScan/blob/master/blin/src/main/java/com/grandfatherpikhto/blin/receivers/BcScanReceiver.kt) получает уведомления о найденных устройствах в виде [ScanResult](https://developer.android.com/reference/android/bluetooth/le/ScanResult) и уведомления об ошибках. И при помощи функции обработного вызова отдаёт результаты в [BleScanManager](https://github.com/GrandFatherPikhto/BLEScan/blob/master/blin/src/main/java/com/grandfatherpikhto/blin/BleScanManager.kt), где они филтруются (если фильтры списков не пустые) и эмитируется событие `stateFlowScanResult` и `stateFlowBleScanResult`.
 
 Эмитирование [ScanResult](https://developer.android.com/reference/android/bluetooth/le/ScanResult) «висит в пустоте» (никуда не передаётся). Антресольный рефлекс — на всякий случай.
 
@@ -370,7 +370,8 @@
 
         @SuppressLint("UnspecifiedImmutableFlag")
         fun getBroadcast(context: Context, requestCode: Int): PendingIntent {
-            Log.e(TAG, "getBroadcast(requestCode = $requestCode, flag = ${PendingIntent.FLAG_UPDATE_CURRENT})")
+            Log.e(TAG, "getBroadcast(requestCode = $requestCode, "
+                + "flag = ${PendingIntent.FLAG_UPDATE_CURRENT})")
             return PendingIntent.getBroadcast(
                 context,
                 requestCode,
@@ -422,7 +423,7 @@
     </application>
     ```
 
-    К существенным недостаткам этого способа стоит отнести, что надо где-то подвешивать либо [SingleTone](https://en.wikipedia.org/wiki/Singleton_pattern#:~:text=In%20software%20engineering%2C%20the%20singleton,coordinate%20actions%20across%20the%20system.), либо [companion object](https://kotlinlang.org/docs/object-declarations.html), через которые обмениваться данными между элементами UI, [Repsitory](https://developer.android.com/codelabs/basic-android-kotlin-training-repository-pattern#0), [ViewModel](https://developer.android.com/topic/libraries/architecture/viewmodel) и т.д. что само по себе уже плохо (в частности, для отладки — куча проблем). Андроидоводы вполне заслуженно уже давно отнесли [SingleTone](https://accu.org/journals/overload/11/57/radford_337/) к антипаттернам.
+    К существенным недостаткам этого способа стоит отнести, что надо где-то подвешивать либо [SingleTone](https://en.wikipedia.org/wiki/Singleton_pattern#:~:text=In%20software%20engineering%2C%20the%20singleton,coordinate%20actions%20across%20the%20system.), либо [companion object](https://kotlinlang.org/docs/object-declarations.html), через которые обмениваться данными между элементами UI, [Repsitory](https://developer.android.com/codelabs/basic-android-kotlin-training-repository-pattern#0), [ViewModel](https://developer.android.com/topic/libraries/architecture/viewmodel) и т.д. что само по себе уже плохо (в частности, для отладки — куча проблем). Андроидоводы вполне заслуженно уже давно отнесли [SingleTone](https://en.wikipedia.org/wiki/Singleton_pattern#:~:text=In%20software%20engineering%2C%20the%20singleton,coordinate%20actions%20across%20the%20system.) к антипаттернам.
 
     Достоинство: не надо загромождать код созданием объекта [BroadcastReceiver](https://developer.android.com/reference/android/content/BroadcastReceiver) и писать линейки фильтров. Весьма сомнительная радость... в нашем проекте точно не подойдёт. Библиотека, даже если она называется [BLIN](https://github.com/GrandFatherPikhto/BLEScan/tree/master/blin), должна быть максимально независима от приложения, поэтому, минимум обращений к ```AndroidManifest.xml```
 
@@ -451,7 +452,7 @@
         private var bleScanPendingIntent: PendingIntent = bcScanReceiver.pendingIntent
     ```
 
-    Поскольку, все менеджеры наследованы от [DefaultLifecycleObserver](https://developer.android.com/reference/androidx/lifecycle/DefaultLifecycleObserver), используем штатные коллбэки LifeCycle: [onCreate()](https://developer.android.com/reference/androidx/lifecycle/DefaultLifecycleObserver#onCreate(androidx.lifecycle.LifecycleOwner)), [onDestroy()](https://developer.android.com/reference/androidx/lifecycle/DefaultLifecycleObserver#onDestroy(androidx.lifecycle.LifecycleOwner)). И в [onCreate()](https://developer.android.com/reference/androidx/lifecycle/DefaultLifecycleObserver#onCreate(androidx.lifecycle.LifecycleOwner)) вызываем регистрацию рессивера, а в [onDestroy()](https://developer.android.com/reference/androidx/lifecycle/DefaultLifecycleObserver#onDestroy(androidx.lifecycle.LifecycleOwner)) — его разрегистрацию:
+    Поскольку, все менеджеры наследованы от [DefaultLifecycleObserver](https://developer.android.com/reference/androidx/lifecycle/DefaultLifecycleObserver), используем штатные коллбэки LifeCycle: [DefaultLifecycleObserver.onCreate()](https://developer.android.com/reference/androidx/lifecycle/DefaultLifecycleObserver#onCreate(androidx.lifecycle.LifecycleOwner)), [DefaultLifecycleObserver.onDestroy()](https://developer.android.com/reference/androidx/lifecycle/DefaultLifecycleObserver#onDestroy(androidx.lifecycle.LifecycleOwner)). И в [DefaultLifecycleObserver.onCreate()](https://developer.android.com/reference/androidx/lifecycle/DefaultLifecycleObserver#onCreate(androidx.lifecycle.LifecycleOwner)) вызываем регистрацию рессивера, а в [DefaultLifecycleObserver.onDestroy()](https://developer.android.com/reference/androidx/lifecycle/DefaultLifecycleObserver#onDestroy(androidx.lifecycle.LifecycleOwner)) — его разрегистрацию:
 
     ```kotlin
     override fun onCreate(owner: LifecycleOwner) {
@@ -551,23 +552,23 @@
     val scanResults = mutableListOf<ScanResult>()
 ```
 
-При помощи которого можно при необходимости отбрасывать повторные результаты сканирования. Вряд ли в списке будет больше 100 элементов, поэтому, нагрузка от такого массива будет не велика.
+При помощи которого можно при необходимости отбрасывать повторные результаты сканирования. Вряд ли в списке будет больше 100 элементов, поэтому, нагрузка от такого массива будет не велика. А пока, что можно было и обойтись буффером из [MutableSharedFlow](https://kotlinlang.org/api/kotlinx.coroutines/kotlinx-coroutines-core/kotlinx.coroutines.flow/-mutable-shared-flow.html)
 
-Конструктор класса [BleScanManager] получает [context](https://developer.android.com/reference/android/content/Context). Это нужно для того, чтобы получить [BluetoothManager]() и из него [BluetoothAdapter]() и [BluetoothLeScanner](), необходимый для сканирования BLE-устройств.
+Конструктор класса [BleScanManager](https://github.com/GrandFatherPikhto/BLEScan/blob/master/blin/src/main/java/com/grandfatherpikhto/blin/BleScanManager.kt) получает [context](https://developer.android.com/reference/android/content/Context). Это нужно для того, чтобы получить [BluetoothManager](https://developer.android.com/reference/android/bluetooth/BluetoothManager) и из него [BluetoothAdapter](https://developer.android.com/reference/android/bluetooth/BluetoothAdapter) и [BluetoothLeScanner](https://developer.android.com/reference/android/bluetooth/le/BluetoothLeScanner), необходимый для сканирования BLE-устройств.
 
-Класс [BleScanManager]() наследован от [DefaultLifecycleObjserver](). Это не очень хорошо, так как лишает его универсальности. Ведь события создания класса и его разрушения привязаны к [onCreate()]() и [onDestroy()]() родительского объекта. Потому, что надо обязательно закрывать подключение или останавливать сканирование при закрытии приложения. Иначе при повтороном подключении/сканировании, получим довольно удивительные ошибки.
+Класс [BleScanManager](https://github.com/GrandFatherPikhto/BLEScan/blob/master/blin/src/main/java/com/grandfatherpikhto/blin/BleScanManager.kt) наследован от [DefaultLifecycleObserver](https://developer.android.com/reference/androidx/lifecycle/DefaultLifecycleObserver). Это не очень хорошо, так как лишает его универсальности. Ведь события создания класса и его разрушения привязаны к [DefaultLifecycleObserver.onCreate()](https://developer.android.com/reference/androidx/lifecycle/DefaultLifecycleObserver#onCreate(androidx.lifecycle.LifecycleOwner)) и [DefaultLifecycleObserver.onDestroy()](https://developer.android.com/reference/androidx/lifecycle/DefaultLifecycleObserver#onDestroy(androidx.lifecycle.LifecycleOwner)) родительского объекта. Потому, что надо обязательно закрывать подключение или останавливать сканирование при закрытии приложения. Иначе при повтороном подключении/сканировании, получим довольно удивительные ошибки.
 
 В принципе, правильным было бы сделать метод `onDestroy()` и на этом «закрыть» тему на ответственность программиста, использующего библиотеку. Но...
 
-А где Вы его собираетесь создавать? В классе, наследованным от [Application]()? Его разрушение можно отследить только из [Service](). Так, что придётся использовать в качестве создателя либо [Activity](), либо [Service](). А у этих классов с `lifecycle` всё в порядке.
+А где Вы его собираетесь создавать? В классе, наследованным от [Application](https://developer.android.com/reference/android/app/Application)? Его разрушение можно отследить только из [Service](https://developer.android.com/reference/android/app/Service). Так, что придётся использовать в качестве создателя либо [Activity](https://developer.android.com/reference/android/app/Activity), либо [Service](https://developer.android.com/reference/android/app/Service). А у этих классов с `lifecycle` всё в порядке.
 
-Второй аргумент, который получает класс [BleScanManager]() — [CoroutineDispatcher](). Он нужен для того, чтобы при тестировании превратить асинхронные события в последовательные синхронные при помощи [UnconfinedTestDispatcher](). У аргумента есть «умолчальное» значение — [Dispatchers.IO]().
+Второй аргумент, который получает класс [BleScanManager](https://github.com/GrandFatherPikhto/BLEScan/blob/master/blin/src/main/java/com/grandfatherpikhto/blin/BleScanManager.kt) — [CoroutineDispatcher](https://kotlinlang.org/api/kotlinx.coroutines/kotlinx-coroutines-core/kotlinx.coroutines/-coroutine-dispatcher/). Он нужен для того, чтобы при тестировании превратить асинхронные события в последовательные синхронные при помощи [UnconfinedTestDispatcher](https://kotlinlang.org/api/kotlinx.coroutines/kotlinx-coroutines-test/kotlinx.coroutines.test/-unconfined-test-dispatcher.html). У аргумента есть «умолчальное» значение — [Dispatchers.IO](https://kotlinlang.org/api/kotlinx.coroutines/kotlinx-coroutines-core/kotlinx.coroutines/-dispatchers/-i-o.html).
 
-## Unit-тестирование [BleScanManager]()
+## Unit-тестирование [BleScanManager](https://github.com/GrandFatherPikhto/BLEScan/blob/master/blin/src/main/java/com/grandfatherpikhto/blin/BleScanManager.kt)
 
-Используется классическая связка [Mockito]()/[Robolectric]().
+Используется классическая связка [Mockito](https://site.mockito.org/)/[Robolectric](http://robolectric.org/androidx_test/).
 
-Сделано несколько примитивных вспомогательных функций для генерирования [ScanResult](), [BluetoothDevice](), [BluetoothGatt]() в [MockHelper](). Например, генерация рандомных [ScanResult] и [BluetoothDevice]()
+Сделано несколько примитивных вспомогательных функций для генерирования [ScanResult](https://developer.android.com/reference/android/bluetooth/le/ScanResult), [BluetoothDevice](https://developer.android.com/reference/android/bluetooth/BluetoothDevice), [BluetoothGatt](https://developer.android.com/reference/android/bluetooth/BluetoothGatt) в [MockHelper](https://github.com/GrandFatherPikhto/BLEScan/blob/master/blin/src/test/java/com/grandfatherpikhto/blin/helper/MockHelper.kt). Например, генерация рандомных [ScanResult](https://developer.android.com/reference/android/bluetooth/le/ScanResult) и [BluetoothDevice](https://developer.android.com/reference/android/bluetooth/BluetoothDevice)
 
 ```kotlin
 fun mockBluetoothDevice(name: String? = null, address: String? = null): BluetoothDevice {
@@ -665,11 +666,11 @@ dependicies {
     }
 ```
 
-*иначе, [Robolectric]() выдаст сообщение о невозможности получить ресурсы проекта.*
+*иначе, [Robolectric](http://robolectric.org/androidx_test/) выдаст сообщение о невозможности получить ресурсы проекта.*
 
-## [BleGattManager]() — Менеджер подключения и обмена данными с Bluetooth устройством 
+## [BleGattManager](https://github.com/GrandFatherPikhto/BLEScan/blob/master/blin/src/main/java/com/grandfatherpikhto/blin/BleGattManager.kt) — Менеджер подключения и обмена данными с Bluetooth устройством 
 
-Этот класс, в отличие от [BleScanManager]() получает в конструкторе ещё и указатель на объект [BleScanManager](), поскольку в случае получения пресловутой ошибки `133`, необходимо пересканировать устройства с фильтром адреса устройства, к которому подключаемся.
+Этот класс, в отличие от [BleScanManager](https://github.com/GrandFatherPikhto/BLEScan/blob/master/blin/src/main/java/com/grandfatherpikhto/blin/BleScanManager.kt) получает в конструкторе ещё и указатель на объект [BleScanManager](https://github.com/GrandFatherPikhto/BLEScan/blob/master/blin/src/main/java/com/grandfatherpikhto/blin/BleScanManager.kt), поскольку в случае получения пресловутой ошибки `133`, необходимо пересканировать устройства с фильтром адреса устройства, к которому подключаемся.
 
 Так, что главный конструктор выглядит так:
 
@@ -722,7 +723,7 @@ disconnect()
 
 Тогда придётся сбрасывать кэш памяти Bluetooth в настройках телефона: Настройки / Приложения(Показать системные) / Bluetooth / Сбросить память.
 
-Система сообщений [BluetoothGattCallback]() обёрнута в собственную систему оповещений, поскольку, может понадобиться отображение процесса подключения к устройству, отключения от него и т.д. и из-за того, что устройство считается подключённым только после того как обработан коллбэк [onServicesDiscovered](), а это событие происходит далеко не внутри [onConnectionStateChange]()
+Система сообщений [BluetoothGattCallback](https://developer.android.com/reference/android/bluetooth/BluetoothGattCallback) обёрнута в собственную систему оповещений, поскольку, может понадобиться отображение процесса подключения к устройству, отключения от него и т.д. и из-за того, что устройство считается подключённым только после того как обработан коллбэк [onServicesDiscovered](https://developer.android.com/reference/android/bluetooth/BluetoothGattCallback#onServicesDiscovered(android.bluetooth.BluetoothGatt,%20int)), а это событие происходит далеко не внутри [onConnectionStateChange](https://developer.android.com/reference/android/bluetooth/BluetoothGattCallback#onConnectionStateChange(android.bluetooth.BluetoothGatt,%20int,%20int))
 
 Так, что создан `enum` с набором состояний:
 
@@ -736,12 +737,12 @@ disconnect()
     }
 ```
 
-Соответственно, `Disconnected` генерируется, когда в [onConnectionStateChange]() приходит [BluetoothProfile.STATE_DISCONNECTED](), `Disconnecting` эмитируется после вызова функции `disconnect()`. `Connecting` — в момент вызова функции `connect(address: String)` и `Connected`, после успешного обратного вызова [onConnectionStateChange](). Можно, конечно, усложнить градацию состояний оповещения, скажем, добавить что-то вроде `Rescan`, `Reconnect`, но на мой взгляд это ненужно усложнит систему оповещения.
+Соответственно, `Disconnected` генерируется, когда в [onConnectionStateChange](https://developer.android.com/reference/android/bluetooth/BluetoothGattCallback#onConnectionStateChange(android.bluetooth.BluetoothGatt,%20int,%20int)) приходит [BluetoothProfile.STATE_DISCONNECTED](https://developer.android.com/reference/android/bluetooth/BluetoothProfile#STATE_DISCONNECTED), `Disconnecting` эмитируется после вызова функции `disconnect()`. `Connecting` — в момент вызова функции `connect(address: String)` и `Connected`, после успешного обратного вызова [onConnectionStateChange](https://developer.android.com/reference/android/bluetooth/BluetoothGattCallback#onConnectionStateChange(android.bluetooth.BluetoothGatt,%20int,%20int)). Можно, конечно, усложнить градацию состояний оповещения, скажем, добавить что-то вроде `Rescan`, `Reconnect`, но на мой взгляд это ненужно усложнит систему оповещения.
 
 В методе `connect(address: String)` умышленно передаётся именно строковый адрес устройства. Это дополнительная проверка того, что устройство может быть вообще подключено при помощи метода [getRemoteDevice(address: String)](https://developer.android.com/reference/android/bluetooth/BluetoothAdapter#getRemoteDevice(java.lang.String)). Однако, не следует забывать, что согласно [официальной документации](https://developer.android.com/reference/android/bluetooth/BluetoothAdapter#getRemoteDevice(java.lang.String)), адрес надо передавать в `верхнем регистре`, иначе можем получать непонятные сообщения об ошибке. Поэтому, в код добавлена статическая функция (обратите внимание, *статическая*, а то будете искать её в объекте `bluetoothManager`...)
 
 > Действительные аппаратные адреса Bluetooth должны быть указаны в верхнем регистре, в порядке следования байтов и в таком формате, как «00:11:22:33:AA:BB». Метод  checkBluetoothAddress(String) поможет проверить адрес Bluetooth.
-> BluetoothDevice будет считать аппаратный адрес действительным, даже если адаптер [BluetoothAdapter]() никогда не видел это устройство.
+> BluetoothDevice будет считать аппаратный адрес действительным, даже если адаптер [BluetoothAdapter](https://developer.android.com/reference/android/bluetooth/BluetoothAdapter) никогда не видел это устройство.
 
 Итого, метод `connect(address:String)` просто получает объект устройства и записывает его в глобальную переменную `bluetoothDevice`
 
@@ -766,7 +767,7 @@ disconnect()
     }
 ```
 
-и если всё прошло успешно, вызовет приватный метод `doConnect()`. Он рассчитан на то, что уже получен ненулевой объект [BluetoothDevice]() и в вызове [connectGatt](https://developer.android.com/reference/android/bluetooth/BluetoothDevice#connectGatt(android.content.Context,%20boolean,%20android.bluetooth.BluetoothGattCallback)) реализует загадочное решение от [Nordic Semiconductor](): `autoConnect = (device.type == BluetoothDevice.DEVICE_TYPE_UNKNOWN)`
+и если всё прошло успешно, вызовет приватный метод `doConnect()`. Он рассчитан на то, что уже получен ненулевой объект [BluetoothDevice](https://developer.android.com/reference/android/bluetooth/BluetoothDevice) и в вызове [connectGatt](https://developer.android.com/reference/android/bluetooth/BluetoothDevice#connectGatt(android.content.Context,%20boolean,%20android.bluetooth.BluetoothGattCallback)) реализует загадочное решение от [Nordic Semiconductor](https://devzone.nordicsemi.com/f/nordic-q-a/33313/android-gatt-133-error): `autoConnect = (device.type == BluetoothDevice.DEVICE_TYPE_UNKNOWN)`
 
 ```kotlin
     @SuppressLint("MissingPermission")
@@ -786,7 +787,7 @@ disconnect()
     }
 ```
 
-Честно говоря, можно было не реализовывать включение и выключение NOTIFICATION/INDICATION Характеристик, но раз уж есть, пусть будет. Суть в том, что штатный метод [setCharacteristicNotification]() вообще не включает ничего и не включает. Поэтому надо устанавливать правильное значение в соответствующий Дескриптор
+Честно говоря, можно было не реализовывать включение и выключение NOTIFICATION/INDICATION Характеристик, но раз уж есть, пусть будет. Суть в том, что штатный метод [setCharacteristicNotification](https://developer.android.com/reference/android/bluetooth/BluetoothGatt#setCharacteristicNotification(android.bluetooth.BluetoothGattCharacteristic,%20boolean)) вообще не включает ничего и не включает. Поэтому надо устанавливать правильное значение в соответствующий Дескриптор
 
 ```kotlin
 val NOTIFY_DESCRIPTOR_UUID: UUID =
@@ -829,11 +830,11 @@ val NOTIFY_DESCRIPTOR_UUID: UUID =
 private val mutableListNotifiedCharacteristic = mutableListOf<BluetoothGattCharacteristic>()
 ```
 
-и в момент выключения не забыть вернуть в исходное состояние все перекоряченные характеристики. Хотя... честно говоря, не думаю, что этим кто-то будет пользоваться. Этот режим работает очень медленно и при начилии буффера для обмена данными, вообще не нужен. Достаточно уведомлений о прочтении/записи характеристики/дескриптора в [BluetoothGattCallback]()
+и в момент выключения не забыть вернуть в исходное состояние все перекоряченные характеристики. Хотя... честно говоря, не думаю, что этим кто-то будет пользоваться. Этот режим работает очень медленно и при начилии буффера для обмена данными, вообще не нужен. Достаточно уведомлений о прочтении/записи характеристики/дескриптора в [BluetoothGattCallback](https://developer.android.com/reference/android/bluetooth/BluetoothGattCallback)
 
-Буффер исходящих сообщений реализован совершенно варварски, на основе [MutableList]() и прицеплен к [BleGattCallback](), поскольку удобнее всего обрабатывать события [onCharacteristicWrite]()/[onDescriptorRead] сразу внутри интерфейса, а не тащить их ещё куда-то.
+Буффер исходящих сообщений реализован совершенно варварски, на основе [MutableList](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.collections/-mutable-list/) и прицеплен к [BleGattCallback](https://github.com/GrandFatherPikhto/BLEScan/blob/master/blin/src/main/java/com/grandfatherpikhto/blin/BleGattCallback.kt), поскольку удобнее всего обрабатывать события [onCharacteristicWrite](https://developer.android.com/reference/android/bluetooth/BluetoothGattCallback#onCharacteristicWrite(android.bluetooth.BluetoothGatt,%20android.bluetooth.BluetoothGattCharacteristic,%20int))/[onDescriptorRead] сразу внутри интерфейса, а не тащить их ещё куда-то.
 
-[OutputBuffer](https://github.com/GrandFatherPikhto/BLEScan/blob/master/blin/src/main/java/com/grandfatherpikhto/blin/buffer/OutputBuffer.kt) Это обычный блокирующий буффер, хранящий объект [MutableListQueue](), что чистое варварство по всем статьям.
+[OutputBuffer](https://github.com/GrandFatherPikhto/BLEScan/blob/master/blin/src/main/java/com/grandfatherpikhto/blin/buffer/OutputBuffer.kt) Это обычный блокирующий буффер, хранящий объект [MutableListQueue](https://github.com/GrandFatherPikhto/BLEScan/blob/master/blin/src/main/java/com/grandfatherpikhto/blin/buffer/MutableListQueue.kt), что чистое варварство по всем статьям.
 
 Если не всё понятно, подробнее об Очередях, можно почитать, например в книжке [Структуры данных и алгоритмы](https://www.raywenderlich.com/books/data-structures-algorithms-in-kotlin/v1.0/chapters/5-queues) очень спокойное объяснение для начинашек.
 
@@ -848,7 +849,7 @@ private val mutableListNotifiedCharacteristic = mutableListOf<BluetoothGattChara
     }
 ```
 
-Соответственно, когда приходит уведомление [onCharacteristicWrite]()/[onDescriptorWrite]() и `status == BluetoothGatt.GATT_SUCCESS`, данные изымаются из очереди и считаются записанными
+Соответственно, когда приходит уведомление [onCharacteristicWrite](https://developer.android.com/reference/android/bluetooth/BluetoothGattCallback#onCharacteristicWrite(android.bluetooth.BluetoothGatt,%20android.bluetooth.BluetoothGattCharacteristic,%20int))/[onDescriptorWrite](https://developer.android.com/reference/android/bluetooth/BluetoothGattCallback#onDescriptorWrite(android.bluetooth.BluetoothGatt,%20android.bluetooth.BluetoothGattDescriptor,%20int)) и `status == BluetoothGatt.GATT_SUCCESS`, данные изымаются из очереди и считаются записанными
 
 ```kotlin
     private fun dequeueAndWriteNextGattData(gattData: GattData) {
@@ -861,7 +862,7 @@ private val mutableListNotifiedCharacteristic = mutableListOf<BluetoothGattChara
     }
 ```
 
-Данные в очереди обёрнуты в самопальный класс [BleGattItem]():
+Данные в очереди обёрнуты в самопальный класс [BleGattItem](https://github.com/GrandFatherPikhto/BLEScan/blob/master/blin/src/main/java/com/grandfatherpikhto/blin/data/BleGattItem.kt):
 
 ```kotlin
 data class BleGattItem (val uuidService: UUID,
@@ -887,10 +888,9 @@ data class BleGattItem (val uuidService: UUID,
                 }
             }
         }
-
 ```
 
-За счёт дополнительных конструкторов можно инициализировать данные из объектов [BluetoothGattService](), [BluetoothGattCharacteristic](), [BluetoothGattDescriptor](). Соответственно, сделано три функции для получения Сервиса, Характеристики и Дескриптора, что несложно при наличии объекта [BluetoothGatt](). Объекты [BluetoothGattService](), [BluetoothGattCharacteristic](), [BluetoothGattDescriptor](),как ни странно прекрасно генерируются без всякого «мокания». Подменный объект [BleGattItem]() сделан не из отладочных соображений, а для того, чтобы не использовать в очереди разнородные объекты и, упаси Вселенная, тип `Any`. Отладка с таким типом — тот ещё ад.
+За счёт дополнительных конструкторов можно инициализировать данные из объектов [BluetoothGattService](https://developer.android.com/reference/android/bluetooth/BluetoothGattService), [BluetoothGattCharacteristic](https://developer.android.com/reference/android/bluetooth/BluetoothGattCharacteristic), [BluetoothGattDescriptor](https://developer.android.com/reference/android/bluetooth/BluetoothGattDescriptor). Соответственно, сделано три функции для получения Сервиса, Характеристики и Дескриптора, что несложно при наличии объекта [BluetoothGatt](https://developer.android.com/reference/android/bluetooth/BluetoothGatt). Объекты [BluetoothGattService](https://developer.android.com/reference/android/bluetooth/BluetoothGattService), [BluetoothGattCharacteristic](https://developer.android.com/reference/android/bluetooth/BluetoothGattCharacteristic), [BluetoothGattDescriptor](https://developer.android.com/reference/android/bluetooth/BluetoothGattDescriptor),как ни странно прекрасно генерируются без всякого «мокания». Подменный объект [BleGattItem](https://github.com/GrandFatherPikhto/BLEScan/blob/master/blin/src/main/java/com/grandfatherpikhto/blin/data/BleGattItem.kt) сделан не из отладочных соображений, а для того, чтобы не использовать в очереди разнородные объекты и, упаси Вселенная, тип `Any`. Отладка с таким типом — тот ещё ад.
 
 Так, что запись очередного значения из очереди выглядит очень просто:
 
@@ -917,15 +917,15 @@ data class BleGattItem (val uuidService: UUID,
         }
 ```
 
-Остаётся дождаться уведомления [onCharacteristicWrite]()/[onDescriptorWrite]() от наследника [BluetoothGattCallback]() и убрать соответствующее значение из очереди.
+Остаётся дождаться уведомления [onCharacteristicWrite](https://developer.android.com/reference/android/bluetooth/BluetoothGattCallback#onCharacteristicWrite(android.bluetooth.BluetoothGatt,%20android.bluetooth.BluetoothGattCharacteristic,%20int))/[onDescriptorWrite](https://developer.android.com/reference/android/bluetooth/BluetoothGattCallback#onDescriptorWrite(android.bluetooth.BluetoothGatt,%20android.bluetooth.BluetoothGattDescriptor,%20int)) от наследника [BluetoothGattCallback](https://developer.android.com/reference/android/bluetooth/BluetoothGattCallback) и убрать соответствующее значение из очереди.
 
-## Юнит-тестирование [BleGattManager]()
+## Юнит-тестирование [BleGattManager](https://github.com/GrandFatherPikhto/BLEScan/blob/master/blin/src/main/java/com/grandfatherpikhto/blin/BleGattManager.kt)
 
 Пока не реализовано
 
-## Менеджер сопряжения BLE-устройств [BleBondManager]()
+## Менеджер сопряжения BLE-устройств [BleBondManager](https://github.com/GrandFatherPikhto/BLEScan/blob/master/blin/src/main/java/com/grandfatherpikhto/blin/BleBondManager.kt)
 
-В основе — класс обработки широковещательных событий [BcBondReceiver](). Он наследуется от [BroadcastReceiver]() и перехватывает событие сопряжения устройства и инициализировать повторное подключение. Проблема в том, что событие `BluetoothDevice.ACTION_BOND_STATE_CHANGED` генерируется при любом подключении к устройству. Поэтому, сначала надо перехватить запрос `BluetoothDevice.ACTION_PAIRING_REQUEST`, а потом сравнить адрес устройства в запросе на сопряжение, и при совпадении сформировать событие «Устройство сопряжено».
+В основе — класс обработки широковещательных событий [BcBondReceiver](https://github.com/GrandFatherPikhto/BLEScan/blob/master/blin/src/main/java/com/grandfatherpikhto/blin/receivers/BcBondReceiver.kt). Он наследуется от [BroadcastReceiver](https://developer.android.com/reference/android/content/BroadcastReceiver) и перехватывает событие сопряжения устройства и инициализировать повторное подключение. Проблема в том, что событие `BluetoothDevice.ACTION_BOND_STATE_CHANGED` генерируется при любом подключении к устройству. Поэтому, сначала надо перехватить запрос `BluetoothDevice.ACTION_PAIRING_REQUEST`, а потом сравнить адрес устройства в запросе на сопряжение, и при совпадении сформировать событие «Устройство сопряжено».
 
 ```kotlin
     override fun onReceive(context: Context?, intent: Intent?) {
@@ -948,7 +948,7 @@ data class BleGattItem (val uuidService: UUID,
     }
 ```
 
-Осталось в классе [BleBondManager]() зарегистрировать получатель:
+Осталось в классе [BleBondManager](https://github.com/GrandFatherPikhto/BLEScan/blob/master/blin/src/main/java/com/grandfatherpikhto/blin/BleBondManager.kt) зарегистрировать получатель:
 
 ```kotlin
     override fun onCreate(owner: LifecycleOwner) {
@@ -999,17 +999,93 @@ data class BleGattItem (val uuidService: UUID,
     }
 ```
 
-К сожалению, такое сопряжение не будет работать на ряде устройств Samsung из-за [Knox](). Как это обойти, пока, увы, не знаю.
+К сожалению, такое сопряжение не будет работать на ряде устройств Samsung из-за [Knox](https://developer.samsung.com/knox). Как это обойти, пока, увы, не знаю.
 
-## Юнит-тестирование [BleBondManager]()
+## Юнит-тестирование [BleBondManager](https://github.com/GrandFatherPikhto/BLEScan/blob/master/blin/src/main/java/com/grandfatherpikhto/blin/BleBondManager.kt)
 
-В классе [BleBondManagerTest] снова ничего сложного, однако, надо не забыть: этот класс — наследник [DefaultLifecycleObjserver](), а значит, надо «замокать» основные события [onCreate()]() и [onDestroy()]()
+В классе [BleBondManagerTest](https://github.com/GrandFatherPikhto/BLEScan/blob/master/blin/src/test/java/com/grandfatherpikhto/blin/BleBondManagerTest.kt) снова ничего сложного, однако, надо не забыть: этот класс — наследник [DefaultLifecycleObserver](https://developer.android.com/reference/androidx/lifecycle/DefaultLifecycleObserver), а значит, надо «замокать» основные события [DefaultLifecycleObserver.onCreate()](https://developer.android.com/reference/androidx/lifecycle/DefaultLifecycleObserver#onCreate(androidx.lifecycle.LifecycleOwner)) и [DefaultLifecycleObserver.onDestroy()](https://developer.android.com/reference/androidx/lifecycle/DefaultLifecycleObserver#onDestroy(androidx.lifecycle.LifecycleOwner))
 
-## Наконец, последний класс — [BleManager]()
+Значит, надо «замокать» жизненный цикл. Сделать это очень просто при помощи [Robolectric](http://robolectric.org/androidx_test/).
 
-Это просто обёртка для потоков, данных, методов всех трёх основных менеджеров [BleScannManager](), [BleGattManager](), [BleBondManager]()
+```kotlin
+    private val controllerActivity = Robolectric.buildActivity(AppCompatActivity::class.java)
+        .create()
+        .start()
 
-[BleManager]() наследуютеся от [BleManagerInterface](). Это нужно, чтобы в app (приложении) можно было создать свой фейковый объект, скажем [FakeBleManager]() и запустить с его помощью управляемый инструментальный тест. Он крайне тупо состоит из одних геттеров и присваиваний.
+    private val appCompatActivity = controllerActivity.get()
+```
+
+Проще говоря, создана пустая активность (Основной класс — [AppCompatActivity](https://developer.android.com/reference/androidx/appcompat/app/AppCompatActivity) и сразу переведена в состояния `create()` и `start()`. После этого зовём геттер `get()` и получаем `appCompatActivity`
+
+Теперь, можно добавить `bleBondManager` к жизненному циклу:
+
+```kotlin
+    @Before
+    fun setUp() {
+        closeable = MockitoAnnotations.openMocks(this)
+        appCompatActivity.lifecycle.addObserver(bleBondManager)
+    }
+```
+
+На всякий случай, оставлен `closeable = MockitoAnnotations.openMocks(this)`, чтобы можно было использовать аннотирование [Mockito](https://site.mockito.org/).
+
+Теперь, есть возможность провести самое «глубинное» тестирование, которого в «чистом» [Mockito](https://site.mockito.org/) или [MockK](https://mockk.io) добиться довольно... громоздко. Т.е., можно отправить интенцию (Намерение [Intent]()), принять её в [BroadcastReceiver](https://developer.android.com/reference/android/content/BroadcastReceiver) и отследить всю цепочку до подтверждения или отказа от сопряжения устройства:
+
+
+```kotlin
+    private fun putIntentDevice(bluetoothDevice: BluetoothDevice, newBondState: Int = BluetoothDevice.BOND_BONDED) =
+        applicationContext.sendBroadcast(Intent(BluetoothDevice.ACTION_BOND_STATE_CHANGED).let {
+            it.putExtra(BluetoothDevice.EXTRA_DEVICE, bluetoothDevice)
+            it.putExtra(BluetoothDevice.EXTRA_PREVIOUS_BOND_STATE, BluetoothDevice.BOND_NONE)
+            it.putExtra(BluetoothDevice.EXTRA_BOND_STATE, newBondState)
+            it
+        })
+```
+
+Осталось создать «Тень» отправляемого [BluetoothDevice](https://developer.android.com/reference/android/bluetooth/BluetoothDevice)
+
+```kotlin
+    private fun shadowBluetoothDevice(address: String, name: String, bondState: Int = BluetoothDevice.BOND_NONE) : BluetoothDevice =
+        bluetoothAdapter.getRemoteDevice(address).let { bluetoothDevice ->
+            shadowOf(bluetoothDevice).setBondState(bondState)
+            shadowOf(bluetoothDevice).setName(name)
+            return bluetoothDevice
+        }
+```
+
+В тесте важно не забыть штатного роболектриковскго «ждуна». Если этого не сделать, событие просто не успеет произойти и Вы получите совсем не тот результат, которого ожидаете!
+
+Учитывая, что внутри библиотеки обмен данными происходит с помощью упрощённых классов устройства — [BleDevice](https://github.com/GrandFatherPikhto/BLEScan/blob/master/blin/src/main/java/com/grandfatherpikhto/blin/data/BleDevice.kt) и для передачи оповещения используется специальный дата-класс [BleBondState(val bleDevice:BleDevice), state: BleBondManager.State](https://github.com/GrandFatherPikhto/BLEScan/blob/master/blin/src/main/java/com/grandfatherpikhto/blin/data/BleBondState.kt), проверка будет выглядеть так:
+
+```kotlin
+    @Test
+    fun bondDevice() = runTest(dispatcher) {
+        // Буквы адреса должны быть в ВЕРХНЕМ регистре
+        val address = randomBluetoothAddress
+        val bluetoothDevice = shadowBluetoothDevice(address, NAME)
+        // Метод [createBond()] вернёт true
+        shadowOf(bluetoothDevice).setCreatedBond(true)
+        // Вызываем запрос на сопряжение в штатном режиме
+        bleBondManager.bondRequest(address)
+        assertEquals(BleBondState(BleDevice(bluetoothDevice),
+            BleBondManager.State.Request), bleBondManager.bondState)
+        // Оговариваем, что устройство теперь относится к списку сопряжённых.
+        shadowAdapter.setBondedDevices(mutableSetOf(bluetoothDevice))
+        shadowOf(bluetoothDevice).setBondState(BluetoothDevice.BOND_BONDED)
+        // Отправляем Намерение с BluetoothDevice и кодом BOND_BONDED
+        putIntentDevice(bluetoothDevice)
+        // Включить штатного роболектривского «ждуна»!
+        ShadowLooper.shadowMainLooper().idle()
+        assertEquals(BleBondState(BleDevice(bluetoothDevice), BleBondManager.State.Bonded),
+            bleBondManager.bondState)
+    }
+```
+
+## Наконец, последний класс — [BleManager](https://github.com/GrandFatherPikhto/BLEScan/blob/master/blin/src/main/java/com/grandfatherpikhto/blin/BleManager.kt)
+
+Это просто обёртка для потоков, данных, методов всех трёх основных менеджеров [BleScannManager](https://github.com/GrandFatherPikhto/BLEScan/blob/master/blin/src/main/java/com/grandfatherpikhto/blin/BleScanManager.kt), [BleGattManager](https://github.com/GrandFatherPikhto/BLEScan/blob/master/blin/src/main/java/com/grandfatherpikhto/blin/BleGattManager.kt), [BleBondManager](https://github.com/GrandFatherPikhto/BLEScan/blob/master/blin/src/main/java/com/grandfatherpikhto/blin/BleBondManager.kt)
+
+[BleManager](https://github.com/GrandFatherPikhto/BLEScan/blob/master/blin/src/main/java/com/grandfatherpikhto/blin/BleManager.kt) наследуютеся от [BleManagerInterface](https://github.com/GrandFatherPikhto/BLEScan/blob/master/blin/src/main/java/com/grandfatherpikhto/blin/BleManagerInterface.kt). Это нужно, чтобы в app (приложении) можно было создать свой фейковый объект, скажем [FakeBleManager](https://github.com/GrandFatherPikhto/BLEScan/blob/master/app/src/main/java/com/grandfatherpikhto/blescan/fake/FakeBleManager.kt) и запустить с его помощью управляемый инструментальный тест. Он крайне тупо состоит из одних геттеров и присваиваний.
 А больше здесь особо ничего и не нужно:
 
 ```kotlin
@@ -1065,21 +1141,21 @@ class BleManager constructor(private val context: Context,
 
 ## Инструментальное тестирование [BleScanManager](https://github.com/GrandFatherPikhto/BLEScan/blob/master/blin/src/main/java/com/grandfatherpikhto/blin/BleScanManager.kt)
 
-А вот здесь всё становится неопрятным и громоздким. Потому, что увы, даже [MockK](mockk.io) стрёмно съехал с темы на ошибке [Unable to dlopen libmockkjvmtiagent.so: dlopen failed: library "libmockkjvmtiagent.so" not found](https://github.com/mockk/mockk/issues/819). Хотя, в [Официальной Документации](https://mockk.io/ANDROID.html) утверждается, что всё прекрасно должно работать... не работает, зараза.
+А вот здесь всё становится неопрятным и громоздким. Потому, что увы, даже [MockK](https://mockk.io) стрёмно съехал с темы на ошибке [Unable to dlopen libmockkjvmtiagent.so: dlopen failed: library "libmockkjvmtiagent.so" not found](https://github.com/mockk/mockk/issues/819). Хотя, в [Официальной Документации](https://mockk.io/ANDROID.html) утверждается, что всё прекрасно должно работать... не работает, зараза.
 
 Проверить «чистый» [Dexopener](https://github.com/tmurakami/dexopener) пока руки не дошли.
 
-Так или иначе, придётся сооружать громоздкий, но зато управляемый [FakeBleManager](), который и будет генерировать нужные события и передавать данные в проект для проверки работы UI. Впрочем, кроме громоздкости в нём ничего сложного нет и чудить можно сколько угодно. Тем более, что в процессе обмена «нативные» объекты, такие, как [ScanResult](), [BluetoothDevice](), [BluetoothGatt](), заменены на обёртки данных, такие, как [BleScanResult](), [BleGatt](), [GattData](), [BleDevice](). Конечно, это данные для бедных и, если что, придётся лезть в библиотеку, добавлять поля, сурово править код на всех уровнях... но зато в тестировании можно сколько угодно «фейкать», «мокать» и «стабить».
+Так или иначе, придётся сооружать громоздкий, но зато управляемый [FakeBleManager](https://github.com/GrandFatherPikhto/BLEScan/blob/master/app/src/main/java/com/grandfatherpikhto/blescan/fake/FakeBleManager.kt), который и будет генерировать нужные события и передавать данные в проект для проверки работы UI. Впрочем, кроме громоздкости в нём ничего сложного нет и чудить можно сколько угодно. Тем более, что в процессе обмена «нативные» объекты, такие, как [ScanResult](https://developer.android.com/reference/android/bluetooth/le/ScanResult), [BluetoothDevice](https://developer.android.com/reference/android/bluetooth/BluetoothDevice), [BluetoothGatt](https://developer.android.com/reference/android/bluetooth/BluetoothGatt), заменены на обёртки данных, такие, как [BleScanResult](https://github.com/GrandFatherPikhto/BLEScan/blob/master/blin/src/main/java/com/grandfatherpikhto/blin/data/BleScanResult.kt), [BleGatt](https://github.com/GrandFatherPikhto/BLEScan/blob/master/blin/src/main/java/com/grandfatherpikhto/blin/data/BleGatt.kt), [BleGattItem](https://github.com/GrandFatherPikhto/BLEScan/blob/master/blin/src/main/java/com/grandfatherpikhto/blin/data/BleGattItem.kt), [BleDevice](https://github.com/GrandFatherPikhto/BLEScan/blob/master/blin/src/main/java/com/grandfatherpikhto/blin/data/BleDevice.kt). Конечно, это данные для бедных и, если что, придётся лезть в библиотеку, добавлять поля, сурово править код на всех уровнях... но зато в тестировании можно сколько угодно «фейкать», «мокать» и «стабить».
 
-Кроме того, в библиотеку пришлось добавить трёх «Ждунов» — [ConnectingIdling](), [DisconnectingIdling](), [ScanIdling](). Они нужны для того, чтобы не давать приложению совершать определённые шаги до тех пор пока фейковое сканирование, подключени, отключение не будут завершены. (См. [Ресурсы для работы с Espresso на холостом ходу](https://developer.android.com/training/testing/espresso/idling-resource))
+Кроме того, в библиотеку пришлось добавить трёх «Ждунов» — [ConnectingIdling](https://github.com/GrandFatherPikhto/BLEScan/blob/master/blin/src/main/java/com/grandfatherpikhto/blin/idling/ConnectingIdling.kt), [DisconnectingIdling](https://github.com/GrandFatherPikhto/BLEScan/blob/master/blin/src/main/java/com/grandfatherpikhto/blin/idling/DisconnectingIdling.kt), [ScanIdling](https://github.com/GrandFatherPikhto/BLEScan/blob/master/blin/src/main/java/com/grandfatherpikhto/blin/idling/ScanIdling.kt). Они нужны для того, чтобы не давать приложению совершать определённые шаги до тех пор пока фейковое сканирование, подключени, отключение не будут завершены. (См. [Ресурсы для работы с Espresso на холостом ходу](https://developer.android.com/training/testing/espresso/idling-resource))
 
 Осталось подменить в основном классе приложения
 
 ### UI
 
-#### [MainActivity](./app/src/main/java/com/grandfatherpikhto/blescan/MainActivity.kt)
+#### [MainActivity](https://github.com/GrandFatherPikhto/BLEScan/blob/master/app/src/main/java/com/grandfatherpikhto/blescan/ui/MainActivity.kt)
 
-Здесь происходит запрос на привязывание/отвязывание сервиса, запрос необходимых разрешений, запрос на включение/выключение адаптера Bluetooth. Здесь же происходит навигация по фрагментам: [ScanFragment]() и [DeviceFragment]().
+Здесь происходит запрос на привязывание/отвязывание сервиса, запрос необходимых разрешений, запрос на включение/выключение адаптера Bluetooth. Здесь же происходит навигация по фрагментам: [ScanFragment](https://github.com/GrandFatherPikhto/BLEScan/blob/master/app/src/main/java/com/grandfatherpikhto/blescan/ui/fragments/ScanFragment.kt) и [DeviceFragment](https://github.com/GrandFatherPikhto/BLEScan/blob/master/app/src/main/java/com/grandfatherpikhto/blescan/ui/fragments/DeviceFragment.kt).
 
 Начнём с запроса разрешений на доступ к сканированию, подключению, сопряжению и обмен данными с Bluetooth:
 
@@ -1199,7 +1275,7 @@ class BleManager constructor(private val context: Context,
 
 Привязывание сервисов так же находится здесь, чтобы согласовать жизненный цикл активности и работы сервиса. Строго говоря, этого можно и не делать и перенести привязывание сервиса в класс наследованный от [Application](https://developer.android.com/reference/android/app/Application) [BleScanApp](./app/src/main/java/com/grandfatherpikhto/blescan/BleScanApp.kt), или вовсе отказаться от сервиса, как от ненужного костыля.
 
-Чтобы [BleScanApp](./app/src/main/java/com/grandfatherpikhto/blescan/BleScanApp.kt) создавался, нужно указать его в [AndroidManifext.xml](./app/src/main/AndroidManifest.xml)
+Чтобы [BleScanApp](./app/src/main/java/com/grandfatherpikhto/blescan/BleScanApp.kt) создавался, нужно указать его в [blin/AndroidManifext.xml](./app/src/main/AndroidManifest.xml)
 
 
 ```xml
@@ -1208,7 +1284,7 @@ class BleManager constructor(private val context: Context,
 </application>
 ```
 
-В этой реализации сервис привязан к жизненному циклу [MainActivity](./app/src/main/java/com/grandfatherpikhto/blescan/MainActivity.kt) и отвязывается c отключением от устройства при каждом повороте экрана или переходе приложения в фоновый режим:
+В этой реализации сервис привязан к жизненному циклу [MainActivity](https://github.com/GrandFatherPikhto/BLEScan/blob/master/app/src/main/java/com/grandfatherpikhto/blescan/ui/MainActivity.kt) и отвязывается c отключением от устройства при каждом повороте экрана или переходе приложения в фоновый режим:
 
 ```kotlin
     /**
@@ -1232,7 +1308,7 @@ class BleManager constructor(private val context: Context,
 
 #### Навигация фрагментов
 
-В этом примере навигация сделана довольно грубо. В [MainActivity](./app/src/main/java/com/grandfatherpikhto/blescan/MainActivity.kt)
+В этом примере навигация сделана довольно грубо. В [MainActivity](https://github.com/GrandFatherPikhto/BLEScan/blob/master/app/src/main/java/com/grandfatherpikhto/blescan/ui/MainActivity.kt)
 создан `enum class Current`, значения которого указывают на объекты навигации из
 [nav_graph.xml](./app/src/main/res/navigation/nav_graph.xml)
 
@@ -1258,8 +1334,8 @@ class BleManager constructor(private val context: Context,
 ```
 
 Всё, что остаётся — просто менять запись на нужное значение и, соответственно, переключаться между
-[ScanFragment](./app/src/main/java/com/grandfatherpikhto/blescan/ScanFragment.kt) и
-[DeviceFragment](./app/src/main/java/com/grandfatherpikhto/blescan/DeviceFragment.kt). Текущий фрагмент хранится в модели, так что при повороте экрана или уходе приложения в фоновый режим, будет восстанавливаться выбранный фрагмент.
+[ScanFragment](https://github.com/GrandFatherPikhto/BLEScan/blob/master/app/src/main/java/com/grandfatherpikhto/blescan/ui/fragments/ScanFragment.kt) и
+[DeviceFragment](https://github.com/GrandFatherPikhto/BLEScan/blob/master/app/src/main/java/com/grandfatherpikhto/blescan/ui/fragments/DeviceFragment.kt). Текущий фрагмент хранится в модели, так что при повороте экрана или уходе приложения в фоновый режим, будет восстанавливаться выбранный фрагмент.
 
 События запуска сканирования и подключения к устройству обрабатываются внутри фрагментов.
 
@@ -1326,7 +1402,7 @@ Fix: Replace with androidx.fragment.app.FragmentContainerView
 
 Работать уже не будет. Так, что его надо заменить на обращение к
 [supportFragmentManager](https://developer.android.com/reference/androidx/fragment/app/FragmentActivity#getSupportFragmentManager())
-(см. [Navigation](https://developer.android.com/guide/navigation))
+(см. [Navigation](https://developer.android.com/guide/navigation)
 
 ```kotlin
     private fun bindNavBar() {
@@ -1359,7 +1435,7 @@ Fix: Replace with androidx.fragment.app.FragmentContainerView
         })
 ```
 
-### [ScanFragment](https://github.com/GrandFatherPikhto/BLEScan/blob/master/app/src/main/java/com/grandfatherpikhto/blescan/ScanFragment.kt)
+### [ScanFragment](https://github.com/GrandFatherPikhto/BLEScan/blob/master/app/src/main/java/com/grandfatherpikhto/blescan/ui/fragments/ScanFragment.kt)
 
 «Умолчальный» фрагмент, с которого начинается запуск приложения (Home в nav_graph).
 
@@ -1380,7 +1456,7 @@ Fix: Replace with androidx.fragment.app.FragmentContainerView
         }
 ```
 
-В свою очередь, [ScanFragment](./app/src/main/java/com/grandfatherpikhto/blescan/ScanFragment.kt) просто отслеживает содержимое списка:
+В свою очередь, [ScanFragment](https://github.com/GrandFatherPikhto/BLEScan/blob/master/app/src/main/java/com/grandfatherpikhto/blescan/ui/fragments/ScanFragment.kt) просто отслеживает содержимое списка:
 
 ```kotlin
     private fun bindRvAdapter () {
@@ -1402,7 +1478,7 @@ Fix: Replace with androidx.fragment.app.FragmentContainerView
     }
 ```
 
-Состояния — сканирование, остановка сканирования, получение списка сопряжённых устройств, так же хранятся в [BtLeModel](https://github.com/GrandFatherPikhto/BLEScan/blob/master/app/src/main/java/com/grandfatherpikhto/blescan/model/BtLeModel.kt).
+Состояния — сканирование, остановка сканирования, получение списка сопряжённых устройств, так же хранятся в [BtLeModel](./app/src/main/java/com/grandfatherpikhto/blescan/model/BtLeModel.kt).
 
 ```kotlin
     /**
@@ -1465,7 +1541,7 @@ Fix: Replace with androidx.fragment.app.FragmentContainerView
     }
 ```
 
-Длительный клик — попытка подключения к устройству. Это передаётся в главную модель [MainActivityModel](https://github.com/GrandFatherPikhto/BLEScan/blob/master/app/src/main/java/com/grandfatherpikhto/blescan/model/MainActivityModel.kt). Поскольку, она общая для Главной Активности и всех фрагментов. Экземпляр модели Главной Активности вызывается при помощи `private val mainActivityModel:MainActivityModel by activityViewModels()`, а значит, это — синглетон
+Длительный клик — попытка подключения к устройству. Это передаётся в главную модель [MainActivityModel](./app/src/main/java/com/grandfatherpikhto/blescan/model/MainActivityModel.kt). Поскольку, она общая для Главной Активности и всех фрагментов. Экземпляр модели Главной Активности вызывается при помощи `private val mainActivityModel:MainActivityModel by activityViewModels()`, а значит, это — синглетон
 
 ```kotlin
     private fun connectToBluetoothDevice(model: BtLeDevice) {
@@ -1474,11 +1550,11 @@ Fix: Replace with androidx.fragment.app.FragmentContainerView
     }
 ```
 
-Главная Активность следит за `current` и переключает текующий фрагмент на [DeviceFragment](https://github.com/GrandFatherPikhto/BLEScan/blob/master/app/src/main/java/com/grandfatherpikhto/blescan/DeviceFragment.kt)
+Главная Активность следит за `current` и переключает текующий фрагмент на [DeviceFragment](https://github.com/GrandFatherPikhto/BLEScan/blob/master/app/src/main/java/com/grandfatherpikhto/blescan/ui/fragments/DeviceFragment.kt)
 
 Длительное нажатие на плашку найденного устройства активирует попытку подключения к устройству.
 
-### [DeviceFragment](./app/src/main/java/com/grandfatherpikhto/blescan/DeviceFragment.kt)
+### [DeviceFragment](https://github.com/GrandFatherPikhto/BLEScan/blob/master/app/src/main/java/com/grandfatherpikhto/blescan/ui/fragments/DeviceFragment.kt)
 
 Фактически, это тоже контейнер для [RecycleView](https://developer.android.com/reference/androidx/recyclerview/widget/RecyclerView) с адаптером [RvGattAdapter](./app/src/main/java/com/grandfatherpikhto/blescan/adapter/RvGattAdapter.kt). После исследования `GATT`, прокручивается простой цикл:
 
@@ -1517,15 +1593,15 @@ Fix: Replace with androidx.fragment.app.FragmentContainerView
 4. [Making Android BLE work — part 3 // Martijn van Welie](https://medium.com/@martijn.van.welie/making-android-ble-work-part-3-117d3a8aee23?source=user_profile---------1-------------------------------) Часть 3. чтение/запись характеристик; включение/выключение уведомлений
 5. [Making Android BLE work — part 4 // Martijn van Welie](https://medium.com/@martijn.van.welie/making-android-ble-work-part-4-72a0b85cb442?source=user_profile---------0-------------------------------) Часть 4. Сопряжение с устройствами
 6. [Перевод статьи Мартина ван Велле](https://habr.com/ru/post/536392/) Часть 1. Сканирование
-7. [Перевод статьи Мартина ван Велле](https://habr.com/ru/post/537526/) Часть 2. Подключение/Отключение
-8. [Перевод статьи Мартина ван Велле](https://habr.com/ru/post/538768/) Часть 3. Чтение/Запись характеристик
-9. [Перевод статьи Мартина ван Велле](https://habr.com/ru/post/539740/) Часть 4. Сопряжение устройств
+7. [Перевод статьи Мартина ван Велле](https://habr.com/ru/post/536392/) Часть 2. Подключение/Отключение
+8. [Перевод статьи Мартина ван Велле](https://habr.com/ru/post/536392/) Часть 3. Чтение/Запись характеристик
+9. [Перевод статьи Мартина ван Велле](https://habr.com/ru/post/536392/) Часть 4. Сопряжение устройств
 10. [BLESSED](https://github.com/weliem/blessed-android) A very compact Bluetooth Low Energy (BLE) library for Android 5 and higher, that makes working with BLE on Android very easy.
-11. [BLESSED](https://github.com/weliem/blessed-android-coroutines) A very compact Bluetooth Low Energy (BLE) library for Android 8 and higher, that makes working with BLE on Android very easy. It is powered by Kotlin's Coroutines and turns asynchronous GATT methods into synchronous methods! It is based on the Blessed Java library and has been rewritten in Kotlin using Coroutines.
+11. [BLESSED](https://github.com/weliem/blessed-android) A very compact Bluetooth Low Energy (BLE) library for Android 8 and higher, that makes working with BLE on Android very easy. It is powered by Kotlin's Coroutines and turns asynchronous GATT methods into synchronous methods! It is based on the Blessed Java library and has been rewritten in Kotlin using Coroutines.
 12. [(Talk) Bluetooth Low Energy On Android // Stuart Kent](https://www.stkent.com/2017/09/18/ble-on-android.html) (Обсуждение) Bluetooth Low Energy на Android // Стюарт Кент //
 13. [Gist by Stuart Kent to Android BLE Talk](https://gist.github.com/stkent/a7f0d6b868e805da326b112d60a9f59b) Огромное количество ссылок на разные ресурсы
 14. [The Ultimate Guide to Android Bluetooth Low Energy](https://punchthrough.com/android-ble-guide/) Дельный и короткий гайд по работе со стеком BLE    
-15. [Android BLE Library](https://github.com/NordicSemiconductor/Android-BLE-Library/) Пожалуй, единственная Android библиотека, которая реально решает множество проблем Android с низким энергопотреблением Bluetooth и действительно нормально работает.
+15. [Android BLE Library](https://github.com/NordicSemiconductor/Android-BLE-Library) Пожалуй, единственная Android библиотека, которая реально решает множество проблем Android с низким энергопотреблением Bluetooth и действительно нормально работает.
 16. [Samsung Bluetooth Knox API](https://docs.samsungknox.com/dev/knox-sdk/bluetooth-support.htm) Работа с BLE на Samsung
 17. [Samsung API](https://developer.samsung.com/smarttv/develop/api-references/tizen-web-device-api-references/systeminfo-api/getting-device-capabilities-using-systeminfo-api.html)
 18. [Android BLE Issues](https://sweetblue.io/docs/Android-BLE-Issues) This is a short list of issues you will encounter if you try to use the native Android BLE stack directly // Краткий список проблем, с которыми вы столкнетесь, если попытаетесь напрямую использовать собственный стек Android BLE
@@ -1541,5 +1617,5 @@ Fix: Replace with androidx.fragment.app.FragmentContainerView
 28. [Connect GATT Server](https://developer.android.com/guide/topics/connectivity/bluetooth/connect-gatt-server) Подключение к серверу GATT.
 29. [Transver BLE Data](https://developer.android.com/guide/topics/connectivity/bluetooth/transfer-ble-data) Передача/Приём данных через GATT.
 30. [Android connectivity samples](https://github.com/android/connectivity-samples) Официальный набор отдельных проектов Android Studio, которые помогут вам приступить к написанию приложений Connectivity на Android.
-31. [Android BLE Library](https://github.com/NordicSemiconductor/Android-BLE-Library/) NordicSemiconductor Android BLE Library // Самая надёжная и быстрая библиотека стека BLE
+31. [Android BLE Library](https://github.com/NordicSemiconductor/Android-BLE-Library) NordicSemiconductor Android BLE Library // Самая надёжная и быстрая библиотека стека BLE
 32. [Android BluetoothLeGatt Sample](https://github.com/android/connectivity-samples/tree/master/BluetoothLeGatt) В этом примере показано, как использовать общий профиль атрибутов Bluetooth LE (GATT) для передачи произвольных данных между устройствами.

@@ -1,3 +1,3 @@
-package com.grandfatherpikhto.blescan.ui.fragments.adapters
+package com.grandfatherpikhto.blescan.data
 
 class CharacteristicProperty(val property: Int, val resId: Int)
