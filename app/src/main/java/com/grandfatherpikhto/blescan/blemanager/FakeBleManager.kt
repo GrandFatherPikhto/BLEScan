@@ -188,6 +188,6 @@ class FakeBleManager(context: Context) : AppBleManager (context) {
     }
 
     override fun onDestroy() {
-        
+
     }
 }
