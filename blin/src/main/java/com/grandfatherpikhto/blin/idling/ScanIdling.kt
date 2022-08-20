@@ -2,7 +2,7 @@ package com.grandfatherpikhto.blin.idling
 
 import androidx.test.espresso.IdlingResource
 import com.grandfatherpikhto.blin.BleManagerInterface
-import com.grandfatherpikhto.blin.BleScanManager
+import com.grandfatherpikhto.blin.orig.AbstractBleScanManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -26,9 +26,7 @@ class ScanIdling (private val bleManager: BleManagerInterface) : IdlingResource 
     var idling by Delegates.observable(false) { _, _, newState ->
         isIdling.set(newState)
         if (newState) {
-            resourceCallback?.let { callback ->
-                callback.onTransitionToIdle()
-            }
+            resourceCallback?.onTransitionToIdle()
         }
     }
 
@@ -36,10 +34,10 @@ class ScanIdling (private val bleManager: BleManagerInterface) : IdlingResource 
         scope.launch {
             bleManager.stateFlowScanState.collect { state ->
                 when(state) {
-                    BleScanManager.State.Stopped -> {
+                    AbstractBleScanManager.State.Stopped -> {
                         idling = true
                     }
-                    BleScanManager.State.Scanning -> {
+                    AbstractBleScanManager.State.Scanning -> {
                         idling = false
                     }
                     else -> { }
