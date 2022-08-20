@@ -1,4 +1,4 @@
-package com.grandfatherpikhto.blin.data
+package com.grandfatherpikhto.blescan.data
 
 import android.bluetooth.le.ScanResult
 
@@ -8,8 +8,8 @@ data class BleScanResult( val device: BleDevice,
 ) {
     constructor(scanResult: ScanResult)
             : this( BleDevice(scanResult.device),
-                    scanResult.isConnectable,
-                    scanResult.rssi
+        scanResult.isConnectable,
+        scanResult.rssi
     )
 
     override fun equals(other: Any?): Boolean {
