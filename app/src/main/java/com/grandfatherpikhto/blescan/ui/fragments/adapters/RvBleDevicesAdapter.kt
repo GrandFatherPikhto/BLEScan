@@ -4,8 +4,8 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
-import com.grandfatherpikhto.blin.data.BleScanResult
 import com.grandfatherpikhto.blescan.R
+import com.grandfatherpikhto.blescan.data.BleScanResult
 import com.grandfatherpikhto.blescan.helper.OnClickItemListener
 import com.grandfatherpikhto.blescan.helper.OnLongClickItemListener
 
