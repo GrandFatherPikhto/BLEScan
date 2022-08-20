@@ -267,7 +267,7 @@ abstract class AbstractBleGattManager constructor(private val context: Context,
         }
     }
 
-    fun addGattData(bleGattData: BleGattItem) = bleGattCallback.writeGattData(bleGattData)
+    fun addGattData(bleGattData: BleGattItem) = bleGattCallback.addGattData(bleGattData)
 
     fun isCharacteristicNotified(bluetoothGattCharacteristic: BluetoothGattCharacteristic) : Boolean =
         mutableListNotifiedCharacteristic.isNotEmpty()
