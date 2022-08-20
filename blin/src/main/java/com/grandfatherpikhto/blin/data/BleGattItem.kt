@@ -10,22 +10,31 @@ data class BleGattItem (val uuidService: UUID,
                         val uuidCharacteristic: UUID? = null,
                         val uuidDescriptor: UUID? = null,
                         val value:ByteArray? = null,
+                        val type: Type = Type.Write
 ) {
-    constructor(bluetoothGattService: BluetoothGattService) :
-            this(uuidService = bluetoothGattService.uuid,
+    enum class Type (val value: Int) {
+        Write(0x01),
+        Read(0x02),
+    }
+
+    constructor(bluetoothGattService: BluetoothGattService, type: Type) : this(
+                uuidService = bluetoothGattService.uuid,
+                type = type
             )
 
-    constructor(bluetoothGattCharacteristic: BluetoothGattCharacteristic) :
+    constructor(bluetoothGattCharacteristic: BluetoothGattCharacteristic, type: Type) :
             this(uuidService = bluetoothGattCharacteristic.service.uuid,
                 uuidCharacteristic = bluetoothGattCharacteristic.uuid,
-                value = bluetoothGattCharacteristic.value
+                value = bluetoothGattCharacteristic.value,
+                type = type
             )
 
-    constructor(bluetoothGattDescriptor: BluetoothGattDescriptor) :
+    constructor(bluetoothGattDescriptor: BluetoothGattDescriptor, type: Type) :
             this(uuidService = bluetoothGattDescriptor.characteristic.service.uuid,
                 uuidCharacteristic = bluetoothGattDescriptor.characteristic.uuid,
                 uuidDescriptor = bluetoothGattDescriptor.uuid,
                 value = bluetoothGattDescriptor.value,
+                type = type
             )
 
     fun getService(bluetoothGatt: BluetoothGatt) : BluetoothGattService? =
@@ -35,9 +44,8 @@ data class BleGattItem (val uuidService: UUID,
         if (uuidCharacteristic == null) {
             null
         } else {
-            bluetoothGatt.getService(uuidService)?.let { service ->
-                service.getCharacteristic(uuidCharacteristic)
-            }
+            bluetoothGatt.getService(uuidService)
+                ?.getCharacteristic(uuidService)
         }
 
     fun getDescriptor(bluetoothGatt: BluetoothGatt) : BluetoothGattDescriptor? =
@@ -45,9 +53,8 @@ data class BleGattItem (val uuidService: UUID,
             null
         } else {
             bluetoothGatt.getService(uuidService)?.let { service ->
-                service.getCharacteristic(uuidCharacteristic)?.let { characteristic ->
-                    characteristic.getDescriptor(uuidDescriptor)
-                }
+                service.getCharacteristic(uuidCharacteristic)
+                    ?.getDescriptor(uuidDescriptor)
             }
         }
 
@@ -57,6 +64,7 @@ data class BleGattItem (val uuidService: UUID,
 
         other as BleGattItem
 
+        if (type != other.type) return false
         if (uuidService != other.uuidService) return false
         if (uuidCharacteristic != other.uuidCharacteristic) return false
         if (uuidDescriptor != other.uuidDescriptor) return false
