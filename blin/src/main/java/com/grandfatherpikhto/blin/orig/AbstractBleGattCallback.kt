@@ -87,5 +87,5 @@ abstract class AbstractBleGattCallback constructor(private val bleGattManager: A
         super.onServiceChanged(gatt)
     }
 
-    fun writeGattData(bleGattData: BleGattItem) = queueBuffer.addGattData(bleGattData)
+    fun addGattData(bleGattData: BleGattItem) = queueBuffer.addGattData(bleGattData)
 }
