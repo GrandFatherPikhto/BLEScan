@@ -8,11 +8,10 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
-import com.grandfatherpikhto.blin.data.BleGatt
 import com.grandfatherpikhto.blescan.R
 import com.grandfatherpikhto.blin.buffer.BleCharacteristicNotify
+import com.grandfatherpikhto.blescan.data.BleGatt
 import com.grandfatherpikhto.blescan.data.BleItem
-import java.util.*
 import kotlin.properties.Delegates
 
 class RvBleDeviceAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder> () {
@@ -36,7 +35,7 @@ class RvBleDeviceAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder> () {
         }
     }
 
-    var bleGatt:BleGatt? by Delegates.observable(null) { _, _, value ->
+    var bleGatt: BleGatt? by Delegates.observable(null) { _, _, value ->
         if (value == null) {
             clear()
         } else {
