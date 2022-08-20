@@ -7,6 +7,8 @@ import androidx.test.core.app.ApplicationProvider
 import com.grandfatherpikhto.blin.helper.mockBluetoothDevice
 import com.grandfatherpikhto.blin.helper.mockBluetoothGatt
 import com.grandfatherpikhto.blin.helper.mockScanResult
+import com.grandfatherpikhto.blin.orig.AbstractBleGattManager
+import com.grandfatherpikhto.blin.orig.AbstractBleScanManager
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import org.junit.Assert.*
@@ -29,10 +31,12 @@ class BleGattManagerTest {
     }
 
     private lateinit var closeable:AutoCloseable
+    private val dispatcher = UnconfinedTestDispatcher()
+
     private val bleManager =
         BleManager(
             ApplicationProvider.getApplicationContext<Context?>().applicationContext,
-            UnconfinedTestDispatcher()
+            dispatcher
         )
 
     @Before
@@ -51,7 +55,7 @@ class BleGattManagerTest {
         val gatt = mockBluetoothGatt(ADDRESS)
         bleManager.bleGattManager.onConnectionStateChange(gatt, BluetoothGatt.GATT_SUCCESS, BluetoothProfile.STATE_CONNECTED)
         bleManager.bleGattManager.onGattDiscovered(gatt, BluetoothGatt.GATT_SUCCESS)
-        assertEquals(BleGattManager.State.Connected, bleManager.connectState)
+        assertEquals(AbstractBleGattManager.State.Connected, bleManager.connectState)
         assertEquals(gatt, bleManager.bleGattManager.bluetoothGatt)
     }
 
@@ -63,11 +67,11 @@ class BleGattManagerTest {
         val scanResult = mockScanResult(bluetoothDevice)
         bleManager.connect(bluetoothDevice.address)
         bleManager.bleGattManager.onConnectionStateChange(null, ERROR_133, 0)
-        assertEquals(BleScanManager.State.Scanning, bleManager.scanState)
+        assertEquals(AbstractBleScanManager.State.Scanning, bleManager.scanState)
         bleManager.bleScanManager.onReceiveScanResult(scanResult)
-        assertEquals(BleScanManager.State.Stopped, bleManager.scanState)
+        assertEquals(AbstractBleScanManager.State.Stopped, bleManager.scanState)
         bleManager.bleGattManager.onGattDiscovered(bluetoothGatt, BluetoothGatt.GATT_SUCCESS)
-        assertEquals(BleGattManager.State.Connected, bleManager.connectState)
+        assertEquals(AbstractBleGattManager.State.Connected, bleManager.connectState)
         assertEquals(bluetoothGatt, bleManager.bleGattManager.bluetoothGatt)
     }
 
@@ -77,11 +81,11 @@ class BleGattManagerTest {
         val scanResult = mockScanResult(bluetoothDevice)
         bleManager.connect(ADDRESS)
 
-        (1..BleGattManager.MAX_ATTEMPTS).forEach { _->
+        (1..AbstractBleGattManager.MAX_ATTEMPTS).forEach { _->
             bleManager.bleGattManager.onConnectionStateChange(null, ERROR_133, 0)
             bleManager.bleScanManager.onReceiveScanResult(scanResult)
         }
 
-        assertEquals(BleGattManager.State.Error, bleManager.connectState)
+        assertEquals(AbstractBleGattManager.State.Error, bleManager.connectState)
     }
 }
