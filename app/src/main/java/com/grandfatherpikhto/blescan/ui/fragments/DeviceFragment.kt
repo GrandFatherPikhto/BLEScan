@@ -191,6 +191,7 @@ class DeviceFragment : Fragment() {
         }
 
         rvBleDeviceAdapter.setOnCharacteristicReadClickListener { bleItem, _ ->
+            Log.d(tagLog, "read $bleItem")
             bleManager.addGattData(bleItem.bleReadGattData)
         }
 
