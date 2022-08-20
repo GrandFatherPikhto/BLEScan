@@ -1,37 +1,39 @@
-package com.grandfatherpikhto.blin
+package com.grandfatherpikhto.blin.orig
 
 import android.bluetooth.*
 import android.content.Context
-import androidx.lifecycle.LifecycleOwner
+import com.grandfatherpikhto.blin.BleBondManager
+import com.grandfatherpikhto.blin.BleGattManager
+import com.grandfatherpikhto.blin.BleManagerInterface
+import com.grandfatherpikhto.blin.BleScanManager
 import com.grandfatherpikhto.blin.buffer.BleCharacteristicNotify
 import com.grandfatherpikhto.blin.data.BleGattItem
 import com.grandfatherpikhto.blin.data.BleBondState
-import com.grandfatherpikhto.blin.data.BleGatt
-import com.grandfatherpikhto.blin.data.BleScanResult
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.*
 
-class BleManager constructor(private val context: Context,
-                             dispatcher: CoroutineDispatcher = Dispatchers.IO)
+abstract class AbstractBleManager constructor(private val context: Context,
+                                              dispatcher: CoroutineDispatcher = Dispatchers.IO)
     : BleManagerInterface {
 
     private val logTag = this.javaClass.simpleName
-    private val scope = CoroutineScope(dispatcher)
+    val scope = CoroutineScope(dispatcher)
 
     val applicationContext:Context get() = context.applicationContext
 
-    val bleScanManager: BleScanManager = BleScanManager(context, dispatcher)
-    val bleGattManager: BleGattManager = BleGattManager(context, bleScanManager, dispatcher)
-    val bleBondManager: BleBondManager = BleBondManager(context, dispatcher)
+    override val bleScanManager: AbstractBleScanManager = BleScanManager(context, dispatcher)
+    override val bleGattManager: AbstractBleGattManager by lazy {
+        BleGattManager(context, bleScanManager, dispatcher) }
+    override val bleBondManager: AbstractBleBondManager = BleBondManager(context, dispatcher)
 
     override val stateFlowScanState get() = bleScanManager.stateFlowScanState
     override val scanState get()     = bleScanManager.scanState
 
-    override val sharedFlowBleScanResult get() = bleScanManager.sharedFlowBleScanResult
+    override val sharedFlowScanResults get() = bleScanManager.sharedFlowBleScanResult
 
-    override val scanResults get() = bleScanManager.scanResults.map { BleScanResult(it) }
+    override val scanResults get() = bleScanManager.scanResults
 
     override val stateFlowScanError get() = bleScanManager.stateFlowError
     override val scanError get()     = bleScanManager.scanError
@@ -41,8 +43,8 @@ class BleManager constructor(private val context: Context,
 
     override val sharedFlowConnectStateCode get() = bleGattManager.stateFlowConnectStateCode
 
-    override val stateFlowBleGatt get() = bleGattManager.stateFlowBleGatt
-    override val bleGatt get() = bleGattManager.bleGatt
+    override val stateFlowBluetoothGatt get() = bleGattManager.stateFlowBluetoothGatt
+    override val bluetoothGatt get() = bleGattManager.bluetoothGatt
 
     override val sharedFlowCharacteristic: SharedFlow<BluetoothGattCharacteristic>
         get() = bleGattManager.sharedFlowCharacteristic
@@ -60,11 +62,13 @@ class BleManager constructor(private val context: Context,
     override fun bondRequest(address: String)
             = bleBondManager.bondRequest(address)
 
-    override fun onCreate(owner: LifecycleOwner) {
-        super.onCreate(owner)
-        owner.lifecycle.addObserver(bleScanManager)
-        owner.lifecycle.addObserver(bleGattManager)
-        owner.lifecycle.addObserver(bleBondManager)
+    init {
+    }
+
+    override fun onDestroy() {
+        bleScanManager.onDestroy()
+        bleGattManager.onDestroy()
+        bleBondManager.onDestroy()
     }
 
     override
@@ -79,26 +83,14 @@ class BleManager constructor(private val context: Context,
 
     override fun stopScan() = bleScanManager.stopScan()
 
-    override fun connect(address: String): BleGatt? {
-        bleGattManager.connect(address)?.let {
-            return BleGatt(it)
-        }
-
-        return null
-    }
+    override fun connect(address: String): BluetoothGatt? = bleGattManager.connect(address)
 
     override fun disconnect() = bleGattManager.disconnect()
 
-    override fun writeGattData(bleGattData: BleGattItem) = bleGattManager.writeGattData(bleGattData)
+    override fun addGattData(bleGattData: BleGattItem) = bleGattManager.addGattData(bleGattData)
 
     override fun readCharacteristic(bluetoothGattCharacteristic: BluetoothGattCharacteristic)
         = bleGattManager.readCharacteristic(bluetoothGattCharacteristic)
-
-    override fun readGattData(bleGattData: BleGattItem): Boolean =
-        bleGattManager.readGattData(bleGattData)
-
-    override fun readDescriptor(bluetoothGattDescriptor: BluetoothGattDescriptor)
-        = bleGattManager.readDescriptor(bluetoothGattDescriptor)
 
     override fun notifyCharacteristic(
         bluetoothGattCharacteristic: BluetoothGattCharacteristic)
