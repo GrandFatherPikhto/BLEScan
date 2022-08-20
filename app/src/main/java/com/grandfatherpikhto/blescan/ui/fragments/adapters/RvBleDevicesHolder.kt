@@ -3,8 +3,8 @@ package com.grandfatherpikhto.blescan.ui.fragments.adapters
 import android.bluetooth.BluetoothDevice
 import android.view.View
 import androidx.recyclerview.widget.RecyclerView
-import com.grandfatherpikhto.blin.data.BleScanResult
 import com.grandfatherpikhto.blescan.R
+import com.grandfatherpikhto.blescan.data.BleScanResult
 import com.grandfatherpikhto.blescan.databinding.LayoutBleDeviceBinding
 
 class RvBleDevicesHolder(view: View) : RecyclerView.ViewHolder(view) {
