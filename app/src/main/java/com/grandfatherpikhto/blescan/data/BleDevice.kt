@@ -1,8 +1,7 @@
-package com.grandfatherpikhto.blin.data
+package com.grandfatherpikhto.blescan.data
 
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothDevice
-import android.bluetooth.BluetoothGattService
 import android.os.ParcelUuid
 
 data class BleDevice(val address: String,
@@ -12,9 +11,9 @@ data class BleDevice(val address: String,
     @SuppressLint("MissingPermission")
     constructor(bluetoothDevice: BluetoothDevice)
             : this( bluetoothDevice.address,
-                    bluetoothDevice.name,
-                    bluetoothDevice.bondState,
-                    bluetoothDevice.uuids?.toList() ?: listOf())
+        bluetoothDevice.name,
+        bluetoothDevice.bondState,
+        bluetoothDevice.uuids?.toList() ?: listOf())
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
