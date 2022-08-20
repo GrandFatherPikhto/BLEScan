@@ -99,7 +99,6 @@ class DescriptorHolder (private val view: View) : RecyclerView.ViewHolder(view) 
 
     fun bind(item: BleItem) {
         _bleItem = item
-        Log.d(tagLog, "bind($item)")
         binding.apply {
             tvDescriptorUuid.text = bleItem.uuidDescriptor.toString().uppercase()
             tvDescriptorName.text = bleItem.uuidDescriptor
