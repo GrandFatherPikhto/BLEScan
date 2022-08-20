@@ -94,12 +94,21 @@ class BleItem ( val uuidService: UUID,
             BluetoothGattDescriptor(uuidDescriptor, descrPermission)
         } else null
 
-    val bleGattData: BleGattItem
+    val bleWriteGattData: BleGattItem
         get() =
             BleGattItem(value = value,
             uuidService = uuidService,
             uuidCharacteristic = uuidCharacteristic,
-            uuidDescriptor = uuidDescriptor)
+            uuidDescriptor = uuidDescriptor,
+            type = BleGattItem.Type.Write)
+
+    val bleReadGattData: BleGattItem
+        get() =
+            BleGattItem(
+                uuidService = uuidService,
+                uuidCharacteristic = uuidCharacteristic,
+                uuidDescriptor = uuidDescriptor,
+                type = BleGattItem.Type.Read)
 
     fun inverseOpened() {
         opened = !opened
