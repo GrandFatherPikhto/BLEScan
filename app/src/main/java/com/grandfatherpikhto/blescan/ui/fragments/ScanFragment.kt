@@ -10,10 +10,10 @@ import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.grandfatherpikhto.blin.BleManagerInterface
-import com.grandfatherpikhto.blin.BleScanManager
+import com.grandfatherpikhto.blin.orig.AbstractBleScanManager
 import com.grandfatherpikhto.blescan.BleScanApp
 import com.grandfatherpikhto.blescan.R
+import com.grandfatherpikhto.blescan.blemanager.AppBleManager
 import com.grandfatherpikhto.blescan.databinding.FragmentScanBinding
 import com.grandfatherpikhto.blescan.helper.linkMenuProvider
 import com.grandfatherpikhto.blescan.helper.unlinkMenuProvider
@@ -37,7 +37,7 @@ class ScanFragment : Fragment() {
     private val mainActivityViewModel by activityViewModels<MainActivityViewModel>()
     private val scanViewModel by viewModels<ScanViewModel>()
 
-    private val _bleManager:BleManagerInterface? by lazy {
+    private val _bleManager:AppBleManager? by lazy {
         (requireActivity().application as BleScanApp).bleManager
     }
     private val bleManager get() = _bleManager!!
@@ -50,16 +50,16 @@ class ScanFragment : Fragment() {
                     scanViewModel.stateFlowScanState.collect { state ->
                         Log.d(logTag, "New State: $state")
                         when(state) {
-                            BleScanManager.State.Stopped -> {
+                            AbstractBleScanManager.State.Stopped -> {
                                 actionScan.setIcon(R.drawable.ic_scan)
                                 actionScan.title = getString(R.string.scan_start)
                             }
-                            BleScanManager.State.Scanning -> {
+                            AbstractBleScanManager.State.Scanning -> {
                                 actionScan.setIcon(R.drawable.ic_stop)
                                 actionScan.title = getString(R.string.scan_start)
                                 Log.d(logTag, getString(R.string.scan_stop))
                             }
-                            BleScanManager.State.Error -> {
+                            AbstractBleScanManager.State.Error -> {
                                 actionScan.setIcon(R.drawable.ic_error)
                                 actionScan.title = getString(R.string.scan_error, scanViewModel.scanError)
                             }
@@ -73,13 +73,13 @@ class ScanFragment : Fragment() {
             return when(menuItem.itemId) {
                 R.id.action_scan -> {
                     when(scanViewModel.scanState) {
-                        BleScanManager.State.Scanning -> {
+                        AbstractBleScanManager.State.Scanning -> {
                             bleManager.stopScan()
                         }
-                        BleScanManager.State.Stopped -> {
+                        AbstractBleScanManager.State.Stopped -> {
                             bleManager.startScan()
                         }
-                        BleScanManager.State.Error -> {
+                        AbstractBleScanManager.State.Error -> {
                             bleManager.stopScan()
                         }
                     }
