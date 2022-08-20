@@ -6,15 +6,16 @@ import android.bluetooth.le.ScanResult
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.util.Log
-import com.grandfatherpikhto.blin.BleScanManager
+import com.grandfatherpikhto.blin.orig.AbstractBleScanManager
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 
-class BcScanReceiver constructor(private val bleScanManager: BleScanManager, dispatcher: CoroutineDispatcher = Dispatchers.IO): BroadcastReceiver() {
+class BcScanReceiver constructor(private val bleScanManager: AbstractBleScanManager, dispatcher: CoroutineDispatcher = Dispatchers.IO): BroadcastReceiver() {
     companion object {
-        const val ACTION_BLE_SCAN = "com.pikhto.blescan.ACTION_BLE_SCAN"
+        const val ACTION_BLE_SCAN = "com.grandfatherpikhto.blescan.ACTION_BLE_SCAN"
         const val REQUEST_CODE_BLE_SCANNER_PENDING_INTENT = 1000
     }
 
@@ -25,12 +26,13 @@ class BcScanReceiver constructor(private val bleScanManager: BleScanManager, dis
     /**
      * Почему Missing PendingIntent mutability flag?
      */
+    @Suppress("UnspecifiedImmutableFlag")
     private val bcPendingIntent: PendingIntent by lazy {
-        PendingIntent.getBroadcast(
+        return@lazy PendingIntent.getBroadcast(
             bleScanManager.applicationContext,
             REQUEST_CODE_BLE_SCANNER_PENDING_INTENT,
             Intent(ACTION_BLE_SCAN),
-            PendingIntent.FLAG_UPDATE_CURRENT
+            PendingIntent.FLAG_IMMUTABLE
         )
     }
 
