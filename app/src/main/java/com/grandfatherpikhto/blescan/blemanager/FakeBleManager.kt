@@ -1,38 +1,35 @@
-package com.grandfatherpikhto.blescan.fake
+package com.grandfatherpikhto.blescan.blemanager
 
 import android.bluetooth.*
+import android.content.Context
 import android.util.Log
-import com.grandfatherpikhto.blin.BleGattManager
-import com.grandfatherpikhto.blin.BleManagerInterface
-import com.grandfatherpikhto.blin.BleScanManager
+import com.grandfatherpikhto.blin.orig.AbstractBleGattManager
+import com.grandfatherpikhto.blin.orig.AbstractBleScanManager
 import com.grandfatherpikhto.blin.buffer.BleCharacteristicNotify
 import com.grandfatherpikhto.blin.data.BleGattItem
 import com.grandfatherpikhto.blin.data.*
 import com.grandfatherpikhto.blin.idling.ConnectingIdling
 import com.grandfatherpikhto.blin.idling.DisconnectingIdling
 import com.grandfatherpikhto.blin.idling.ScanIdling
+import com.grandfatherpikhto.blescan.data.BleDevice
+import com.grandfatherpikhto.blescan.data.BleGatt
+import com.grandfatherpikhto.blescan.data.BleScanResult
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import java.util.*
 import kotlin.random.Random
 
-class FakeBleManager : BleManagerInterface {
+class FakeBleManager(context: Context) : AppBleManager (context) {
 
     private val logTag = this.javaClass.simpleName
-    private val scope = CoroutineScope(Dispatchers.IO)
 
-    private val mutableStateFlowScanState = MutableStateFlow(BleScanManager.State.Stopped)
-    override val stateFlowScanState: StateFlow<BleScanManager.State>
+    private val mutableStateFlowScanState = MutableStateFlow(AbstractBleScanManager.State.Stopped)
+    override val stateFlowScanState: StateFlow<AbstractBleScanManager.State>
         get() = mutableStateFlowScanState.asStateFlow()
-    override val scanState: BleScanManager.State
+    override val scanState: AbstractBleScanManager.State
         get() = mutableStateFlowScanState.value
 
-    private val mutableScanResults = mutableListOf<BleScanResult>()
-    private val mutableSharedFlowScanResult = MutableSharedFlow<BleScanResult>(replay = 100)
-    override val sharedFlowBleScanResult: SharedFlow<BleScanResult>
-        get() = mutableSharedFlowScanResult.asSharedFlow()
-    override val scanResults: List<BleScanResult>
-        get() = mutableScanResults.toList()
+    private val mutableBleScanResults = mutableListOf<BleScanResult>()
 
     private val mutableFlowScanError = MutableStateFlow(-1)
     override val stateFlowScanError: StateFlow<Int>
@@ -40,21 +37,21 @@ class FakeBleManager : BleManagerInterface {
     override val scanError: Int
         get() = mutableFlowScanError.value
 
-    private val mutableStateFlowConnectState = MutableStateFlow(BleGattManager.State.Disconnected)
-    override val stateFlowConnectState: StateFlow<BleGattManager.State>
+    private val mutableStateFlowConnectState = MutableStateFlow(AbstractBleGattManager.State.Disconnected)
+    override val stateFlowConnectState: StateFlow<AbstractBleGattManager.State>
         get() = mutableStateFlowConnectState.asStateFlow()
-    override val connectState: BleGattManager.State
+    override val connectState: AbstractBleGattManager.State
         get() = mutableStateFlowConnectState.value
 
     private val mutableSharedFlowStateCode = MutableStateFlow(-1)
     override val sharedFlowConnectStateCode: SharedFlow<Int>
         get() = mutableSharedFlowStateCode.asStateFlow()
 
-    private val mutableStateFlowBleGatt = MutableStateFlow<BleGatt?>(null)
-    override val stateFlowBleGatt: StateFlow<BleGatt?>
-        get() = mutableStateFlowBleGatt.asStateFlow()
-    override val bleGatt: BleGatt?
-        get() = mutableStateFlowBleGatt.value
+    private val mutableStateFlowBluetoothGatt = MutableStateFlow<BluetoothGatt?>(null)
+    override val stateFlowBluetoothGatt: StateFlow<BluetoothGatt?>
+        get() = mutableStateFlowBluetoothGatt.asStateFlow()
+    override val bluetoothGatt: BluetoothGatt?
+        get() = mutableStateFlowBluetoothGatt.value
 
     private val mutableSharedFlowCharacteristic = MutableSharedFlow<BluetoothGattCharacteristic>(replay = 100)
     override val sharedFlowCharacteristic: SharedFlow<BluetoothGattCharacteristic>
@@ -93,12 +90,12 @@ class FakeBleManager : BleManagerInterface {
         stopTimeout: Long
     ): Boolean {
         Log.d(logTag, "startScan($scanState)")
-        if (scanState != BleScanManager.State.Scanning) {
-            mutableStateFlowScanState.tryEmit(BleScanManager.State.Scanning)
+        if (scanState != AbstractBleScanManager.State.Scanning) {
+            mutableStateFlowScanState.tryEmit(AbstractBleScanManager.State.Scanning)
             scope.launch {
                 (1..10).forEach { i ->
                     delay(Random.nextLong(200, 1000))
-                    mutableSharedFlowScanResult.tryEmit(
+                    mutableSharedFlowBleScanResult.tryEmit(
                         BleScanResult(
                             BleDevice(Random.nextBytes(6)
                                 .joinToString (":") { String.format("%02X", it) },
@@ -106,7 +103,7 @@ class FakeBleManager : BleManagerInterface {
                                 if (Random.nextBoolean()) BluetoothDevice.BOND_BONDED else BluetoothDevice.BOND_NONE),
                             Random.nextBoolean(),
                             Random.nextInt(-100, 0)))
-                    if (scanState != BleScanManager.State.Scanning) return@forEach
+                    if (scanState != AbstractBleScanManager.State.Scanning) return@forEach
                 }
                 stopScan()
             }
@@ -117,7 +114,7 @@ class FakeBleManager : BleManagerInterface {
     init {
         scope.launch {
             sharedFlowBleScanResult.collect {
-                mutableScanResults.add(it)
+                mutableBleScanResults.add(it)
             }
         }
     }
@@ -125,7 +122,7 @@ class FakeBleManager : BleManagerInterface {
 
     override fun stopScan() {
         Log.d(logTag, "stopScan()")
-        mutableStateFlowScanState.tryEmit(BleScanManager.State.Stopped)
+        mutableStateFlowScanState.tryEmit(AbstractBleScanManager.State.Stopped)
     }
 
     private fun generateRandomBle(bleDevice: BleDevice): BleGatt {
@@ -148,16 +145,16 @@ class FakeBleManager : BleManagerInterface {
         return BleGatt(bleDevice, services)
     }
 
-    override fun connect(address: String): BleGatt? {
+    override fun connectBle(address: String): BleGatt? {
         Log.d(logTag, "connect($address)")
-        scanResults.find { it.device.address == address }?.let { scanResult ->
+        bleScanResults.find { it.device.address == address }?.let { scanResult ->
             val bleGatt = generateRandomBle(scanResult.device)
-            mutableStateFlowConnectState.tryEmit(BleGattManager.State.Connected)
-            mutableStateFlowBleGatt.tryEmit(bleGatt)
+            mutableStateFlowConnectState.tryEmit(AbstractBleGattManager.State.Connected)
+            // mutableStateFlowBluetoothGatt.tryEmit(bleGatt)
             scope.launch {
-                mutableStateFlowConnectState.tryEmit(BleGattManager.State.Connecting)
+                mutableStateFlowConnectState.tryEmit(AbstractBleGattManager.State.Connecting)
                 delay(Random.nextLong(300, 1500))
-                mutableStateFlowConnectState.tryEmit(BleGattManager.State.Connected)
+                mutableStateFlowConnectState.tryEmit(AbstractBleGattManager.State.Connected)
             }
 
             return bleGatt
@@ -169,31 +166,18 @@ class FakeBleManager : BleManagerInterface {
     override fun disconnect() {
         Log.d(logTag, "disconnect()")
         scope.launch {
-            mutableStateFlowConnectState.tryEmit(BleGattManager.State.Disconnecting)
+            mutableStateFlowConnectState.tryEmit(AbstractBleGattManager.State.Disconnecting)
             delay(Random.nextLong(100, 500))
-            mutableStateFlowConnectState.tryEmit(BleGattManager.State.Disconnected)
-            mutableStateFlowBleGatt.tryEmit(null)
+            mutableStateFlowConnectState.tryEmit(AbstractBleGattManager.State.Disconnected)
+            // mutableStateFlowBleGatt.tryEmit(null)
         }
     }
 
-    override fun writeGattData(bleGattData: BleGattItem) {
+    override fun addGattData(bleGattData: BleGattItem) {
 
-    }
-
-    override fun readCharacteristic(bluetoothGattCharacteristic: BluetoothGattCharacteristic) : Boolean {
-        return  false
-
-    }
-
-    override fun readGattData(bleGattData: BleGattItem): Boolean {
-        return false
     }
 
     override fun notifyCharacteristic(bleGattData: BleGattItem) { }
-
-    override fun readDescriptor(bluetoothGattDescriptor: BluetoothGattDescriptor) : Boolean {
-        return false
-    }
 
     override fun notifyCharacteristic(
         bluetoothGattCharacteristic: BluetoothGattCharacteristic) {
@@ -201,5 +185,9 @@ class FakeBleManager : BleManagerInterface {
 
     override fun isCharacteristicNotified(bluetoothGattCharacteristic: BluetoothGattCharacteristic): Boolean {
         return true
+    }
+
+    override fun onDestroy() {
+        
     }
 }
