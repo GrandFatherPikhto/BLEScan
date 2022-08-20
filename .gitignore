@@ -13,5 +13,4 @@
 .externalNativeBuild
 .cxx
 local.properties
-/links.py
-/.linktemp/
+/.linktemp/.backup/
