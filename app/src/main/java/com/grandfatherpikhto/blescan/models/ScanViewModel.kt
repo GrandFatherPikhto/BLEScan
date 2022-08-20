@@ -1,18 +1,16 @@
 package com.grandfatherpikhto.blescan.models
 
-import android.bluetooth.BluetoothGattCharacteristic
-import android.bluetooth.BluetoothGattDescriptor
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.grandfatherpikhto.blin.BleManagerInterface
-import com.grandfatherpikhto.blin.BleScanManager
-import com.grandfatherpikhto.blin.data.BleScanResult
+import com.grandfatherpikhto.blin.orig.AbstractBleScanManager
+import com.grandfatherpikhto.blescan.blemanager.AppBleManager
+import com.grandfatherpikhto.blescan.data.BleScanResult
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
 class ScanViewModel() : ViewModel() {
     private val mutableSharedFlowScanResult     = MutableSharedFlow<BleScanResult>(replay = 100)
-    private val mutableStateFLowScanState       = MutableStateFlow(BleScanManager.State.Stopped)
+    private val mutableStateFLowScanState       = MutableStateFlow(AbstractBleScanManager.State.Stopped)
     private val mutableStateFlowScanError       = MutableStateFlow(-1)
 
     val sharedFlowScanResult     get() = mutableSharedFlowScanResult.asSharedFlow()
@@ -21,7 +19,7 @@ class ScanViewModel() : ViewModel() {
     val stateFlowScanError       get() = mutableStateFlowScanError.asStateFlow()
     val scanError                get() = mutableStateFlowScanError.value
 
-    fun changeBleManager(bleManager: BleManagerInterface) {
+    fun changeBleManager(bleManager: AppBleManager) {
         viewModelScope.launch {
             bleManager.sharedFlowBleScanResult.collect {
                 mutableSharedFlowScanResult.tryEmit(it)
