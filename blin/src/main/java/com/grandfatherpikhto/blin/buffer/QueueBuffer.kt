@@ -30,6 +30,7 @@ class QueueBuffer (dispatcher: CoroutineDispatcher = Dispatchers.IO) {
     private fun nextCharacteristic(bleGattItem: BleGattItem) : Boolean {
         bluetoothGatt?.let { gatt ->
             bleGattItem.getCharacteristic(gatt)?.let { characteristic ->
+                Log.d(tagLog, "nextCharacteristic($bleGattItem)")
                 when (bleGattItem.type) {
                     BleGattItem.Type.Write -> {
                         characteristic.value = bleGattItem.value
@@ -65,13 +66,12 @@ class QueueBuffer (dispatcher: CoroutineDispatcher = Dispatchers.IO) {
     }
 
 
-    private fun nextGattData(bleGattData: BleGattItem) : Boolean {
-        return if (bleGattData.uuidDescriptor == null) {
-            nextCharacteristic(bleGattData)
+    private fun nextGattData(bleGattItem: BleGattItem) : Boolean =
+        if (bleGattItem.uuidDescriptor == null) {
+            nextCharacteristic(bleGattItem)
         } else {
-            nextDescriptor(bleGattData)
+            nextDescriptor(bleGattItem)
         }
-    }
 
     private fun nextBufferGattData(bleGattData: BleGattItem) {
         Log.d(tagLog, "nextBufferGattData($bleGattData, ${buffer.peek()})")
@@ -86,6 +86,7 @@ class QueueBuffer (dispatcher: CoroutineDispatcher = Dispatchers.IO) {
     fun onCharacteristicWrite (gatt: BluetoothGatt?,
                                characteristic: BluetoothGattCharacteristic?,
                                status: Int) {
+        Log.d(tagLog, "onCharacteristicWrite(${characteristic?.uuid})")
         if (status == BluetoothGatt.GATT_SUCCESS) {
             if (gatt != null && characteristic != null) {
                 nextBufferGattData(BleGattItem(characteristic, BleGattItem.Type.Write))
@@ -100,7 +101,7 @@ class QueueBuffer (dispatcher: CoroutineDispatcher = Dispatchers.IO) {
     fun onDescriptorWrite (gatt: BluetoothGatt?,
                            descriptor: BluetoothGattDescriptor?,
                            status: Int?) {
-
+        Log.d(tagLog, "onDescriptorWrite(${descriptor?.uuid})")
         if (status == BluetoothGatt.GATT_SUCCESS) {
             if (gatt != null && descriptor != null) {
                 nextBufferGattData(BleGattItem(descriptor, BleGattItem.Type.Write))
@@ -117,6 +118,7 @@ class QueueBuffer (dispatcher: CoroutineDispatcher = Dispatchers.IO) {
         characteristic: BluetoothGattCharacteristic?,
         status: Int
     ) {
+        Log.d(tagLog, "onCharacteristicRead(${characteristic?.uuid})")
         if (status == BluetoothGatt.GATT_SUCCESS) {
             if (gatt != null && characteristic != null) {
                 nextBufferGattData(BleGattItem(characteristic, BleGattItem.Type.Read))
@@ -133,6 +135,7 @@ class QueueBuffer (dispatcher: CoroutineDispatcher = Dispatchers.IO) {
         descriptor: BluetoothGattDescriptor?,
         status: Int
     ) {
+        Log.d(tagLog, "onDescriptorRead(${descriptor?.uuid})")
         if (status == BluetoothGatt.GATT_SUCCESS) {
             if (gatt != null && descriptor != null) {
                 nextBufferGattData(BleGattItem(descriptor, BleGattItem.Type.Read))
@@ -145,7 +148,6 @@ class QueueBuffer (dispatcher: CoroutineDispatcher = Dispatchers.IO) {
     }
 
     fun addGattData(bleGattItem: BleGattItem) {
-        Log.d(tagLog, "addGattData($bleGattItem)")
         buffer.enqueue(bleGattItem)
         if (buffer.count == 1) {
             nextGattData(bleGattItem)
