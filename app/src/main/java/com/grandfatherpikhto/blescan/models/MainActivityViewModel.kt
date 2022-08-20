@@ -1,7 +1,7 @@
 package com.grandfatherpikhto.blescan.models
 
 import androidx.lifecycle.ViewModel
-import com.grandfatherpikhto.blin.data.BleScanResult
+import com.grandfatherpikhto.blescan.data.BleScanResult
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
