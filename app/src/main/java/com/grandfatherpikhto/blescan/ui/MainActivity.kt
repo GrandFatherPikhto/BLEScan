@@ -13,13 +13,14 @@ import androidx.navigation.findNavController
 import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.navigateUp
 import androidx.navigation.ui.setupActionBarWithNavController
-import com.grandfatherpikhto.blin.BleManager
 import com.grandfatherpikhto.blin.BleManagerInterface
 import com.grandfatherpikhto.blin.permissions.RequestPermissions
 import com.grandfatherpikhto.blescan.BleScanApp
 import com.grandfatherpikhto.blescan.R
+import com.grandfatherpikhto.blescan.blemanager.AppBleManager
+import com.grandfatherpikhto.blescan.blemanager.MainBleManager
 import com.grandfatherpikhto.blescan.databinding.ActivityMainBinding
-import com.grandfatherpikhto.blescan.fake.FakeBleManager
+import com.grandfatherpikhto.blescan.blemanager.FakeBleManager
 import com.grandfatherpikhto.blescan.helper.linkMenu
 import com.grandfatherpikhto.blescan.models.MainActivityViewModel
 import kotlinx.coroutines.flow.filterNotNull
@@ -34,7 +35,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var appBarConfiguration: AppBarConfiguration
     private lateinit var binding: ActivityMainBinding
 
-    private lateinit var bleManager:BleManagerInterface
+    private lateinit var bleManager : AppBleManager
 
     private val mainActivityViewModel by viewModels<MainActivityViewModel>()
 
@@ -76,6 +77,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         linkMenu(false, menuProvider)
+        bleManager.onDestroy()
         super.onDestroy()
     }
 
@@ -105,12 +107,12 @@ class MainActivity : AppCompatActivity() {
             fake = extras.getBoolean(FAKE, false)
         }
 
-        if (fake) {
-            bleManager = FakeBleManager()
+        bleManager = if (fake) {
+            FakeBleManager(applicationContext)
         } else {
-            bleManager = BleManager(applicationContext)
+            MainBleManager(applicationContext)
         }
+
         (applicationContext as BleScanApp).bleManager = bleManager
-        lifecycle.addObserver(bleManager)
     }
 }
