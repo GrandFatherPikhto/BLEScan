@@ -1,5 +1,6 @@
 package com.grandfatherpikhto.blin.receivers
 
+import android.annotation.SuppressLint
 import android.app.PendingIntent
 import android.bluetooth.le.BluetoothLeScanner
 import android.bluetooth.le.ScanResult
@@ -13,6 +14,7 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 
+@SuppressLint("UnspecifiedImmutableFlag")
 class BcScanReceiver constructor(private val bleScanManager: AbstractBleScanManager, dispatcher: CoroutineDispatcher = Dispatchers.IO): BroadcastReceiver() {
     companion object {
         const val ACTION_BLE_SCAN = "com.grandfatherpikhto.blescan.ACTION_BLE_SCAN"
@@ -26,13 +28,12 @@ class BcScanReceiver constructor(private val bleScanManager: AbstractBleScanMana
     /**
      * Почему Missing PendingIntent mutability flag?
      */
-    @Suppress("UnspecifiedImmutableFlag")
     private val bcPendingIntent: PendingIntent by lazy {
         return@lazy PendingIntent.getBroadcast(
             bleScanManager.applicationContext,
             REQUEST_CODE_BLE_SCANNER_PENDING_INTENT,
             Intent(ACTION_BLE_SCAN),
-            PendingIntent.FLAG_IMMUTABLE
+            PendingIntent.FLAG_UPDATE_CURRENT
         )
     }
 
