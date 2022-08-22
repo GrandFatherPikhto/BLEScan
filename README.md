@@ -42,7 +42,7 @@
 
     Однако, это далеко не всегда помогает.
 
-    Цитирую дословно [Мартина Велле](https://medium.com/@martijn.van.welie/making-android-ble-work-part-2-47a3cdaade07): 
+    Цитирую дословно [Мартейна Велле](https://medium.com/@martijn.van.welie/making-android-ble-work-part-2-47a3cdaade07):
     > «Чтобы узнать, было ли кэшировано устройство, вы можете использовать небольшой трюк. После создания BluetoothDevice вы должны сделать это, getType() и если он вернет TYPE_UNKNOWN, устройство явно не закэшировано.
 
     Это решение, придуманно программистами NordicSemiconductor: в качестве значения `autoConnect` использовать
@@ -94,7 +94,7 @@
 
     ```#define  GATT_ERROR                          0x85```
 
-    Опять-таки, у Мартина ван Вилли говорится, что в этом случае, нужно просканировать устройство с фильтром по его mac-адресу (используя неагрессивный режим сканирования). После этого можно снова использовать автоподключение»
+    Опять-таки, у Мартейна ван Велле говорится, что в этом случае, нужно просканировать устройство с фильтром по его mac-адресу (используя неагрессивный режим сканирования). После этого можно снова использовать автоподключение»
     [Мартин Веллие](https://medium.com/@martijn.van.welie/making-android-ble-work-part-2-47a3cdaade07) пишет, что при возврате такой ошибки надо пересканировать устройство и повторить попытку подключения.
 
 3. [Проблема работы фильтров при сканировании BLE устройств](https://stackoverflow.com/questions/34065210/android-ble-device-scan-with-filter-is-not-working/34092300), так до сих пор и не решена. Это известная «умолчанка» про [BluetoothLeScanner](https://developer.android.com/reference/android/bluetooth/le/BluetoothLeScanner) висит в списке issues уже лет десять. Так же, официально не заявлено, что при шестикратном повторном запуске сканирования, сканирование вообще блокируется на минуту.
@@ -236,13 +236,13 @@
    3. [Making Android BLE work — part 3 // Martin van Welie](https://medium.com/@martijn.van.welie/making-android-ble-work-part-3-117d3a8aee23?source=user_profile---------1-------------------------------) Мартейн ван Велли. Часть 3. чтение/запись характеристик; включение/выключение уведомлений
    4. [Making Android BLE work — part 4 // Martin van Welie](https://medium.com/@martijn.van.welie/making-android-ble-work-part-4-72a0b85cb442?source=user_profile---------0-------------------------------) Мартейн ван Велли. Часть 4. Сопряжение с устройствами
    5. Есть отличный перевод этого цикла на Хабре:
-      1. [Перевод статьи Мартина ван Велле](https://habr.com/ru/post/536392/) Часть 1. Сканирование
-      2. [Перевод статьи Мартина ван Велле](https://habr.com/ru/post/536392/) Часть 2. Подключение/Отключение
-      3. [Перевод статьи Мартина ван Велле](https://habr.com/ru/post/536392/) Часть 3. Чтение/Запись характеристик
-      4. [Перевод статьи Мартина ван Велле](https://habr.com/ru/post/536392/) Часть 4.Чтение/Запись характеристик. Очереди. Включение/Выключение уведомлений характеристик
-   6. Библиотеки Мартина ван Велли
+      1. [Перевод статьи Мартейна ван Велле. Часть 1.](https://habr.com/ru/post/536392/) Сканирование
+      2. [Перевод статьи Мартейна ван Велле. Часть 2.](https://habr.com/ru/post/537526/) Подключение/Отключение
+      3. [Перевод статьи Мартейна ван Велле. Часть 3.](https://habr.com/ru/post/538768/) Чтение/Запись характеристик
+      4. [Перевод статьи Мартейна ван Велле. Часть 4.](https://habr.com/ru/post/539740/) Сопряжение. Очереди. Включение/Выключение уведомлений характеристик
+   6. Библиотеки Мартейна ван Велле
       1. [Wellie Blessed](https://github.com/weliem/blessed-android) — Библиотека для Андроид Blessed (Java)
-      2. [Wellie Blessed Coroutine](https://github.com/weliem/blessed-android-coroutines) — Библиотека Мартейна ван Велли Blessed на Котлин
+      2. [Wellie Blessed Coroutine](https://github.com/weliem/blessed-android-coroutines) — Библиотека Мартейна ван Велле Blessed на Котлин
 
 4. Существует небольшой, но очень дельный ~~китаёзный~~ гайд [Chee Yi Ong](https://punchthrough.com/author/cong/) — [The Ultimate Guide to Android Bluetooth Low Energy](https://punchthrough.com/android-ble-guide/). Настоятельно рекомендую для чтения, если Вы всё-таки решили «залезть» в тему BLE.
     Можно с уверенностью утверждать, что если Вы будете следовать в разработке своей библиотеки рекомендациям эти руководства, Ваше приложение будет работать хотя бы на 80% современных мобильных устройств, учитывая что особо не хочется поддерживать всё, что ниже версии Marshmallow (хотя, это не так уж и трудно — описано довольно подробно) и на 12-й версии описывают какие-то трудно объяснимые проблемы.
@@ -330,7 +330,9 @@
                   filterRepeatable: Boolean = false,
                   stopTimeout: Long = 0L
     ) : Boolean {
-        ...
+        // ...
+        return true
+    }
 ```
 
 Фильтрация по адресу ```addresses: List<String>``` понадобится при подключении к устройству. Как и было сказано, часто случается, так, что метод
@@ -354,7 +356,7 @@
    В этом случае надо создать статические «получатели» [PendingIntent()](https://developer.android.com/reference/android/app/PendingIntent), в классе, наследованном от [BroadcastReceiver()](https://developer.android.com/reference/android/content/BroadcastReceiver):
 
    ```kotlin
-   ...
+    // ...
     companion object Receiver {
         private const val TAG="BleScanReceiver"
         private const val ACTION_BLE_SCAN = "com.rqd.testscanbt.ACTION_BLE_SCAN"
@@ -382,7 +384,7 @@
     }
 
     private var bleScanManager:BleScanManager? = null
-    ...
+    // ...
    ```
 
    В этом случае, нам остаётся получить в [BleScanManager.kt](https://github.com/GrandFatherPikhto/BLEScan/blob/master/blin/src/main/java/com/grandfatherpikhto/blin/BleScanManager.kt) экземпляр Намерения при помощи обращения к ленивому неизменяемому свойству bleScanPendingIntent
@@ -582,7 +584,7 @@ fun mockBluetoothDevice(name: String? = null, address: String? = null): Bluetoot
 
     return bluetoothDevice
 }
-...
+// ...
 ```
 
 Так, что код проверки ставится очень простым. Например, можно посмотреть состояние ```bleScanManager.flowState``` после запуска сканирования. Запустить набор сгенерированных BluetoothDevices, проверить список отфильтрованных устройств на совпадение. Проверить, остановилось ли сканирование ```bleScanManager.flowState```
@@ -650,7 +652,7 @@ dependicies {
     ```kotlin
     mock<BluetoothDevice> { bluetoothDevice ->
         on { bluetoothDevice.name } doReturn name
-        ...
+        // ...
     }
     ```
 
@@ -679,13 +681,16 @@ class BleGattManager constructor(private val context: Context,
                                  private val bleScanManager: BleScanManager,
                                  dispatcher: CoroutineDispatcher = Dispatchers.IO)
     : DefaultLifecycleObserver {
-        ...
+        // ...
+    }
 ```
 
 главные методы этого класса — подключение к устройству с указанным адресом
 
 ```kotlin
-connect(address: String)
+connect(address: String) {
+    // ...
+}
 ```
 
 и отключение
@@ -870,14 +875,14 @@ data class BleGattItem (val uuidService: UUID,
                         val uuidDescriptor: UUID? = null,
                         val value:ByteArray? = null,
 ) {
-    ...
+    // ...
     constructor(bluetoothGattDescriptor: BluetoothGattDescriptor) :
             this(uuidService = bluetoothGattDescriptor.characteristic.service.uuid,
                 uuidCharacteristic = bluetoothGattDescriptor.characteristic.uuid,
                 uuidDescriptor = bluetoothGattDescriptor.uuid,
                 value = bluetoothGattDescriptor.value,
             )
-    ...
+    // ...
     fun getDescriptor(bluetoothGatt: BluetoothGatt) : BluetoothGattDescriptor? =
         if (uuidCharacteristic == null && uuidDescriptor == null) {
             null
@@ -888,6 +893,7 @@ data class BleGattItem (val uuidService: UUID,
                 }
             }
         }
+        // ...
 ```
 
 За счёт дополнительных конструкторов можно инициализировать данные из объектов [BluetoothGattService](https://developer.android.com/reference/android/bluetooth/BluetoothGattService), [BluetoothGattCharacteristic](https://developer.android.com/reference/android/bluetooth/BluetoothGattCharacteristic), [BluetoothGattDescriptor](https://developer.android.com/reference/android/bluetooth/BluetoothGattDescriptor). Соответственно, сделано три функции для получения Сервиса, Характеристики и Дескриптора, что несложно при наличии объекта [BluetoothGatt](https://developer.android.com/reference/android/bluetooth/BluetoothGatt). Объекты [BluetoothGattService](https://developer.android.com/reference/android/bluetooth/BluetoothGattService), [BluetoothGattCharacteristic](https://developer.android.com/reference/android/bluetooth/BluetoothGattCharacteristic), [BluetoothGattDescriptor](https://developer.android.com/reference/android/bluetooth/BluetoothGattDescriptor),как ни странно прекрасно генерируются без всякого «мокания». Подменный объект [BleGattItem](https://github.com/GrandFatherPikhto/BLEScan/blob/master/blin/src/main/java/com/grandfatherpikhto/blin/data/BleGattItem.kt) сделан не из отладочных соображений, а для того, чтобы не использовать в очереди разнородные объекты и, упаси Вселенная, тип `Any`. Отладка с таким типом — тот ещё ад.
@@ -915,6 +921,9 @@ data class BleGattItem (val uuidService: UUID,
                 return gatt.writeDescriptor(descriptor)
             }
         }
+        // ...
+        return true
+    }
 ```
 
 Остаётся дождаться уведомления [onCharacteristicWrite](https://developer.android.com/reference/android/bluetooth/BluetoothGattCallback#onCharacteristicWrite(android.bluetooth.BluetoothGatt,%20android.bluetooth.BluetoothGattCharacteristic,%20int))/[onDescriptorWrite](https://developer.android.com/reference/android/bluetooth/BluetoothGattCallback#onDescriptorWrite(android.bluetooth.BluetoothGatt,%20android.bluetooth.BluetoothGattDescriptor,%20int)) от наследника [BluetoothGattCallback](https://developer.android.com/reference/android/bluetooth/BluetoothGattCallback) и убрать соответствующее значение из очереди.
@@ -932,10 +941,10 @@ data class BleGattItem (val uuidService: UUID,
         if ( context != null && intent != null ) {
             when (intent.action) {
                 BluetoothDevice.ACTION_BOND_STATE_CHANGED -> {
-                    val bondState: Int = intent.getIntExtra(BluetoothDevice.EXTRA_BOND_STATE, -1);
+                    val bondState: Int = intent.getIntExtra(BluetoothDevice.EXTRA_BOND_STATE, -1)
                     val previousBondState: Int =
-                        intent.getIntExtra(BluetoothDevice.EXTRA_PREVIOUS_BOND_STATE, -1);
-                    val bluetoothDevice: BluetoothDevice? =
+                        intent.getIntExtra(BluetoothDevice.EXTRA_PREVIOUS_BOND_STATE, -1)
+                    val bluetoothDevice: BluetoothDevice =
                         intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE)
                     // Log.d(TAG, "ACTION_BOND_STATE_CHANGED(${device?.address}): $previousBondState => $bondState")
                     bleBondManager.onSetBondingDevice(bluetoothDevice, previousBondState, bondState)
@@ -1029,7 +1038,7 @@ data class BleGattItem (val uuidService: UUID,
 
 На всякий случай, оставлен `closeable = MockitoAnnotations.openMocks(this)`, чтобы можно было использовать аннотирование [Mockito](https://site.mockito.org/).
 
-Теперь, есть возможность провести самое «глубинное» тестирование, которого в «чистом» [Mockito](https://site.mockito.org/) или [MockK](https://mockk.io) добиться довольно... громоздко. Т.е., можно отправить интенцию (Намерение [Intent]()), принять её в [BroadcastReceiver](https://developer.android.com/reference/android/content/BroadcastReceiver) и отследить всю цепочку до подтверждения или отказа от сопряжения устройства:
+Теперь, есть возможность провести самое «глубинное» тестирование, которого в «чистом» [Mockito](https://site.mockito.org/) или [MockK](https://mockk.io) добиться довольно... громоздко. Т.е., можно отправить интенцию (Намерение [Intent](https://developer.android.com/reference/android/content/Intent)), принять её в [BroadcastReceiver](https://developer.android.com/reference/android/content/BroadcastReceiver) и отследить всю цепочку до подтверждения или отказа от сопряжения устройства:
 
 
 ```kotlin
@@ -1109,9 +1118,9 @@ class BleManager constructor(private val context: Context,
 
     override val scanResults get() = bleScanManager.scanResults.map { BleScanResult(it) }
 
-    ....
+    // ...
 
-        override
+    override
     fun startScan(addresses: List<String>,
                   names: List<String>,
                   services: List<String>,
@@ -1133,8 +1142,8 @@ class BleManager constructor(private val context: Context,
 
     override fun disconnect() = bleGattManager.disconnect()
 
-    ....
-
+    // ...
+ }
 ```
 
 `Сервис взаимодействия с BLE устройством создан`
@@ -1586,16 +1595,16 @@ Fix: Replace with androidx.fragment.app.FragmentContainerView
 
 ## Материалы
 
-1. [Все работы Мартина Ван Велле](https://medium.com/@martijn.van.welie) Самое толковое и подробное описание работы с Bluetooth BLE, с кучей ссылок на различные источники.
+1. [Все работы Мартейна Ван Велле](https://medium.com/@martijn.van.welie) Самое толковое и подробное описание работы с Bluetooth BLE, с кучей ссылок на различные источники.
    Подробно о сканировании устройств. Почему-то не отражена проблема сканирования устройств с фильтрами.
 2. [Making Android BLE work — part 1 // Martijn van Welie](https://medium.com/@martijn.van.welie/making-android-ble-work-part-1-a736dcd53b02?source=user_profile---------3-------------------------------) Часть 1. Как заставить Android BLE работать - часть 1
 3. [Making Android BLE work — part 2 // Martijn van Welie](https://medium.com/@martijn.van.welie/making-android-ble-work-part-2-47a3cdaade07?source=user_profile---------2-------------------------------) Часть 2. Подключение, отключение, исследование сервисов
 4. [Making Android BLE work — part 3 // Martijn van Welie](https://medium.com/@martijn.van.welie/making-android-ble-work-part-3-117d3a8aee23?source=user_profile---------1-------------------------------) Часть 3. чтение/запись характеристик; включение/выключение уведомлений
 5. [Making Android BLE work — part 4 // Martijn van Welie](https://medium.com/@martijn.van.welie/making-android-ble-work-part-4-72a0b85cb442?source=user_profile---------0-------------------------------) Часть 4. Сопряжение с устройствами
-6. [Перевод статьи Мартина ван Велле](https://habr.com/ru/post/536392/) Часть 1. Сканирование
-7. [Перевод статьи Мартина ван Велле](https://habr.com/ru/post/536392/) Часть 2. Подключение/Отключение
-8. [Перевод статьи Мартина ван Велле](https://habr.com/ru/post/536392/) Часть 3. Чтение/Запись характеристик
-9. [Перевод статьи Мартина ван Велле](https://habr.com/ru/post/536392/) Часть 4. Сопряжение устройств
+6. [Перевод статьи Мартейна ван Велле. Часть 1.](https://habr.com/ru/post/536392/)  Сканирование
+7. [Перевод статьи Мартейна ван Велле. Часть 2.](https://habr.com/ru/post/537526/)  Подключение/Отключение
+8. [Перевод статьи Мартейна ван Велле. Часть 3.](https://habr.com/ru/post/538768/) Чтение/Запись характеристик
+9. [Перевод статьи Мартейна ван Велле. Часть 4.](https://habr.com/ru/post/539740/) Сопряжение устройств
 10. [BLESSED](https://github.com/weliem/blessed-android) A very compact Bluetooth Low Energy (BLE) library for Android 5 and higher, that makes working with BLE on Android very easy.
 11. [BLESSED](https://github.com/weliem/blessed-android) A very compact Bluetooth Low Energy (BLE) library for Android 8 and higher, that makes working with BLE on Android very easy. It is powered by Kotlin's Coroutines and turns asynchronous GATT methods into synchronous methods! It is based on the Blessed Java library and has been rewritten in Kotlin using Coroutines.
 12. [(Talk) Bluetooth Low Energy On Android // Stuart Kent](https://www.stkent.com/2017/09/18/ble-on-android.html) (Обсуждение) Bluetooth Low Energy на Android // Стюарт Кент //
