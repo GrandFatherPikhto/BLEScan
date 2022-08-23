@@ -18,6 +18,8 @@ class QueueBuffer (dispatcher: CoroutineDispatcher = Dispatchers.IO) {
     private val buffer = MutableListQueue<BleGattItem>()
     private val bufferMutex = Mutex(locked = false)
 
+    val count get() = buffer.count
+
     var bluetoothGatt:BluetoothGatt? by Delegates.observable(null) { _, _, newValue ->
         newValue?.let { _ ->
             buffer.peek()?.let { nextGattData ->
