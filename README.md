@@ -268,8 +268,6 @@
 
 ## BLIN (Bluetooth Interface)
 
-## Класс сканирования устройств [BtLeScanner](./app/src/main/java/com/grandfatherpikhto/blescan/service/BtLeScanner.kt)
-
 Библиотека состоит из четырёх основных модулей:
 
 1. [BleManager.kt](https://github.com/GrandFatherPikhto/BLEScan/blob/master/blin/src/main/java/com/grandfatherpikhto/blin/BleManager.kt)
@@ -688,15 +686,18 @@ class BleGattManager constructor(private val context: Context,
 главные методы этого класса — подключение к устройству с указанным адресом
 
 ```kotlin
-connect(address: String) {
+fun connect(address:String):BlutoothGatt? {
     // ...
+    return null
 }
 ```
 
 и отключение
 
 ```kotlin
-disconnect()
+fun disconnect() {
+    // ...
+}
 ```
 
 Причём, отключение реализуется в ждущем режиме: пока не будет получено уведомление об отключении, объект класса не разрушается. Это связано с тем, что внутренний счётчик подключений системы Андроид может переполниться и подключение к устройству будет постоянно возвращать ошибку `6`.
@@ -875,25 +876,28 @@ data class BleGattItem (val uuidService: UUID,
                         val uuidDescriptor: UUID? = null,
                         val value:ByteArray? = null,
 ) {
-    // ...
-    constructor(bluetoothGattDescriptor: BluetoothGattDescriptor) :
-            this(uuidService = bluetoothGattDescriptor.characteristic.service.uuid,
-                uuidCharacteristic = bluetoothGattDescriptor.characteristic.uuid,
-                uuidDescriptor = bluetoothGattDescriptor.uuid,
-                value = bluetoothGattDescriptor.value,
-            )
-    // ...
-    fun getDescriptor(bluetoothGatt: BluetoothGatt) : BluetoothGattDescriptor? =
-        if (uuidCharacteristic == null && uuidDescriptor == null) {
-            null
-        } else {
-            bluetoothGatt.getService(uuidService)?.let { service ->
-                service.getCharacteristic(uuidCharacteristic)?.let { characteristic ->
-                    characteristic.getDescriptor(uuidDescriptor)
-                }
+   // ...
+   constructor(bluetoothGattDescriptor: BluetoothGattDescriptor) :
+           this(
+              uuidService = bluetoothGattDescriptor.characteristic.service.uuid,
+              uuidCharacteristic = bluetoothGattDescriptor.characteristic.uuid,
+              uuidDescriptor = bluetoothGattDescriptor.uuid,
+              value = bluetoothGattDescriptor.value,
+           )
+
+   // ...
+   fun getDescriptor(bluetoothGatt: BluetoothGatt): BluetoothGattDescriptor? =
+      if (uuidCharacteristic == null && uuidDescriptor == null) {
+         null
+      } else {
+         bluetoothGatt.getService(uuidService)?.let { service ->
+            service.getCharacteristic(uuidCharacteristic)?.let { characteristic ->
+               characteristic.getDescriptor(uuidDescriptor)
             }
-        }
-        // ...
+         }
+      }
+   // ...
+}
 ```
 
 За счёт дополнительных конструкторов можно инициализировать данные из объектов [BluetoothGattService](https://developer.android.com/reference/android/bluetooth/BluetoothGattService), [BluetoothGattCharacteristic](https://developer.android.com/reference/android/bluetooth/BluetoothGattCharacteristic), [BluetoothGattDescriptor](https://developer.android.com/reference/android/bluetooth/BluetoothGattDescriptor). Соответственно, сделано три функции для получения Сервиса, Характеристики и Дескриптора, что несложно при наличии объекта [BluetoothGatt](https://developer.android.com/reference/android/bluetooth/BluetoothGatt). Объекты [BluetoothGattService](https://developer.android.com/reference/android/bluetooth/BluetoothGattService), [BluetoothGattCharacteristic](https://developer.android.com/reference/android/bluetooth/BluetoothGattCharacteristic), [BluetoothGattDescriptor](https://developer.android.com/reference/android/bluetooth/BluetoothGattDescriptor),как ни странно прекрасно генерируются без всякого «мокания». Подменный объект [BleGattItem](https://github.com/GrandFatherPikhto/BLEScan/blob/master/blin/src/main/java/com/grandfatherpikhto/blin/data/BleGattItem.kt) сделан не из отладочных соображений, а для того, чтобы не использовать в очереди разнородные объекты и, упаси Вселенная, тип `Any`. Отладка с таким типом — тот ещё ад.
@@ -930,7 +934,109 @@ data class BleGattItem (val uuidService: UUID,
 
 ## Юнит-тестирование [BleGattManager](https://github.com/GrandFatherPikhto/BLEScan/blob/master/blin/src/main/java/com/grandfatherpikhto/blin/BleGattManager.kt)
 
-Используется, опять-таки [Shadow]()
+Используется, опять-таки [Shadow](http://robolectric.org/extending/) из пакета [Robolectric](http://robolectric.org/androidx_test/). Правда, придётся создать собственную `Тень` [BluetoothGatt](https://developer.android.com/reference/android/bluetooth/BluetoothGatt):
+
+```Kotlin
+@SuppressLint("PrivateApi")
+@SuppressWarnings("unchecked")
+@Implements(BluetoothGatt::class)
+class ShadowBluetoothGatt {
+    companion object {
+        private var bluetoothGatt:BluetoothGatt? = null
+        fun newInstance(bluetoothDevice: BluetoothDevice):BluetoothGatt
+            = bluetoothGatt ?: Shadow.newInstanceOf(BluetoothGatt::class.java,
+        ).let { gatt ->
+            bluetoothGatt = gatt
+            gatt
+        }
+    }
+
+    private val mutableListServices = mutableListOf<BluetoothGattService>()
+
+    init {
+        (1..Random.nextInt(2,5)).forEach { _ ->
+            val service = BluetoothGattService(UUID.randomUUID(), BluetoothGattService.SERVICE_TYPE_PRIMARY)
+            (1..Random.nextInt(2,5)).forEach { _ ->
+                val characteristic = BluetoothGattCharacteristic(UUID.randomUUID(),
+                    BluetoothGattCharacteristic.PROPERTY_NOTIFY
+                        .or(BluetoothGattCharacteristic.PROPERTY_READ)
+                        .or(BluetoothGattCharacteristic.PROPERTY_WRITE),
+                    0
+                    )
+                service.addCharacteristic(characteristic)
+            }
+            mutableListServices.add(service)
+        }
+    }
+
+    val services: ArrayList<BluetoothGattService>
+        get() = mutableListServices as ArrayList<BluetoothGattService>
+
+    fun getService(uuid: UUID) : BluetoothGattService? =
+        mutableListServices.find { it.uuid == uuid }
+   // ...
+ }
+```
+
+Не забываем аннотацию `@Implements(BluetoothGatt::class)`, иначе получим ворох ошибок.
+
+Пользовательскую тень пришлось создать потому, что в [BleGattItem](https://github.com/GrandFatherPikhto/BLEScan/blob/master/blin/src/main/java/com/grandfatherpikhto/blin/data/BleGattItem.kt) используются методы `getService(bluetoothGatt: BluetoothGatt)`, `getCharacteristic(bluetoothGatt: BluetoothGatt)` и `getDescriptor(bluetoothGatt: BluetoothGatt)`. Это связано с тем, что в списке очереди хранятся только [UUID](https://developer.android.com/reference/java/util/UUID)'ы Сервиса, Характеристики и Дескриптора. Если [UUID](https://developer.android.com/reference/java/util/UUID) дескриптора равен `null`, значит в [BleGattItem](https://github.com/GrandFatherPikhto/BLEScan/blob/master/blin/src/main/java/com/grandfatherpikhto/blin/data/BleGattItem.kt) хранится Характеристика, если [UUID](https://developer.android.com/reference/java/util/UUID)'ы Дескриптора и Характеристики равны `null`, в объекте хранится сервис. Так сделано, чтобы не использовать тип [Any](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-any/) и хранить в списке объекты всех необходимых типов.
+
+Конструкторы [BleGattItem](https://github.com/GrandFatherPikhto/BLEScan/blob/master/blin/src/main/java/com/grandfatherpikhto/blin/data/BleGattItem.kt) выглядят так:
+
+```Kotlin
+data class BleGattItem (val uuidService: UUID,
+                        val uuidCharacteristic: UUID? = null,
+                        val uuidDescriptor: UUID? = null,
+                        val value:ByteArray? = null,
+                        val type: Type = Type.Write
+) {
+    enum class Type (val value: Int) {
+        Write(0x01),
+        Read(0x02),
+    }
+
+    // ...
+}
+```
+
+В процессе обработки очереди есть накладные расходы на вызовах типа
+
+```Kotlin
+    bluetoothGatt.getService(uuidService)
+                ?.getCharacteristic(uuidCharacteristic)
+                    ?.getDescriptor(uuidDescriptor)
+```
+
+Зато, объект получился универсальным. За счёт указания типа `Type.Read` и `Type.Write` в очереди можно запрашивать как запись Характеристики/Дескриптора, так и чтение.
+
+Осталось заполнить очередь данными. Допустим, запросами на запись Характеристики и вызвать в очереди метод `onCharacteristicWrite(gatt: BluetoothGatt?, characteristic: BluetoothGattCharacteristic?, state: Int)` с соответствующими данными. Если после всех операций очередь пуста, значит всё работает.
+
+```Kotlin
+    @Test
+    fun testQueue() = runTest (dispatcher) {
+        queueBuffer.bluetoothGatt = bluetoothGatt
+        val gattItems = mutableListOf<BleGattItem>()
+
+        (0..99).forEach { idx ->
+            val service = bluetoothGatt.services[idx.rem(bluetoothGatt.services.size)]
+            val characteristic = service.characteristics[idx.rem(service.characteristics.size)]
+            characteristic.value = Random.nextBytes(Random.nextInt(1, 10))
+            val gattItem = BleGattItem(characteristic, BleGattItem.Type.Write)
+            gattItems.add(gattItem)
+            queueBuffer.addGattData(gattItem)
+        }
+        assertEquals(100, queueBuffer.count)
+
+        gattItems.forEach { item ->
+            queueBuffer.onCharacteristicWrite(bluetoothGatt, item.getCharacteristic(bluetoothGatt), BluetoothGatt.GATT_SUCCESS)
+        }
+
+        assertEquals(0, queueBuffer.count)
+    }
+```
+
+Халтура, конечно. Неплохо бы добавить тестирование записи/чтения Характеристик/Дескрипторов.
 
 ## Менеджер сопряжения BLE-устройств [BleBondManager](https://github.com/GrandFatherPikhto/BLEScan/blob/master/blin/src/main/java/com/grandfatherpikhto/blin/BleBondManager.kt)
 
@@ -1146,11 +1252,96 @@ class BleManager constructor(private val context: Context,
  }
 ```
 
+Есть группа «абстрактных» классов [AbstractBleManager](https://github.com/GrandFatherPikhto/BLEScan/blob/master/blin/src/main/java/com/grandfatherpikhto/blin/orig/AbstractBleManager.kt), [AbstractBleScanManager](https://github.com/GrandFatherPikhto/BLEScan/blob/master/blin/src/main/java/com/grandfatherpikhto/blin/orig/AbstractBleScanManager.kt), [AbstractBleGattManager](https://github.com/GrandFatherPikhto/BLEScan/blob/master/blin/src/main/java/com/grandfatherpikhto/blin/orig/AbstractBleGattManager.kt), [AbstractBleBondManager](https://github.com/GrandFatherPikhto/BLEScan/blob/master/blin/src/main/java/com/grandfatherpikhto/blin/orig/AbstractBleBondManager.kt). От них можно наследовать собственные менеджеры подключения, сканирования и сопряжения и общий менеджер. Слово «абстрактные» взято в кавычки потому, что классы-то на самом деле конкретные. Сделаны абстрактными затем, чтобы избежать полной перегрузки всех методов при наследовании, но при этом сделать наследование необходимым и возможным создание переменной общего типа для нескольких разных менеджеров.
+
+В частности, это можно использовать для инструментального тестирования приложения, подменяя «штатный» менеджер BLE на фиктивный.
+
 `Сервис взаимодействия с BLE устройством создан`
+
+# UI
+
+## [BleScanApp](https://github.com/GrandFatherPikhto/BLEScan/blob/master/app/src/main/java/com/grandfatherpikhto/blescan/BleScanApp.kt)
+
+Используется для хранения менеджера BLE:
+
+```Kotlin
+class BleScanApp : Application() {
+    var bleManager: AppBleManager? = null
+}
+```
+
+Пришлось создать новый абстрактный класс [AppBleManager](), наследованный от [AbstractBleManager](https://github.com/GrandFatherPikhto/BLEScan/blob/master/app/src/main/java/com/grandfatherpikhto/blescan/blemanager/AppBleManager.kt). Это нужно для того, чтобы обмениваться сурроагатами [BleGatt](https://github.com/GrandFatherPikhto/BLEScan/blob/master/app/src/main/java/com/grandfatherpikhto/blescan/data/BleGatt.kt), [BleScanResult](https://github.com/GrandFatherPikhto/BLEScan/blob/master/app/src/main/java/com/grandfatherpikhto/blescan/data/BleScanResult.kt), [BleDevice](https://github.com/GrandFatherPikhto/BLEScan/blob/master/app/src/main/java/com/grandfatherpikhto/blescan/data/BleDevice.kt) и т.д.
+
+Плюс, можно создать фиктивный менеджер работы с BLE для инструментального тестирования, который тоже наследует [AppBleManager](https://github.com/GrandFatherPikhto/BLEScan/blob/master/app/src/main/java/com/grandfatherpikhto/blescan/blemanager/AppBleManager.kt), а значит, может заменить оригинальный.
+
+Поскольку «мокание» на виртуальной Java-машине мобильного телефона, крайне усечённое, здесь уже трюки [Mockito](https://site.mockito.org/), [MockK](https://mockk.io), [Robolectric](https://robolectric.org) не пройдут. Придётся обмениваться объектами, которые можно легко создавать и изменять. В этом есть свой плюс: такие объекты занимают гораздо меньше места в памяти, чем оригинальные [BluetoothGatt](https://developer.android.com/reference/android/bluetooth/BluetoothGatt), [ScanResult](https://developer.android.com/reference/android/bluetooth/le/ScanResult) и [BluetoothDevice](https://developer.android.com/reference/android/bluetooth/BluetoothDevice). Тем более если понадобятся дополнительные данные, их всегда можно добавить в класс-суррогат.
+
+В проекте не применяются [DI](https://ru.wikipedia.org/wiki/Внедрение_зависимости), типа [Dagger](https://dagger.dev) и т.д. Т.е., все инъекции делаются «врукопашную». Честно говоря, этому разумного обоснования нет. Просто, так нагляднее, что ли...
+
+## [MainActivity](https://github.com/GrandFatherPikhto/BLEScan/blob/master/app/src/main/java/com/grandfatherpikhto/blescan/ui/MainActivity.kt)
+
+Здесь инициализируется объект [AppBleManager]():
+
+```Kotlin
+private fun initBleManager() {
+        var fake = false
+        intent.extras?.let { extras ->
+            fake = extras.getBoolean(FAKE, false)
+        }
+
+        bleManager = if (fake) {
+            FakeBleManager(applicationContext)
+        } else {
+            MainBleManager(applicationContext)
+        }
+
+        (applicationContext as BleScanApp).bleManager = bleManager
+    }
+```
+
+И единственное отличие от «штатного» [MainActivity](https://github.com/GrandFatherPikhto/BLEScan/blob/master/app/src/main/java/com/grandfatherpikhto/blescan/ui/MainActivity.kt), сгенерированного мастером [AndroidStudio](https://developer.android.com/), то, что здесь используется [MenuProvider](https://developer.android.com/reference/kotlin/androidx/core/view/MenuProvider). Это гораздо удобнее устаревающего
+
+```Kotlin
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        return super.onCreateOptionsMenu(menu)
+    }
+```
+
+И хорошо тем, что во всех Фрагментах будет использоваться тот же способ. Единообразная система работы с меню безо всяких унылых ```setHasOptionsMenu(true)```.
+
+Для упрощения «прицепления» меню к Активностям и Фрагментам, сделаны дополнительные функции в [Helper](https://github.com/GrandFatherPikhto/BLEScan/blob/master/app/src/main/java/com/grandfatherpikhto/blescan/helper/Helper.kt):
+
+```Kotlin
+fun AppCompatActivity.linkMenuProvider(menuProvider: MenuProvider) {
+    (this as MenuHost).addMenuProvider(menuProvider)
+}
+
+fun AppCompatActivity.unlinkMenuProvider(menuProvider: MenuProvider) {
+    (this as MenuHost).removeMenuProvider(menuProvider)
+}
+
+fun Fragment.linkMenuProvider(menuProvider: MenuProvider) {
+    (requireActivity() as MenuHost).addMenuProvider(menuProvider)
+}
+
+fun Fragment.unlinkMenuProvider(menuProvider: MenuProvider) {
+    (requireActivity() as MenuHost).removeMenuProvider(menuProvider)
+}
+```
+
+Мелочь, но делает жизнь чуть-чуть приятнее.
+
+## [ScanFragment](https://github.com/GrandFatherPikhto/BLEScan/blob/master/app/src/main/java/com/grandfatherpikhto/blescan/ui/fragments/ScanFragment.kt)
+
+## [DeviceFragment](https://github.com/GrandFatherPikhto/BLEScan/blob/master/app/src/main/java/com/grandfatherpikhto/blescan/ui/fragments/DeviceFragment.kt)
+
+## [SendDialogFragment](https://github.com/GrandFatherPikhto/BLEScan/blob/master/app/src/main/java/com/grandfatherpikhto/blescan/ui/fragments/SendDialogFragment.kt)
 
 ## Инструментальное тестирование [BleScanManager](https://github.com/GrandFatherPikhto/BLEScan/blob/master/blin/src/main/java/com/grandfatherpikhto/blin/BleScanManager.kt)
 
 А вот здесь всё становится неопрятным и громоздким. Потому, что увы, даже [MockK](https://mockk.io) стрёмно съехал с темы на ошибке [Unable to dlopen libmockkjvmtiagent.so: dlopen failed: library "libmockkjvmtiagent.so" not found](https://github.com/mockk/mockk/issues/819). Хотя, в [Официальной Документации](https://mockk.io/ANDROID.html) утверждается, что всё прекрасно должно работать... не работает, зараза.
+
+# Инструментальное тестирование UI
 
 Проверить «чистый» [Dexopener](https://github.com/tmurakami/dexopener) пока руки не дошли.
 
@@ -1159,439 +1350,6 @@ class BleManager constructor(private val context: Context,
 Кроме того, в библиотеку приш добавить трёх «Ждунов» — [ConnectingIdling](https://github.com/GrandFatherPikhto/BLEScan/blob/master/blin/src/main/java/com/grandfatherpikhto/blin/idling/ConnectingIdling.kt), [DisconnectingIdling](https://github.com/GrandFatherPikhto/BLEScan/blob/master/blin/src/main/java/com/grandfatherpikhto/blin/idling/DisconnectingIdling.kt), [ScanIdling](https://github.com/GrandFatherPikhto/BLEScan/blob/master/blin/src/main/java/com/grandfatherpikhto/blin/idling/ScanIdling.kt). Они нужны для того, чтобы не давать приложению совершать определённые шаги до тех пор пока фейковое сканирование, подключени, отключение не будут завершены. (См. [Ресурсы для работы с Espresso на холостом ходу](https://developer.android.com/training/testing/espresso/idling-resource))
 
 Осталось подменить в основном классе приложения
-
-### UI
-
-#### [MainActivity](https://github.com/GrandFatherPikhto/BLEScan/blob/master/app/src/main/java/com/grandfatherpikhto/blescan/ui/MainActivity.kt)
-
-Здесь происходит запрос на привязывание/отвязывание сервиса, запрос необходимых разрешений, запрос на включение/выключение адаптера Bluetooth. Здесь же происходит навигация по фрагментам: [ScanFragment](https://github.com/GrandFatherPikhto/BLEScan/blob/master/app/src/main/java/com/grandfatherpikhto/blescan/ui/fragments/ScanFragment.kt) и [DeviceFragment](https://github.com/GrandFatherPikhto/BLEScan/blob/master/app/src/main/java/com/grandfatherpikhto/blescan/ui/fragments/DeviceFragment.kt).
-
-Начнём с запроса разрешений на доступ к сканированию, подключению, сопряжению и обмен данными с Bluetooth:
-
-```xml
-<manifest>
-    <!-- Запросить устаревшие разрешения Bluetooth на старых устройствах -->
-    <uses-permission android:name="android.permission.BLUETOOTH"
-        android:maxSdkVersion="30" />
-    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN"
-        android:maxSdkVersion="30" />
-
-    <!-- Требуется только в том случае, если ваше приложение ищет устройства Bluetooth.
-         Если ваше приложение не использует результаты сканирования Bluetooth для получения
-         информации о физическом местоположении, вы можете твердо утверждать,
-         что ваше приложение не определяет физическое местоположение. -->
-    <uses-permission android:name="android.permission.BLUETOOTH_SCAN" />
-
-    <!-- Требуется только в том случае, если ваше приложение позволяет обнаруживать устройство для
-         устройств Bluetooth. -->
-    <uses-permission android:name="android.permission.BLUETOOTH_ADVERTISE" />
-
-    <!-- Требуется только в том случае, если ваше приложение обменивается данными с уже сопряженными
-         устройствами Bluetooth.. -->
-    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
-
-    <!-- Требуется только в том случае, если ваше приложение использует результаты сканирования
-         Bluetooth для определения физического местоположения. -->
-    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
-    ...
-</manifest>
-```
-
-На первых порах, некое изумление вызвает необходимость давать разрешение на локацию. Но это ничего, со временем привыкаешь и начинаешь более ли менее понимать логику системы. Запрос на доступ к локации, относится к уровню `dangerous` и требует программного запроса на доступ.
-
-Запросы уровня `dangerous`: [android.permission.ACCESS_FINE_LOCATION](https://developer.android.com/reference/android/Manifest.permission#ACCESS_FINE_LOCATION), [android.permission.ACCESS_COARSE_LOCATION](https://developer.android.com/reference/android/Manifest.permission#ACCESS_COARSE_LOCATION), [android.permission.ACCESS_BACKGROUND_LOCATION](https://developer.android.com/reference/android/Manifest.permission#ACCESS_COARSE_LOCATION) нужно запрашивать напрямую, скажем, из `Активности`. Причём, ланчеры запросов надо создать до формирования самой `Активности`, иначе мы сможем запрашивать разрешения или запрос на включение/выключение Bluetooth только в процессе запуска приложения.
-
-```kotlin
-    /**
-     * Запрос группы разрешений
-     * Ланчер необходимо вынести в глобальные переменные, потому что
-     * он должен быть инициализирован ДО запуска Активности.
-     * В противном случае, будет ошибка запроса, если мы вздумаем
-     * перезапросить разрешения после запуска полного запуска приложения
-     */
-    private val permissionsLauncher =
-        registerForActivityResult(
-            ActivityResultContracts.RequestMultiplePermissions()) { results ->
-            results?.entries?.forEach { result ->
-                val name = result.key
-                val isGranted = result.value
-                if (isGranted) {
-                    Toast.makeText(this, "Разрешение на $name получено", Toast.LENGTH_SHORT)
-                        .show()
-                    mainActivityModel.andReady(true)
-                } else {
-                    Toast.makeText(this, "Разрешение на $name не дано", Toast.LENGTH_SHORT)
-                        .show()
-                    mainActivityModel.andReady(false)
-                }
-            }
-        }
-
-    /**
-     * Ланчер для запроса на включение bluetooth
-     * Тоже самое: ланчер надо вынести в глобальные переменные,
-     * чтобы он инициализировался ДО запуска Активности.
-     * Иначе, после старта виджета перезапросить включение Блютуз
-     * уже не получится
-     */
-    private val bluetoothLauncher
-            = registerForActivityResult(
-        ActivityResultContracts.StartActivityForResult()) { result ->
-        if(result.resultCode == RESULT_OK) {
-            mainActivityModel.andReady(true)
-        } else {
-            mainActivityModel.andReady(false)
-        }
-    }
-```
-
-Теперь можно сделать пару функций для запросов разрешений и на включение Bluetooth.
-
-```kotlin
-    /**
-     * Запрос на включение Bluetooth
-     */
-    private fun requestEnableBluetooth() {
-        val enableBtIntent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
-        bluetoothLauncher.launch(enableBtIntent)
-    }
-
-    /**
-     * Запрос группы разрешений
-     */
-    private fun requestPermissions(permissions: Array<String>) {
-        val launchPermissions:MutableList<String> = mutableListOf<String>()
-
-        permissions.forEach { permission ->
-            if (ContextCompat.checkSelfPermission(
-                    this,
-                    permission
-                ) == PackageManager.PERMISSION_GRANTED
-            ) {
-                mainActivityModel.andReady(true)
-            } else {
-                launchPermissions.add(permission)
-            }
-        }
-
-        if(launchPermissions.isNotEmpty()) {
-            permissionsLauncher.launch(launchPermissions.toTypedArray())
-        }
-    }
-```
-
-Например, можно запрашивать разрешения на доступ при запуске приложения, а запрос на включение/выключение адаптера Bluetooth, «повесить» на опцию главного меню.
-
-Привязывание сервисов так же находится здесь, чтобы согласовать жизненный цикл активности и работы сервиса. Строго говоря, этого можно и не делать и перенести привязывание сервиса в класс наследованный от [Application](https://developer.android.com/reference/android/app/Application) [BleScanApp](./app/src/main/java/com/grandfatherpikhto/blescan/BleScanApp.kt), или вовсе отказаться от сервиса, как от ненужного костыля.
-
-Чтобы [BleScanApp](./app/src/main/java/com/grandfatherpikhto/blescan/BleScanApp.kt) создавался, нужно указать его в [blin/AndroidManifext.xml](./app/src/main/AndroidManifest.xml)
-
-
-```xml
-<application>
-    <service android:name=".service.BtLeService" android:enabled="true" />
-</application>
-```
-
-В этой реализации сервис привязан к жизненному циклу [MainActivity](https://github.com/GrandFatherPikhto/BLEScan/blob/master/app/src/main/java/com/grandfatherpikhto/blescan/ui/MainActivity.kt) и отвязывается c отключением от устройства при каждом повороте экрана или переходе приложения в фоновый режим:
-
-```kotlin
-    /**
-     * Событие жизненного цикла Activity() onPause()
-     */
-    override fun onPause() {
-        super.onPause()
-        unbindService(btLeServiceConnector)
-    }
-
-    /**
-     * Событие жизненного цикла Activity() onResume()
-     */
-    override fun onResume() {
-        super.onResume()
-        Intent(this, BtLeService::class.java).also { intent ->
-            bindService(intent, btLeServiceConnector, Context.BIND_AUTO_CREATE)
-        }
-    }
-```
-
-#### Навигация фрагментов
-
-В этом примере навигация сделана довольно грубо. В [MainActivity](https://github.com/GrandFatherPikhto/BLEScan/blob/master/app/src/main/java/com/grandfatherpikhto/blescan/ui/MainActivity.kt)
-создан `enum class Current`, значения которого указывают на объекты навигации из
-[nav_graph.xml](./app/src/main/res/navigation/nav_graph.xml)
-
-```kotlin
-    enum class Current (val value: Int) {
-        None(0x00),
-        Scanner(R.id.ScanFragment),
-        Device(R.id.DeviceFragment)
-    }
-```
-
-Объект [MutableLiveData](https://developer.android.com/reference/androidx/lifecycle/MutableLiveData) в
-модели [MainActivityModel](./app/src/main/java/com/grandfatherpikhto/blescan/model/MainActivityModel.kt)
-хранит идентификатор текущего активного фрейма:
-
-```kotlin
-    private val _current = MutableLiveData<MainActivity.Current>(MainActivity.Current.Scanner)
-    val current:LiveData<MainActivity.Current> = _current
-
-    fun changeCurrent(value: MainActivity.Current) {
-        _current.postValue(value)
-    }
-```
-
-Всё, что остаётся — просто менять запись на нужное значение и, соответственно, переключаться между
-[ScanFragment](https://github.com/GrandFatherPikhto/BLEScan/blob/master/app/src/main/java/com/grandfatherpikhto/blescan/ui/fragments/ScanFragment.kt) и
-[DeviceFragment](https://github.com/GrandFatherPikhto/BLEScan/blob/master/app/src/main/java/com/grandfatherpikhto/blescan/ui/fragments/DeviceFragment.kt). Текущий фрагмент хранится в модели, так что при повороте экрана или уходе приложения в фоновый режим, будет восстанавливаться выбранный фрагмент.
-
-События запуска сканирования и подключения к устройству обрабатываются внутри фрагментов.
-
-Важно, что по-умолчанию генератор приложения AndroidStudio `Basic Activity` создаёт тэг `fragment`
-
-```xml
-    <fragment
-        android:id="@+id/nav_host_fragment_content_main"
-        android:name="androidx.navigation.fragment.NavHostFragment"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        app:defaultNavHost="true"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:navGraph="@navigation/nav_graph" />
-
-```
-
-Однако, этот тэг является устаревшим и если последовать совету автокорректировщика
-
-```text
-Use FragmentContainerView instead of the <fragment> tag
-
-Replace the <fragment> tag with FragmentContainerView.
-
-FragmentContainerView replaces the <fragment> tag as the preferred way of adding fragments via XML.
-Unlike the <fragment> tag, FragmentContainerView uses a normal FragmentTransaction under the hood
-to add the initial fragment, allowing further FragmentTransaction operations on the
-FragmentContainerView and providing a consistent timing for lifecycle events. 
-Issue id: FragmentTagUsage
-https://developer.android.com/reference/androidx/fragment/app/FragmentContainerView.html
-Vendor: Android Open Source Project (fragment-1.3.6)
-Identifier: fragment-1.3.6 Feedback: https://issuetracker.google.com/issues/new?component=192731
-
-Fix: Replace with androidx.fragment.app.FragmentContainerView 
-```
-
-И заменить &lt;fragment&gt; на &lt;FragmentContainerView&gt;
-
-```xml
-    <androidx.fragment.app.FragmentContainerView
-        android:id="@+id/nav_host_fragment_content_main"
-        android:name="androidx.navigation.fragment.NavHostFragment"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        app:defaultNavHost="true"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:navGraph="@navigation/nav_graph" />
-```
-
-Штатный код вызова
-[findNavController](https://developer.android.com/reference/androidx/navigation/Navigation#findNavController(android.app.Activity,kotlin.Int))
-
-```kotlin
-        val navController = findNavController(R.id.nav_host_fragment_content_main)
-        appBarConfiguration = AppBarConfiguration(navController.graph)
-        setupActionBarWithNavController(navController, appBarConfiguration)
-```
-
-Работать уже не будет. Так, что его надо заменить на обращение к
-[supportFragmentManager](https://developer.android.com/reference/androidx/fragment/app/FragmentActivity#getSupportFragmentManager())
-(см. [Navigation](https://developer.android.com/guide/navigation)
-
-```kotlin
-    private fun bindNavBar() {
-        val navHostFragment = supportFragmentManager.findFragmentById(R.id.nav_host_fragment_content_main) as NavHostFragment
-        val navController = navHostFragment?.findNavController()
-        if(navController != null) {
-            appBarConfiguration = AppBarConfiguration(navController.graph)
-            setupActionBarWithNavController(navController, appBarConfiguration)
-        }
-    }
-```
-
-И навигация по фрагментам тогда будет работать так:
-
-```kotlin
-    private fun doNavigate(current: Current) {
-        val navHostFragment = supportFragmentManager.findFragmentById(R.id.nav_host_fragment_content_main) as NavHostFragment
-        val navController = navHostFragment?.findNavController()
-        if(navController.currentDestination?.id != current.value) {
-            navController.navigate(current.value)
-        }
-    }
-```
-
-Осталось «привязать» изменения значения поля `current` в модели `MainActivityModel` к навигации по текущему фрагменту:
-
-```kotlin
-        mainActivityModel.current.observe(this, { current ->
-            doNavigate(current)
-        })
-```
-
-### [ScanFragment](https://github.com/GrandFatherPikhto/BLEScan/blob/master/app/src/main/java/com/grandfatherpikhto/blescan/ui/fragments/ScanFragment.kt)
-
-«Умолчальный» фрагмент, с которого начинается запуск приложения (Home в nav_graph).
-
-Запускается первым. Контейнер для списка найденных устройств. Использует [RecycleView](https://developer.android.com/reference/androidx/recyclerview/widget/RecyclerView), в простейшем варианте. Для его работы создан небольшой адаптер [RvBtAdapter](https://github.com/GrandFatherPikhto/BLEScan/blob/master/app/src/main/java/com/grandfatherpikhto/blescan/adapter/RvBtAdapter.kt). Адаптер сделан очень просто, буквально по [официальному руководству](https://developer.android.com/guide/topics/ui/layout/recyclerview). Так, что подробно описывать его здесь не будем.
-
-Может быть, не стоило валить в одну кучу все данные сканирования устройств и подключения в одну модель, но данный пример невелик, поэтому, данные сканирования и подключения находятся в [BtLeModel](./app/src/main/java/com/grandfatherpikhto/blescan/model/BtLeModel.kt)
-
-Устройства хранятся в списке, причём, по каждому новому устройству идёт сигнал обновления всего списка. Это не красиво, но больше вряд ли в списке будет больше 20 устройств, поэтому, в модели сделано так:
-
-```kotlin
-        override fun onFindDevice(btLeDevice: BtLeDevice?) {
-            super.onFindDevice(btLeDevice)
-            _device.postValue(btLeDevice)
-            btLeDevice?.let { found ->
-                devicesList.add(found)
-                _devices.postValue(devicesList)
-            }
-        }
-```
-
-В свою очередь, [ScanFragment](https://github.com/GrandFatherPikhto/BLEScan/blob/master/app/src/main/java/com/grandfatherpikhto/blescan/ui/fragments/ScanFragment.kt) просто отслеживает содержимое списка:
-
-```kotlin
-    private fun bindRvAdapter () {
-        binding.apply {
-            rvBtList.adapter = rvBtAdapter
-            rvBtList.layoutManager = LinearLayoutManager(requireContext())
-            if(btLeModel.devices != null) {
-                rvBtAdapter.setBtDevices(btLeModel.devices.value!!.toSet())
-            }
-
-            btLeModel.devices.observe(viewLifecycleOwner, { devices ->
-                rvBtAdapter.setBtDevices(devices.toSet())
-            })
-            btLeModel.bond.observe(viewLifecycleOwner, { isBond ->
-                // btLeScanService = BtLeScanServiceConnector.service
-                // btLeScanService?.scanLeDevices(name = AppConst.DEFAULT_NAME)
-            })
-        }
-    }
-```
-
-Состояния — сканирование, остановка сканирования, получение списка сопряжённых устройств, так же хранятся в [BtLeModel](./app/src/main/java/com/grandfatherpikhto/blescan/model/BtLeModel.kt).
-
-```kotlin
-    /**
-     * Следит за изменением LiveData переменной Action.
-     * Запускает/останавливает сканирование или выводит
-     * список сопряжённых устройств
-     * Обрабатывается, только когда сервис уже привязан к
-     * Активности!
-     */
-    private fun bindAction (view: View) {
-        Log.d(TAG, "bindAction, bond = true")
-        btLeModel.action.observe(viewLifecycleOwner, { action ->
-            Log.d(TAG, "bindAction: $action")
-            when(action) {
-                Action.None -> {
-                    bluetoothInterface.stopScan()
-                }
-                Action.Scan -> {
-                    Log.d(TAG, "Action: $action")
-                    btLeModel.clean()
-                    bluetoothInterface.leScanDevices(names = settings.getString("names_filter", ""),
-                    addresses = settings.getString("addresses_filter", ""))
-                }
-                Action.Paired -> {
-                    btLeModel.clean()
-                    bluetoothInterface.stopScan()
-                    bluetoothInterface.pairedDevices()
-                }
-                else -> {}
-            }
-        })
-    }
-```
-
-Короткий клик по плашке найденного устройства останавливает текущее сканирование и запускает повторное сканирование с фильтром по адресу устройства. Сделано просто так, для проверки работы фильтра.
-
-```kotlin
-    private fun initRvAdapter() {
-        rvBtAdapter.setOnItemClickListener(object : RvItemClick<BtLeDevice> {
-            override fun onItemClick(model: BtLeDevice, view: View) {
-                Toast.makeText(
-                    requireContext(),
-                    "Сканируем адрес ${model.address}",
-                    Toast.LENGTH_LONG).show()
-                bluetoothInterface.stopScan()
-                btLeModel.clean()
-                bluetoothInterface.leScanDevices(addresses = model.address, mode = BtLeScanner.Mode.StopOnFind)
-            }
-
-            override fun onItemLongClick(model: BtLeDevice, view: View) {
-                Toast.makeText(
-                    requireContext(),
-                    "Подключаемся к ${model.address}",
-                    Toast.LENGTH_LONG).show()
-                connectToBluetoothDevice(model)
-            }
-        })
-
-        bindRvAdapter()
-    }
-```
-
-Длительный клик — попытка подключения к устройству. Это передаётся в главную модель [MainActivityModel](./app/src/main/java/com/grandfatherpikhto/blescan/model/MainActivityModel.kt). Поскольку, она общая для Главной Активности и всех фрагментов. Экземпляр модели Главной Активности вызывается при помощи `private val mainActivityModel:MainActivityModel by activityViewModels()`, а значит, это — синглетон
-
-```kotlin
-    private fun connectToBluetoothDevice(model: BtLeDevice) {
-        mainActivityModel.changeDevice(model)
-        mainActivityModel.changeCurrent(MainActivity.Current.Device)
-    }
-```
-
-Главная Активность следит за `current` и переключает текующий фрагмент на [DeviceFragment](https://github.com/GrandFatherPikhto/BLEScan/blob/master/app/src/main/java/com/grandfatherpikhto/blescan/ui/fragments/DeviceFragment.kt)
-
-Длительное нажатие на плашку найденного устройства активирует попытку подключения к устройству.
-
-### [DeviceFragment](https://github.com/GrandFatherPikhto/BLEScan/blob/master/app/src/main/java/com/grandfatherpikhto/blescan/ui/fragments/DeviceFragment.kt)
-
-Фактически, это тоже контейнер для [RecycleView](https://developer.android.com/reference/androidx/recyclerview/widget/RecyclerView) с адаптером [RvGattAdapter](./app/src/main/java/com/grandfatherpikhto/blescan/adapter/RvGattAdapter.kt). После исследования `GATT`, прокручивается простой цикл:
-
-```kotlin
-        btLeModel.gatt.observe(viewLifecycleOwner, { gatt ->
-            gatt?.let { rvGattAdapter.setGatt(it) }
-            gatt?.services?.forEach { service ->
-                Log.d(TAG, "Service: ${service.uuid} ${service.type}")
-                service?.characteristics?.forEach { characteristic ->
-                    Log.d(TAG, "Characteristic: ${characteristic.uuid} ${characteristic.properties}")
-                    characteristic?.descriptors?.forEach { descriptor ->
-                        Log.d(TAG, "Descriptor: ${descriptor.uuid}")
-                    }
-                }
-            }
-        })
-```
-
-и список заполняется значениями сервисов, характеристик и дескрипторов. Чтобы не усложнять работу списка, здесь не реализована псевдодревовидная структура отображения, хотя это не так уж сложно. Для этого вовсе не надо реализовывать вложенные списки. Достаточно просто перехватить вызов
-
-```kotlin
-    override fun getItemViewType(position: Int): Int {
-        // return super.getItemViewType(position)
-        return profile[position].first.value
-    }
-```
-
-и в `bind` привязывать разные плашки, с разным отступом и разным содержимым. Впрочем, Вы это можете реализовать самостоятельно.
 
 ## Материалы
 
