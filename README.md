@@ -398,7 +398,7 @@
     }   
    ```
 
-    Однако, необходимо не забыть прописать в ```AndroidManifest.xml``` этот рессивер и фильтры к нему:
+    В этом случае важно не забыть прописать в ```AndroidManifest.xml``` этот рессивер фильтры к нему:
 
     ```xml
         <application
@@ -930,7 +930,7 @@ data class BleGattItem (val uuidService: UUID,
 
 ## Юнит-тестирование [BleGattManager](https://github.com/GrandFatherPikhto/BLEScan/blob/master/blin/src/main/java/com/grandfatherpikhto/blin/BleGattManager.kt)
 
-Пока не реализовано
+Используется, опять-таки [Shadow]()
 
 ## Менеджер сопряжения BLE-устройств [BleBondManager](https://github.com/GrandFatherPikhto/BLEScan/blob/master/blin/src/main/java/com/grandfatherpikhto/blin/BleBondManager.kt)
 
@@ -1582,7 +1582,7 @@ Fix: Replace with androidx.fragment.app.FragmentContainerView
         })
 ```
 
-и список заполняется значениями сервисов, характеристик и дескрипторов. Чтобы не усложнять работу списка здесь не реализована псевдодревовидная структура отображения, хотя это не так уж сложно и для этого вовсе не надо реализовывать вложенные списки. Достаточно просто перехватить вызов
+и список заполняется значениями сервисов, характеристик и дескрипторов. Чтобы не усложнять работу списка, здесь не реализована псевдодревовидная структура отображения, хотя это не так уж сложно. Для этого вовсе не надо реализовывать вложенные списки. Достаточно просто перехватить вызов
 
 ```kotlin
     override fun getItemViewType(position: Int): Int {
