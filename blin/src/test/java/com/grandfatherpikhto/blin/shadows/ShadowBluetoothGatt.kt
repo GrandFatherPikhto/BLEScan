@@ -16,19 +16,12 @@ import kotlin.random.Random
 @Implements(BluetoothGatt::class)
 class ShadowBluetoothGatt {
     companion object {
+        private var bluetoothGatt:BluetoothGatt? = null
         fun newInstance(bluetoothDevice: BluetoothDevice):BluetoothGatt
-            = Shadow.newInstanceOf(BluetoothGatt::class.java,
-//                arrayOf(
-//                    iBluetoothGattClass,
-//                    BluetoothDevice::class.java,
-//                    Integer.TYPE,
-//                    Boolean.TYPE,
-//                    Integer.TYPE,
-//                    Class.forName("android.content.AttributionSource")
-//                ),
-//                arrayOf<Any?>(null, device, 0, false, 0, null)
-        ).let { bluetoothGatt ->
-                bluetoothGatt
+            = bluetoothGatt ?: Shadow.newInstanceOf(BluetoothGatt::class.java,
+        ).let { gatt ->
+            bluetoothGatt = gatt
+            gatt
         }
     }
 
