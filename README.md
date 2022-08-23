@@ -934,6 +934,9 @@ data class BleGattItem (val uuidService: UUID,
 
 ## Юнит-тестирование [BleGattManager](https://github.com/GrandFatherPikhto/BLEScan/blob/master/blin/src/main/java/com/grandfatherpikhto/blin/BleGattManager.kt)
 
+Состоит из двух частей:
+
+### Тестирование очереди [QueueBuffer](https://github.com/GrandFatherPikhto/BLEScan/blob/master/blin/src/main/java/com/grandfatherpikhto/blin/buffer/QueueBuffer.kt)
 Используется, опять-таки [Shadow](http://robolectric.org/extending/) из пакета [Robolectric](http://robolectric.org/androidx_test/). Правда, придётся создать собственную `Тень` [BluetoothGatt](https://developer.android.com/reference/android/bluetooth/BluetoothGatt):
 
 ```Kotlin
@@ -1037,6 +1040,59 @@ data class BleGattItem (val uuidService: UUID,
 ```
 
 Халтура, конечно. Неплохо бы добавить тестирование записи/чтения Характеристик/Дескрипторов.
+
+### Тестирование подключения/отключения [BleGattManagerTest](https://github.com/GrandFatherPikhto/BLEScan/blob/master/blin/src/test/java/com/grandfatherpikhto/blin/BleGattManagerTest.kt)
+
+Здесь тестируется сам процесс подключения:
+
+```Kotlin
+@Test
+    fun testConnect() {
+        bleManager.connect(ADDRESS)
+        val gatt = mockBluetoothGatt(ADDRESS)
+        bleManager.bleGattManager.onConnectionStateChange(gatt, BluetoothGatt.GATT_SUCCESS, BluetoothProfile.STATE_CONNECTED)
+        bleManager.bleGattManager.onGattDiscovered(gatt, BluetoothGatt.GATT_SUCCESS)
+        assertEquals(AbstractBleGattManager.State.Connected, bleManager.connectState)
+        assertEquals(gatt, bleManager.bleGattManager.bluetoothGatt)
+    }
+```
+
+Причём, было бы правильным использовать «Тени» [ShadowBluetoothGatt](http://robolectric.org/javadoc/4.0/org/robolectric/shadows/ShadowBluetoothGatt.html) и [ShadowBluetoothDevice](https://www.google.com/search?q=shadowbluetoothdevice) и далее, [writeCharacteristic](https://developer.android.com/reference/android/bluetooth/BluetoothGatt#writeCharacteristic(android.bluetooth.BluetoothGattCharacteristic)), [readCharacteristic](https://developer.android.com/reference/android/bluetooth/BluetoothGatt#readCharacteristic(android.bluetooth.BluetoothGattCharacteristic))... так тестирование не надо было бы разбивать на части
+
+```Kotlin
+        val adapter = (ApplicationProvider.getApplicationContext<Context>()
+            .getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager).adapter
+        val bluetoothDevice = adapter.getRemoteDevice(Random.nextBytes(6)
+            .joinToString (":"){ String.format("%02X", it) })
+        shadowOf(bluetoothDevice).simulateGattConnectionChange(BluetoothGatt.GATT_SUCCESS, BluetoothProfile.STATE_CONNECTED)
+        val bluetoothGatt = ShadowBluetoothGatt.newInstance(bluetoothDevice)
+        bluetoothGatt.stub { 
+            // ...
+        }
+        // ...
+```
+
+и можно было бы протестировать в одном флаконе подключение, работу буффера, чтение/запись характеристик/дескрипторов. Но тест получается очень громоздким. Так, что остановимся на более простом варианте, в котором просто вызываются методы [BleGattCallback](https://github.com/GrandFatherPikhto/BLEScan/blob/master/blin/src/main/java/com/grandfatherpikhto/blin/orig/AbstractBleGattCallback.kt) с нужными значениями.
+
+Этого достаточно, чтобы протестировать подключение с ошибкой `133` и последющим ресканом с фильтром по адресу.
+
+```Kotlin
+    @Test
+    fun testReconnectWithRescan() {
+        bleManager.connect(ADDRESS)
+        val bluetoothDevice = mockBluetoothDevice(address = ADDRESS, name = NAME)
+        val bluetoothGatt = mockBluetoothGatt(bluetoothDevice)
+        val scanResult = mockScanResult(bluetoothDevice)
+        bleManager.connect(bluetoothDevice.address)
+        bleManager.bleGattManager.onConnectionStateChange(null, ERROR_133, 0)
+        assertEquals(AbstractBleScanManager.State.Scanning, bleManager.scanState)
+        bleManager.bleScanManager.onReceiveScanResult(scanResult)
+        assertEquals(AbstractBleScanManager.State.Stopped, bleManager.scanState)
+        bleManager.bleGattManager.onGattDiscovered(bluetoothGatt, BluetoothGatt.GATT_SUCCESS)
+        assertEquals(AbstractBleGattManager.State.Connected, bleManager.connectState)
+        assertEquals(bluetoothGatt, bleManager.bleGattManager.bluetoothGatt)
+    }
+```
 
 ## Менеджер сопряжения BLE-устройств [BleBondManager](https://github.com/GrandFatherPikhto/BLEScan/blob/master/blin/src/main/java/com/grandfatherpikhto/blin/BleBondManager.kt)
 
