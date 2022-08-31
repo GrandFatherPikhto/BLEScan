@@ -18,7 +18,7 @@
     <string name="default_address" translatable="false">00:00:00:00:00:00</string>
     <string name="default_uuid" translatable="false">123e4567-e89b-12d3-a456-426614174000</string>
     <string name="permission_granted">Permission %1$s is granted</string>
-    <string name="permission_not_granted">Permission on %1$s is not granted</string>
+    <string name="permission_not_granted">Permission on %1$s is not granted. You can give permission manually in the program settings.</string>
     <string name="characteristic_name">Characteristic name</string>
     <string name="service_name">Service Name</string>
     <string name="descriptor_name">Descriptor Name</string>
@@ -73,6 +73,11 @@
     <string name="addresses_filter">Filter Addresses of Device</string>
     <string name="filter_header">Filters</string>
     <string name="custom_descriptor">Custom Descriptor</string>
+    <string name="request_enable_bluetooth_adapter">The Bluetooth adapter of the phone is disabled. Turn it on so the program can run!</string>
+    <string name="alert_title">Warning!</string>
+    <string name="ok">Ok</string>
+    <string name="cancel">Cancel</string>
+    <string name="accessibly">It\'s clear</string>
     <!-- TODO: Remove or change this placeholder text -->
 
 </resources>

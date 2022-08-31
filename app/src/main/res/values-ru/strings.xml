@@ -14,8 +14,8 @@
     <string name="description_bond">Сопряжение Устройства</string>
     <string name="description_connectable">Подключаемое устройство</string>
     <string name="unknown_device">Неизвестное Устройство</string>
-    <string name="permission_granted">Разрешение на %1$s получение</string>
-    <string name="permission_not_granted">Разрешение на %1$s не получено</string>
+    <string name="permission_granted">Разрешение на %1$s получено</string>
+    <string name="permission_not_granted">Разрешение на %1$s не получено. Вы можете дать разрешение вручную в настройках программы.</string>
     <string name="characteristic_name">Название Характеристики</string>
     <string name="service_name">Название Сервиса</string>
     <string name="descriptor_name">Название Дестриптора</string>
@@ -69,4 +69,9 @@
     <string name="addresses_filter">Фильтр по адресам устройств</string>
     <string name="filter_header">Фильтры</string>
     <string name="custom_descriptor">Пользовательский Дескриптор</string>
+    <string name="request_enable_bluetooth_adapter">Блютуз адаптер телефона отключён. Включите его, чтобы программа могла работать!</string>
+    <string name="alert_title">Предупреждение!</string>
+    <string name="ok">Да</string>
+    <string name="cancel">Нет</string>
+    <string name="accessibly">Понятно</string>
 </resources>
