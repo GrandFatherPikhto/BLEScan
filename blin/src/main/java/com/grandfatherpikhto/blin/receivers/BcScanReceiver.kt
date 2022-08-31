@@ -33,7 +33,7 @@ class BcScanReceiver constructor(private val bleScanManager: AbstractBleScanMana
             bleScanManager.applicationContext,
             REQUEST_CODE_BLE_SCANNER_PENDING_INTENT,
             Intent(ACTION_BLE_SCAN),
-            PendingIntent.FLAG_UPDATE_CURRENT
+            PendingIntent.FLAG_UPDATE_CURRENT.or(PendingIntent.FLAG_IMMUTABLE)
         )
     }
 

@@ -1316,7 +1316,7 @@ class BleManager constructor(private val context: Context,
 
 # UI
 
-## [BleScanApp](https://github.com/GrandFatherPikhto/BLEScan/blob/master/app/src/main/java/com/grandfatherpikhto/blescan/BleScanApp.kt)
+## [BleScanApp](https://github.com/GrandFatherPikhto/BLEScan/blob/master/app/src/main/java/com/grandfatherpikhto/blescan/BleScanApp.kt) — экземпляр [Application](https://developer.android.com/reference/android/app/Application)
 
 Используется для хранения менеджера BLE:
 
@@ -1326,7 +1326,7 @@ class BleScanApp : Application() {
 }
 ```
 
-Пришлось создать новый абстрактный класс [AppBleManager](), наследованный от [AbstractBleManager](https://github.com/GrandFatherPikhto/BLEScan/blob/master/app/src/main/java/com/grandfatherpikhto/blescan/blemanager/AppBleManager.kt). Это нужно для того, чтобы обмениваться сурроагатами [BleGatt](https://github.com/GrandFatherPikhto/BLEScan/blob/master/app/src/main/java/com/grandfatherpikhto/blescan/data/BleGatt.kt), [BleScanResult](https://github.com/GrandFatherPikhto/BLEScan/blob/master/app/src/main/java/com/grandfatherpikhto/blescan/data/BleScanResult.kt), [BleDevice](https://github.com/GrandFatherPikhto/BLEScan/blob/master/app/src/main/java/com/grandfatherpikhto/blescan/data/BleDevice.kt) и т.д.
+Пришлось создать новый абстрактный класс [AppBleManager](https://github.com/GrandFatherPikhto/BLEScan/blob/master/app/src/main/java/com/grandfatherpikhto/blescan/BleScanApp.kt), наследованный от [AbstractBleManager](https://github.com/GrandFatherPikhto/BLEScan/blob/master/app/src/main/java/com/grandfatherpikhto/blescan/blemanager/AppBleManager.kt). Это нужно для того, чтобы обмениваться сурроагатами [BleGatt](https://github.com/GrandFatherPikhto/BLEScan/blob/master/app/src/main/java/com/grandfatherpikhto/blescan/data/BleGatt.kt), [BleScanResult](https://github.com/GrandFatherPikhto/BLEScan/blob/master/app/src/main/java/com/grandfatherpikhto/blescan/data/BleScanResult.kt), [BleDevice](https://github.com/GrandFatherPikhto/BLEScan/blob/master/app/src/main/java/com/grandfatherpikhto/blescan/data/BleDevice.kt) и т.д.
 
 Плюс, можно создать фиктивный менеджер работы с BLE для инструментального тестирования, который тоже наследует [AppBleManager](https://github.com/GrandFatherPikhto/BLEScan/blob/master/app/src/main/java/com/grandfatherpikhto/blescan/blemanager/AppBleManager.kt), а значит, может заменить оригинальный.
 
