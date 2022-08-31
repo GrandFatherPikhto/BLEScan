@@ -42,11 +42,6 @@ abstract class AbstractBleGattManager constructor(private val context: Context,
         Error         (0xFF), // Получена ошибка
     }
 
-    enum class GattStatus (val value: Int) {
-        GattSuccess (BluetoothGatt.GATT_SUCCESS),
-        GattFailure(BluetoothGatt.GATT_FAILURE)
-    }
-
     private val tagLog = this.javaClass.simpleName
     private val bleGattCallback  = BleGattCallback(this, dispatcher)
     private var bluetoothDevice: BluetoothDevice? = null
@@ -122,6 +117,13 @@ abstract class AbstractBleGattManager constructor(private val context: Context,
 
     fun connect(address:String) : BluetoothGatt? {
         val validAddress = address.uppercase()
+        /**
+         * https://developer.android.com/reference/android/bluetooth/BluetoothAdapter#enable()
+         */
+        if (!bluetoothAdapter.isEnabled) {
+            return null
+        }
+
         Log.d(tagLog, "connect($validAddress)")
         if (connectState == State.Disconnected) {
             connectIdling?.idling = false

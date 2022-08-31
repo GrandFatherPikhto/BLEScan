@@ -61,6 +61,13 @@ abstract class AbstractBleBondManager (private val context: Context,
      */
     @SuppressLint("MissingPermission")
     fun bondRequest(address: String) : Boolean {
+        /**
+         * https://developer.android.com/reference/android/bluetooth/BluetoothAdapter#enable()
+         */
+        if (!bluetoothAdapter.isEnabled) {
+            return false
+        }
+
         val validAddress = address.uppercase()
         if (BluetoothAdapter.checkBluetoothAddress(validAddress)) {
             bluetoothAdapter.getRemoteDevice(address.uppercase())?.let { bluetoothDevice ->
@@ -73,6 +80,13 @@ abstract class AbstractBleBondManager (private val context: Context,
 
     @SuppressLint("MissingPermission")
     private fun bondRequest(bluetoothDevice: BluetoothDevice) : Boolean {
+        /**
+         * https://developer.android.com/reference/android/bluetooth/BluetoothAdapter#enable()
+         */
+        if (!bluetoothAdapter.isEnabled) {
+            return false
+        }
+
         Log.d(logTag, "bondRequest(${bluetoothDevice.address})")
         if(bluetoothDevice.bondState == BluetoothDevice.BOND_BONDED) {
             mutableStateFlowBleBondState.tryEmit(BleBondState(bluetoothDevice, State.Bonded))

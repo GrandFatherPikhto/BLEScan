@@ -87,6 +87,12 @@ abstract class AbstractBleScanManager constructor(private val context: Context,
                   filterRepeatable: Boolean = false,
                   stopTimeout: Long = 0L
     ) : Boolean {
+        /**
+         * https://developer.android.com/reference/android/bluetooth/BluetoothAdapter#enable()
+         */
+        if (!bluetoothAdapter.isEnabled) {
+            return false
+        }
 
         if (scanState == State.Error) {
             Log.e(tagLog, "Error: ${stateFlowError.value}")
@@ -204,6 +210,7 @@ abstract class AbstractBleScanManager constructor(private val context: Context,
 
     @SuppressLint("MissingPermission")
     fun onReceiveScanResult(scanResult: ScanResult) {
+        // Log.d(tagLog, "ScanResult: $scanResult")
         scanResult.device.let { bluetoothDevice ->
             if ( filterName(bluetoothDevice)
                 .and(filterAddress(bluetoothDevice))

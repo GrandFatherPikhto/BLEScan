@@ -44,6 +44,8 @@ interface BleManagerInterface {
     val sharedFlowCharacteristicNotify: SharedFlow<BleCharacteristicNotify>
     val notifiedCharacteristic:List<BluetoothGattCharacteristic>
 
+    val isBluetoothAdapterEnabled : Boolean
+
     fun onDestroy()
 
     fun bondRequest(address: String): Boolean

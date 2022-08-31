@@ -102,4 +102,7 @@ abstract class AbstractBleManager constructor(private val context: Context,
     override fun isCharacteristicNotified(
         bluetoothGattCharacteristic: BluetoothGattCharacteristic): Boolean
         = bleGattManager.isCharacteristicNotified(bluetoothGattCharacteristic)
+
+    override val isBluetoothAdapterEnabled: Boolean get() = (applicationContext.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager)
+            .adapter.isEnabled
 }
